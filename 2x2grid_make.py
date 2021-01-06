@@ -73,4 +73,6 @@ def specify_flow(edge_dict):
             flows.append('from="{}" to="{}"'.format(append_start_str,append_fin_str))
             print('    <flow id="{}" from="{}" to="{}" begin="0" end="9000" number="1800" />'.format(key_start,append_start_str,append_fin_str))
     return flows
+
+
 flow_list=specify_flow(edge_dict)
