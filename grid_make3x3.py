@@ -247,7 +247,7 @@ class Network():
         indent(sumocfg)
         dump(sumocfg)
         tree=ET.ElementTree(sumocfg)
-        tree.write(self.file_name+'simulate'+'.sumocfg',pretty_print=True,encoding='UTF-8',xml_declaration=True)
+        tree.write(self.file_name+'_simulate'+'.sumocfg',pretty_print=True,encoding='UTF-8',xml_declaration=True)
 
     
     def sumogui(self):
