@@ -1,8 +1,8 @@
 
 <configuration>
     <input>
-        <net-file value="hello.net.xml"/>
-        <route-files value="hello.rou.xml"/>
+        <net-file value="3x3intersection.net.xml"/>
+        <route-files value="3x3intersection.rou.xml"/>
     </input>
     <time>
         <begin value="0"/>

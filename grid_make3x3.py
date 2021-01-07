@@ -77,6 +77,8 @@ class Network():
         self.laneLength=configs['laneLength']
         print(configs)
         self.node = self.specify_node()  # node info
+        self.flows = list()
+        self.vehicles=list()
 
 
     def specify_edge(self):
@@ -84,18 +86,15 @@ class Network():
         edges_dict=dict()
         for _, dict_key in enumerate(self.edge_dict.keys()):
             for i, _ in enumerate(self.edge_dict[dict_key]):
-                print('    <edge from="{}" id="{}_to_{}" to="{}" numLanes="{}"/>'.format(dict_key,
-                                                                                         dict_key,
-                                                                                         self.edge_dict[dict_key][i],
-                                                                                         self.edge_dict[dict_key][i],
-                                                                                         self.num_lanes))
                 edges_dict={
                     'from':dict_key,
                     'id':"{}_to_{}".format(dict_key, self.edge_dict[dict_key][i]),
-                    'to': self.edge_dict[dict_key][i]
+                    'to': self.edge_dict[dict_key][i],
+                    'numLanes':self.num_lanes
                 }
                 edges.append(edges_dict)
                 edges_dict=dict()
+        self.edges=edges
         return edges
 
     def specify_node(self):
@@ -158,18 +157,12 @@ class Network():
         tree.write(self.xml_nod_pos+'.xml', pretty_print=True, encoding='UTF-8', xml_declaration=True)
 
     def generate_edg_xml(self):
+        self.specify_edge()
         self.xml_edg_pos = os.path.join(self.current_path, self.xml_edg_name)
         edg_xml = ET.Element('edges')
-        for _, dict_key in enumerate(self.edge_dict.keys()):
-            for i, _ in enumerate(self.edge_dict[dict_key]):
-                doc = ET.SubElement(edg_xml, 'edge')
-                doc.attrib['from']=dict_key
-                doc.attrib['id']='{}_to_{}'.format(dict_key,edge_dict[dict_key][i])
-                doc.attrib['to']=edge_dict[dict_key][i]
-                doc.attrib['numLanes']=self.num_lanes
-                edg_xml.append(doc)
-                indent(edg_xml)
-                #print(print_str)
+        for _, edge_dict in enumerate(self.edges):
+            edg_xml.append(E('edge',attrib=edge_dict))
+            indent(edg_xml)
         dump(edg_xml)
         tree=ET.ElementTree(edg_xml)
         #tree.write(self.xml_edg_pos+'.xml',encoding='utf-8',xml_declaration=True)
@@ -181,10 +174,8 @@ class Network():
     def specify_flow(self):
         edge_start = list()
         node_fin = list()
-        flows = list()
         flow_dict=dict()
         edge_fin = list()
-        route_xml = ET.Element('routes')
         for _, key_start in enumerate(self.edge_dict):
             if len(self.edge_dict[key_start]) == 1:
                 append_start_str = "{}_to_{}".format(
@@ -220,18 +211,26 @@ class Network():
                     append_fin_str = "{}_to_{}".format(node_fin, key_fin)
                 edge_fin.append(append_fin_str)
                 flow_dict={'id':key_start,'from':append_start_str,'to':append_fin_str,'begin':self.flow_start,'end':self.flow_end,'number':self.num_cars}
-                flows.append(flow_dict)
-                route_xml.append(E('flow',attrib=flow_dict))
+                self.flows.append(flow_dict)
                 flow_dict=dict()
+
+        return self.flows
+
+    def generate_rou_xml(self):
+        self.specify_flow()
+        route_xml = ET.Element('routes')
+        if len(self.vehicles)!=0: #empty
+            for _,vehicle_dict in enumerate(self.vehicles):
+                route_xml.append(E('veh',attrib=vehicle_dict))
                 indent(route_xml)
-                print('    <flow id="{}" from="{}" to="{}" begin="0" end="9000" number="1800" />'.format(
-                    key_start, append_start_str, append_fin_str))
+        if len(self.flows)!=0:
+            for _,flow_dict in enumerate(self.flows):
+                route_xml.append(E('flow',attrib=flow_dict))
+                indent(route_xml)
         dump(route_xml)
         tree=ET.ElementTree(route_xml)
-        #tree.write(self.xml_edg_pos+'.xml',encoding='utf-8',xml_declaration=True)
         tree.write(self.xml_route_pos+'.xml', pretty_print=True, encoding='UTF-8', xml_declaration=True)
-        return flows
-    
+
     def generate_cfg(self):
         sumocfg=ET.Element('configuration')
         input=ET.SubElement(sumocfg,'input')
@@ -248,11 +247,11 @@ class Network():
         indent(sumocfg)
         dump(sumocfg)
         tree=ET.ElementTree(sumocfg)
-        tree.write(self.file_name+'.sumocfg',pretty_print=True,encoding='UTF-8',xml_declaration=True)
+        tree.write(self.file_name+'simulate'+'.sumocfg',pretty_print=True,encoding='UTF-8',xml_declaration=True)
 
     
     def sumogui(self):
-        os.system('sumo-gui -c {}.sumocfg'.format(self.file_name))
+        os.system('sumo-gui -c {}.sumocfg'.format(self.file_name+'simulate'))
 
 
 
@@ -262,7 +261,7 @@ if __name__ == '__main__':
     network.generate_edg_xml()
     network.generate_nod_xml()
     network.generate_net_xml()
-    network.specify_flow()
+    network.generate_rou_xml()
     network.generate_cfg()
     network.sumogui()
 
