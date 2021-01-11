@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<nodes>
+	<node id="n_nl" x="-100.0" y="200.0"/>
+	<node id="n_nc" x="0.0" y="200.0"/>
+	<node id="n_nr" x="100.0" y="200.0"/>
+	<node id="n_ln" type="traffic_light" tl="n_ln" x="-200.0" y="100.0"/>
+	<node id="n_cnl" type="traffic_light" tl="n_cnl" x="-100.0" y="100.0"/>
+	<node id="n_cnc" type="traffic_light" tl="n_cnc" x="0.0" y="100.0"/>
+	<node id="n_cnr" type="traffic_light" tl="n_cnr" x="100.0" y="100.0"/>
+	<node id="n_rn" type="traffic_light" tl="n_rn" x="200.0" y="100.0"/>
+	<node id="n_lc" type="traffic_light" tl="n_lc" x="-200.0" y="0.0"/>
+	<node id="n_ccl" type="traffic_light" tl="n_ccl" x="-100.0" y="0.0"/>
+	<node id="n_ccc" type="traffic_light" tl="n_ccc" x="0.0" y="0.0"/>
+	<node id="n_ccr" type="traffic_light" tl="n_ccr" x="100.0" y="0.0"/>
+	<node id="n_rc" type="traffic_light" tl="n_rc" x="200.0" y="0.0"/>
+	<node id="n_ls" type="traffic_light" tl="n_ls" x="-200.0" y="-100.0"/>
+	<node id="n_csl" type="traffic_light" tl="n_csl" x="-100.0" y="-100.0"/>
+	<node id="n_csc" type="traffic_light" tl="n_csc" x="0.0" y="-100.0"/>
+	<node id="n_csr" type="traffic_light" tl="n_csr" x="100.0" y="-100.0"/>
+	<node id="n_rs" type="traffic_light" tl="n_rs" x="200.0" y="-100.0"/>
+	<node id="n_sl" x="-100.0" y="-200.0"/>
+	<node id="n_sc" x="0.0" y="-200.0"/>
+	<node id="n_sr" x="100.0" y="-200.0"/>
+	</nodes>
+	

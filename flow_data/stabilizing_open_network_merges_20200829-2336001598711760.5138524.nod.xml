@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<nodes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/nodes_file.xsd">
+  <node id="inflow_highway" x="-100" y="0"/>
+  <node id="left" y="0" x="0"/>
+  <node id="center" y="0" x="500" radius="10"/>
+  <node id="right" y="0" x="600"/>
+  <node id="inflow_merge" x="358.5786437626905" y="-141.42135623730948"/>
+  <node id="bottom" x="429.28932188134524" y="-70.71067811865474"/>
+</nodes>

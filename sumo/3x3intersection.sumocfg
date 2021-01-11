@@ -1,0 +1,11 @@
+
+<configuration>
+    <input>
+        <net-file value="3x3intersection.net.xml"/>
+        <route-files value="3x3intersection.rou.xml"/>
+    </input>
+    <time>
+        <begin value="0"/>
+        <end value="10000"/>
+    </time>
+</configuration>

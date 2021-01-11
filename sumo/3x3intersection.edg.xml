@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<edges>
+	<edge from="n_nl" id="n_nl_to_n_cnl" to="n_cnl" numLanes="3"/>
+	<edge from="n_nc" id="n_nc_to_n_cnc" to="n_cnc" numLanes="3"/>
+	<edge from="n_nr" id="n_nr_to_n_cnr" to="n_cnr" numLanes="3"/>
+	<edge from="n_ln" id="n_ln_to_n_cnl" to="n_cnl" numLanes="3"/>
+	<edge from="n_lc" id="n_lc_to_n_ccl" to="n_ccl" numLanes="3"/>
+	<edge from="n_ls" id="n_ls_to_n_csl" to="n_csl" numLanes="3"/>
+	<edge from="n_rn" id="n_rn_to_n_cnr" to="n_cnr" numLanes="3"/>
+	<edge from="n_rc" id="n_rc_to_n_ccr" to="n_ccr" numLanes="3"/>
+	<edge from="n_rs" id="n_rs_to_n_csr" to="n_csr" numLanes="3"/>
+	<edge from="n_sl" id="n_sl_to_n_csl" to="n_csl" numLanes="3"/>
+	<edge from="n_sc" id="n_sc_to_n_csc" to="n_csc" numLanes="3"/>
+	<edge from="n_sr" id="n_sr_to_n_csr" to="n_csr" numLanes="3"/>
+	<edge from="n_cnl" id="n_cnl_to_n_nl" to="n_nl" numLanes="3"/>
+	<edge from="n_cnl" id="n_cnl_to_n_ln" to="n_ln" numLanes="3"/>
+	<edge from="n_cnl" id="n_cnl_to_n_cnr" to="n_cnr" numLanes="3"/>
+	<edge from="n_cnl" id="n_cnl_to_n_csl" to="n_csl" numLanes="3"/>
+	<edge from="n_cnc" id="n_cnc_to_n_nc" to="n_nc" numLanes="3"/>
+	<edge from="n_cnc" id="n_cnc_to_n_ccc" to="n_ccc" numLanes="3"/>
+	<edge from="n_cnc" id="n_cnc_to_n_cnl" to="n_cnl" numLanes="3"/>
+	<edge from="n_cnc" id="n_cnc_to_n_cnr" to="n_cnr" numLanes="3"/>
+	<edge from="n_cnr" id="n_cnr_to_n_nr" to="n_nr" numLanes="3"/>
+	<edge from="n_cnr" id="n_cnr_to_n_cnl" to="n_cnl" numLanes="3"/>
+	<edge from="n_cnr" id="n_cnr_to_n_rn" to="n_rn" numLanes="3"/>
+	<edge from="n_cnr" id="n_cnr_to_n_csr" to="n_csr" numLanes="3"/>
+	<edge from="n_csl" id="n_csl_to_n_ccl" to="n_ccl" numLanes="3"/>
+	<edge from="n_csl" id="n_csl_to_n_ls" to="n_ls" numLanes="3"/>
+	<edge from="n_csl" id="n_csl_to_n_csc" to="n_csc" numLanes="3"/>
+	<edge from="n_csl" id="n_csl_to_n_sl" to="n_sl" numLanes="3"/>
+	<edge from="n_csc" id="n_csc_to_n_csl" to="n_csl" numLanes="3"/>
+	<edge from="n_csc" id="n_csc_to_n_ccc" to="n_ccc" numLanes="3"/>
+	<edge from="n_csc" id="n_csc_to_n_sc" to="n_sc" numLanes="3"/>
+	<edge from="n_csc" id="n_csc_to_n_csr" to="n_csr" numLanes="3"/>
+	<edge from="n_csr" id="n_csr_to_n_csc" to="n_csc" numLanes="3"/>
+	<edge from="n_csr" id="n_csr_to_n_ccr" to="n_ccr" numLanes="3"/>
+	<edge from="n_csr" id="n_csr_to_n_rs" to="n_rs" numLanes="3"/>
+	<edge from="n_csr" id="n_csr_to_n_sr" to="n_sr" numLanes="3"/>
+	<edge from="n_ccl" id="n_ccl_to_n_lc" to="n_lc" numLanes="3"/>
+	<edge from="n_ccl" id="n_ccl_to_n_csl" to="n_csl" numLanes="3"/>
+	<edge from="n_ccl" id="n_ccl_to_n_cnl" to="n_cnl" numLanes="3"/>
+	<edge from="n_ccl" id="n_ccl_to_n_ccc" to="n_ccc" numLanes="3"/>
+	<edge from="n_ccc" id="n_ccc_to_n_ccl" to="n_ccl" numLanes="3"/>
+	<edge from="n_ccc" id="n_ccc_to_n_cnc" to="n_cnc" numLanes="3"/>
+	<edge from="n_ccc" id="n_ccc_to_n_ccr" to="n_ccr" numLanes="3"/>
+	<edge from="n_ccc" id="n_ccc_to_n_csc" to="n_csc" numLanes="3"/>
+	<edge from="n_ccr" id="n_ccr_to_n_ccc" to="n_ccc" numLanes="3"/>
+	<edge from="n_ccr" id="n_ccr_to_n_cnr" to="n_cnr" numLanes="3"/>
+	<edge from="n_ccr" id="n_ccr_to_n_rc" to="n_rc" numLanes="3"/>
+	<edge from="n_ccr" id="n_ccr_to_n_csr" to="n_csr" numLanes="3"/>
+</edges>
+	

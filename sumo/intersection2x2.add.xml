@@ -1,0 +1,26 @@
+<additional>
+    <tlLogic id="n_cnl" type="static" programID="1" offset="10">
+        <phase duration="42" state="gGGGggrrrrrrgGGGggrrrrrr"/>
+        <phase duration="3"  state="yyyyyyrrrrrryyyyyyrrrrrr"/>
+        <phase duration="42" state="rrrrrrgGGGggrrrrrrgGGGgg"/>
+        <phase duration="3"  state="rrrrrryyyyyyrrrrrryyyyyy"/>
+    </tlLogic>
+    <tlLogic id="n_cnr" type="static" programID="1" offset="10">
+        <phase duration="42" state="gGGGggrrrrrrgGGGggrrrrrr"/>
+        <phase duration="3"  state="yyyyyyrrrrrryyyyyyrrrrrr"/>
+        <phase duration="42" state="rrrrrrgGGGggrrrrrrgGGGgg"/>
+        <phase duration="3"  state="rrrrrryyyyyyrrrrrryyyyyy"/>
+    </tlLogic>
+    <tlLogic id="n_csl" type="static" programID="1" offset="10">
+        <phase duration="42" state="gGGGggrrrrrrgGGGggrrrrrr"/>
+        <phase duration="3"  state="yyyyyyrrrrrryyyyyyrrrrrr"/>
+        <phase duration="42" state="rrrrrrgGGGggrrrrrrgGGGgg"/>
+        <phase duration="3"  state="rrrrrryyyyyyrrrrrryyyyyy"/>
+    </tlLogic>
+    <tlLogic id="n_csr" type="static" programID="1" offset="10">
+        <phase duration="42" state="gGGGggrrrrrrgGGGggrrrrrr"/>
+        <phase duration="3"  state="yyyyyyrrrrrryyyyyyrrrrrr"/>
+        <phase duration="42" state="rrrrrrgGGGggrrrrrrgGGGgg"/>
+        <phase duration="3"  state="rrrrrryyyyyyrrrrrryyyyyy"/>
+    </tlLogic>
+</additional>
