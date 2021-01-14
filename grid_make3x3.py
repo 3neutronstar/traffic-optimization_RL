@@ -83,9 +83,9 @@ class Network():
 
     def specify_edge(self):
         edges = list()
-        edges_dict=dict()
         for _, dict_key in enumerate(self.edge_dict.keys()):
             for i, _ in enumerate(self.edge_dict[dict_key]):
+                edges_dict=dict()
                 edges_dict={
                     'from':dict_key,
                     'id':"{}_to_{}".format(dict_key, self.edge_dict[dict_key][i]),
@@ -93,7 +93,6 @@ class Network():
                     'numLanes':self.num_lanes
                 }
                 edges.append(edges_dict)
-                edges_dict=dict()
         self.edges=edges
         return edges
 
@@ -232,18 +231,25 @@ class Network():
         tree.write(self.xml_route_pos+'.xml', pretty_print=True, encoding='UTF-8', xml_declaration=True)
 
     def generate_cfg(self):
-        sumocfg=ET.Element('configuration')
-        input=ET.SubElement(sumocfg,'input')
-        input.append(E('net-file',attrib={'value':self.file_name+'.net.xml'}))
+        sumocfg=ET.Element('configuration') #attrib={'xmlns:xmi':'http://www.w3.org/2001/XMLSchema-instance','xsi:noNamespaceSchemaLocation':'http://sumo.sf.net/xsd/netconvertConfiguration.xsd'}
+        inputXML=ET.SubElement(sumocfg,'input')
+        inputXML.append(E('net-file',attrib={'value':self.file_name+'.net.xml'}))
         indent(sumocfg)
-        input.append(E('route-files',attrib={'value':self.file_name+'.rou.xml'}))
-        indent(sumocfg)
+        if os.path.exists(os.path.join(self.current_path,self.file_name+'.rou.xml')):
+            inputXML.append(E('route-files',attrib={'value':self.file_name+'.rou.xml'}))
+            indent(sumocfg)
+
         if os.path.exists(os.path.join(self.current_path,self.file_name+'.add.xml')):
-            input.append(E('add-file',attrib={'value':self.file_name+'.add.xml'}))
+            inputXML.append(E('add-file',attrib={'value':self.file_name+'.add.xml'}))
+            indent(sumocfg)
+
         time=ET.SubElement(sumocfg,'time')
         time.append(E('begin',attrib={'value':str(self.sim_start)}))
         indent(sumocfg)
         time.append(E('end',attrib={'value':str(self.sim_end)}))
+        indent(sumocfg)
+        outputXML=ET.SubElement(sumocfg,'output')
+        outputXML.append(E('netstate-dump',attrib={'value':self.file_name+'_dump.net.xml'}))
         indent(sumocfg)
         dump(sumocfg)
         tree=ET.ElementTree(sumocfg)
@@ -251,7 +257,7 @@ class Network():
 
     
     def sumogui(self):
-        os.system('sumo-gui -c {}.sumocfg'.format(self.file_name+'simulate'))
+        os.system('sumo-gui -c {}.sumocfg'.format(self.current_path+self.file_name+'_simulate'))
 
 
 
