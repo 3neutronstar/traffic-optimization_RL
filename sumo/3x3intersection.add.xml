@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<additional>
+	<edgeData id="edgeData_00" file="3x3intersection_edgeData.xml" begin="0" end="10000" freq="1000"/>
+	<laneData id="laneData_00" file="3x3intersection_laneData.xml" begin="0" end="10000" freq="1000"/>
+	</additional>
+	

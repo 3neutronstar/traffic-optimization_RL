@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<configuration>
+	<input>
+	<net-file value="test_grid.net.xml"/>
+	<additional-files value="test_grid.add.xml"/>
+	</input>
+	<time>
+	<begin value="0"/>
+	<end value="10000"/>
+	</time>
+	<output>
+	<netstate-dump value="test_grid_dump.net.xml"/>
+	</output>
+	</configuration>
+	
