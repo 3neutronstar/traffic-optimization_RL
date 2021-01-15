@@ -2,6 +2,7 @@ import argparse
 import json, os, sys
 import traci
 import traci.constants as tc
+import torch
 from grid import configs
 from grid import GridNetwork
 from sumolib import checkBinary
@@ -28,10 +29,20 @@ def train(flags):
     sumoCmd = [sumoBinary, "-c", "{}.sumocfg".format(configs['file_name'])]
     traci.start(sumoCmd)
     step = 0
+    # state=env.init(action)
     while step < 1000:
         traci.simulationStep()
+        '''
+        state=env.get_state() #partial하게는 env에서 조정
+        action=agent.get_action(state)
+        reward=env.get_reward(action)
+        next_state=env.get_state(action)
         # if traci.inductionloop.getLastStepVehicleNumber("0") > 0:
         step += 1
+        state=next_state
+        '''
+
+        step+=1
     traci.close()  
 
 
@@ -56,9 +67,10 @@ def main(args):
         sumoBinary = checkBinary('sumo')
 
     if flags.mode.lower()=='train':
-        sumoConfig=os.path.join()
+        sumoConfig=os.path.join(os.path.abspath('traffic-optimization_RL'),'env',configs['file_name']+'.sumocfg')
         train(flags)
     elif flags.mode.lower()=='test':
+        sumoConfig=os.path.join(os.path.abspath('traffic-optimization_RL'),'env',configs['file_name']+'_test.sumocfg')
         test(flags)
     
     #check the environment
