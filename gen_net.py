@@ -77,9 +77,10 @@ class Network():
         self.xml_con_name = self.configs['file_name']+'.con'
         self.xml_route_pos = self.file_name+'.rou'
         self.current_path = os.path.abspath('traffic-optimization_RL')
-        if os.path.exists(os.path.join(self.current_path,'env'))==False:
-            os.makedirs('env')
-        self.current_path=os.path.join(self.current_path,'env')
+        if os.path.exists(os.path.join(self.current_path,'Env'))==True:
+            os.makedirs('Env')
+        print(self.current_path)
+        self.current_path=os.path.join(self.current_path,'Env')
 
         self.num_cars = str(self.configs['num_cars'])
         self.num_lanes = str(self.configs['num_lanes'])
@@ -140,7 +141,6 @@ class Network():
 
     def _generate_nod_xml(self):
         self.nodes = self.specify_node()
-        self.xml_nod_pos = os.path.join(self.current_path, self.xml_node_name)
         nod_xml = ET.Element('nodes')
 
         for node_dict in self.nodes:
@@ -149,25 +149,25 @@ class Network():
             indent(nod_xml)
         dump(nod_xml)
         tree = ET.ElementTree(nod_xml)
-        # tree.write(self.xml_nod_pos+'.xml',encoding='utf-8',xml_declaration=True)
-        tree.write(os.path.join(self.current_path,self.xml_nod_pos+'.xml'), pretty_print=True,
+        # tree.write(self.xml_node_name+'.xml',encoding='utf-8',xml_declaration=True)
+        tree.write(self.xml_node_name+'.xml', pretty_print=True,
                    encoding='UTF-8', xml_declaration=True)
 
     def _generate_edg_xml(self):
         self.edges = self.specify_edge()
-        self.xml_edg_pos = os.path.join(self.current_path, self.xml_edg_name)
         edg_xml = ET.Element('edges')
         for _, edge_dict in enumerate(self.edges):
             edg_xml.append(E('edge', attrib=edge_dict))
             indent(edg_xml)
         dump(edg_xml)
         tree = ET.ElementTree(edg_xml)
-        # tree.write(self.xml_edg_pos+'.xml',encoding='utf-8',xml_declaration=True)
-        tree.write(self.xml_edg_pos+'.xml', pretty_print=True,
+        # tree.write(self.xml_edg_name+'.xml',encoding='utf-8',xml_declaration=True)
+        tree.write(self.xml_edg_name+'.xml', pretty_print=True,
                    encoding='UTF-8', xml_declaration=True)
 
     def _generate_net_xml(self):
-        file_name_str=os.path.join(self.current_path,self.file_name)
+        # file_name_str=os.path.join(self.current_path,self.file_name)
+        file
         if len(self.connections) == 0:
             os.system('netconvert -n {}.nod.xml -e {}.edg.xml -o {}.net.xml'.format(
                 file_name_str, file_name_str, file_name_str))
@@ -188,7 +188,7 @@ class Network():
                 indent(route_xml)
         dump(route_xml)
         tree = ET.ElementTree(route_xml)
-        tree.write(os.path.join(self.current_path,self.xml_route_pos+'.xml'), pretty_print=True,
+        tree.write(self.xml_route_pos+'.xml', pretty_print=True,
                    encoding='UTF-8', xml_declaration=True)
 
     def _generate_con_xml(self):
@@ -202,7 +202,7 @@ class Network():
 
         dump(con_xml)
         tree = ET.ElementTree(con_xml)
-        tree.write(os.path.join(self.current_path,self.xml_con_pos+'.xml'), pretty_print=True,
+        tree.write(self.xml_con_pos+'.xml', pretty_print=True,
                    encoding='UTF-8', xml_declaration=True)
 
     def _generate_cfg(self, route):
@@ -233,7 +233,7 @@ class Network():
         indent(sumocfg)
         dump(sumocfg)
         tree = ET.ElementTree(sumocfg)
-        tree.write(os.path.join(self.current_path,self.file_name+'_simulate'+'.sumocfg'),
+        tree.write(self.file_name+'_simulate'+'.sumocfg',
                    pretty_print=True, encoding='UTF-8', xml_declaration=True)
 
     def _generate_add_xml(self):
@@ -252,8 +252,10 @@ class Network():
             tlLogic.append(E('phase',attrib={'duration':'{}'.format('42'),'state':'ggggggggggggggggggg'}))
         dump(additional)
         tree = ET.ElementTree(additional)
-        tree.write(os.path.join(self.current_path,self.file_name+'.add.xml'),
+        tree.write(self.file_name+'.add.xml',
                    pretty_print=True, encoding='UTF-8', xml_declaration=True)
+        # tree.write(os.path.join(self.current_path,self.file_name+'.add.xml'),
+        #            pretty_print=True, encoding='UTF-8', xml_declaration=True)
 
     
     def test_net(self):
