@@ -39,8 +39,9 @@ def train(flags):
         '''
         #state=env.get_state(action) #partial하게는 env에서 조정
         action=agent.get_action(state)
-        reward=env.get_reward(action)
-        next_state=env.get_state(action)
+        env.step(action)
+        reward=env.get_reward()
+        next_state=env.get_state()
         # if traci.inductionloop.getLastStepVehicleNumber("0") > 0:
         step += 1
         state=next_state
