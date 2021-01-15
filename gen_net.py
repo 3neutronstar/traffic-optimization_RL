@@ -76,12 +76,8 @@ class Network():
         self.xml_edg_name = self.configs['file_name']+'.edg'
         self.xml_con_name = self.configs['file_name']+'.con'
         self.xml_route_pos = self.file_name+'.rou'
-        self.current_path = os.path.abspath('traffic-optimization_RL')
-        if os.path.exists(os.path.join(self.current_path,'Env'))==True:
-            os.makedirs('Env')
-        print(self.current_path)
-        self.current_path=os.path.join(self.current_path,'Env')
-
+        self.current_path = os.path.dirname(os.path.abspath(__file__))
+        self.current_path = os.path.join(self.current_path, 'Env')
         self.num_cars = str(self.configs['num_cars'])
         self.num_lanes = str(self.configs['num_lanes'])
         self.flow_start = str(self.configs['flow_start'])
@@ -92,8 +88,8 @@ class Network():
         self.vehicles = list()
         self.edges = list()
         self.connections = list()
-        self.outputData=list()
-        self.traffic_light=list()
+        self.outputData = list()
+        self.traffic_light = list()
 
     def specify_edge(self):
         edges = list()
@@ -131,9 +127,9 @@ class Network():
         상속을 위한 함수
         '''
         return outputData
-    
+
     def specify_traffic_light(self):
-        traffic_light=list()
+        traffic_light = list()
         '''
         상속을 위한 함수
         '''
@@ -150,7 +146,7 @@ class Network():
         dump(nod_xml)
         tree = ET.ElementTree(nod_xml)
         # tree.write(self.xml_node_name+'.xml',encoding='utf-8',xml_declaration=True)
-        tree.write(self.xml_node_name+'.xml', pretty_print=True,
+        tree.write(os.path.join(self.current_path, self.xml_node_name+'.xml'), pretty_print=True,
                    encoding='UTF-8', xml_declaration=True)
 
     def _generate_edg_xml(self):
@@ -162,12 +158,12 @@ class Network():
         dump(edg_xml)
         tree = ET.ElementTree(edg_xml)
         # tree.write(self.xml_edg_name+'.xml',encoding='utf-8',xml_declaration=True)
-        tree.write(self.xml_edg_name+'.xml', pretty_print=True,
+        tree.write(os.path.join(self.current_path, self.xml_edg_name+'.xml'), pretty_print=True,
                    encoding='UTF-8', xml_declaration=True)
 
     def _generate_net_xml(self):
         # file_name_str=os.path.join(self.current_path,self.file_name)
-        file
+        file_name_str = os.path.join(self.current_path, self.file_name)
         if len(self.connections) == 0:
             os.system('netconvert -n {}.nod.xml -e {}.edg.xml -o {}.net.xml'.format(
                 file_name_str, file_name_str, file_name_str))
@@ -176,7 +172,7 @@ class Network():
                 file_name_str, file_name_str, file_name_str, file_name_str))
 
     def _generate_rou_xml(self):
-        self.flows=self.specify_flow()
+        self.flows = self.specify_flow()
         route_xml = ET.Element('routes')
         if len(self.vehicles) != 0:  # empty
             for _, vehicle_dict in enumerate(self.vehicles):
@@ -188,12 +184,12 @@ class Network():
                 indent(route_xml)
         dump(route_xml)
         tree = ET.ElementTree(route_xml)
-        tree.write(self.xml_route_pos+'.xml', pretty_print=True,
+        tree.write(os.path.join(self.current_path, self.xml_route_pos+'.xml'), pretty_print=True,
                    encoding='UTF-8', xml_declaration=True)
 
     def _generate_con_xml(self):
-        self.cons=self.specify_connection()
-        self.xml_con_pos=self.xml_con_name
+        self.cons = self.specify_connection()
+        self.xml_con_pos = self.xml_con_name
         con_xml = ET.Element('connections')
         if len(self.connections) != 0:  # empty
             for _, connection_dict in enumerate(self.connections):
@@ -202,7 +198,7 @@ class Network():
 
         dump(con_xml)
         tree = ET.ElementTree(con_xml)
-        tree.write(self.xml_con_pos+'.xml', pretty_print=True,
+        tree.write(os.path.join(self.current_path, self.xml_con_pos+'.xml'), pretty_print=True,
                    encoding='UTF-8', xml_declaration=True)
 
     def _generate_cfg(self, route):
@@ -228,17 +224,17 @@ class Network():
         time.append(E('end', attrib={'value': str(self.sim_end)}))
         indent(sumocfg)
         outputXML = ET.SubElement(sumocfg, 'output')
-        outputXML.append(
-            E('netstate-dump', attrib={'value': os.path.join(self.current_path,self.file_name+'_dump.net.xml')}))
+        # outputXML.append(
+        #     E('netstate-dump', attrib={'value': os.path.join(self.current_path, self.file_name+'_dump.net.xml')}))
         indent(sumocfg)
         dump(sumocfg)
         tree = ET.ElementTree(sumocfg)
-        tree.write(self.file_name+'_simulate'+'.sumocfg',
+        tree.write(os.path.join(self.current_path, self.file_name+'_simulate'+'.sumocfg'),
                    pretty_print=True, encoding='UTF-8', xml_declaration=True)
 
     def _generate_add_xml(self):
-        self.traffic_light=self.specify_traffic_light()
-        
+        self.traffic_light = self.specify_traffic_light()
+
         additional = ET.Element('additional')
         additional.append(E('edgeData', attrib={'id': 'edgeData_00', 'file': '{}_edgeData.xml'.format(self.file_name), 'begin': '0', 'end': str(
             self.configs['sim_end']), 'freq': '1000'}))
@@ -246,18 +242,18 @@ class Network():
         additional.append(E('laneData', attrib={'id': 'laneData_00', 'file': '{}_laneData.xml'.format(self.file_name), 'begin': '0', 'end': str(
             self.configs['sim_end']), 'freq': '1000'}))
         indent(additional)
-        if len(self.traffic_light)!=0:
-            tlLogic=ET.SubElement(additional,'tlLogic',attrib={'programID':'{}'.format('myprogram'),'offset':'0','type':'static'})
-            tlLogic.append(E('phase',attrib={'duration':'{}'.format('42'),'state':'rrrrrrrrrrrrrrrrrrr'}))
-            tlLogic.append(E('phase',attrib={'duration':'{}'.format('42'),'state':'ggggggggggggggggggg'}))
+        if len(self.traffic_light) != 0:
+            tlLogic = ET.SubElement(additional, 'tlLogic', attrib={
+                                    'programID': '{}'.format('myprogram'), 'offset': '0', 'type': 'static'})
+            tlLogic.append(E('phase', attrib={'duration': '{}'.format(
+                '42'), 'state': 'rrrrrrrrrrrrrrrrrrr'}))
+            tlLogic.append(E('phase', attrib={'duration': '{}'.format(
+                '42'), 'state': 'ggggggggggggggggggg'}))
         dump(additional)
         tree = ET.ElementTree(additional)
-        tree.write(self.file_name+'.add.xml',
+        tree.write(os.path.join(self.current_path, self.file_name+'.add.xml'),
                    pretty_print=True, encoding='UTF-8', xml_declaration=True)
-        # tree.write(os.path.join(self.current_path,self.file_name+'.add.xml'),
-        #            pretty_print=True, encoding='UTF-8', xml_declaration=True)
 
-    
     def test_net(self):
         self._generate_edg_xml()
         self._generate_nod_xml()
@@ -265,7 +261,8 @@ class Network():
         self._generate_add_xml()
         self._generate_cfg(False)
 
-        os.system('sumo-gui -c {}.sumocfg'.format(os.path.join(self.current_path,self.file_name+'_simulate')))
+        os.system('sumo-gui -c {}.sumocfg'.format(os.path.join(self.current_path,
+                                                               self.file_name+'_simulate')))
 
     def sumo_gui(self):
         self._generate_edg_xml()
@@ -274,7 +271,8 @@ class Network():
         self._generate_rou_xml()
         self._generate_add_xml()
         self._generate_cfg(True)
-        os.system('sumo-gui -c {}.sumocfg '.format(os.path.join(self.current_path,self.file_name+'_simulate')))
+        os.system('sumo-gui -c {}.sumocfg '.format(
+            os.path.join(self.current_path, self.file_name+'_simulate')))
 
 
 if __name__ == '__main__':

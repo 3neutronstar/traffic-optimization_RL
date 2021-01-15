@@ -105,7 +105,7 @@ class GridNetwork(Network):
                     edges_dict['n_{}_r'.format(y)].append(
                         'n_{}_{}'.format(x, y))
 
-                # inside edge making        
+                # inside edge making
                 if x+1 < self.gridNum:
                     edges_dict['n_{}_{}'.format(x, y)].append(
                         'n_{}_{}'.format(x+1, y))
@@ -130,38 +130,36 @@ class GridNetwork(Network):
                     'numLanes': self.num_lanes
                 }
                 edges.append(edge_info)
-        print(edges)
         self.edges = edges
         return edges
 
     def specify_flow(self):
         flows = list()
-        direction_list=['l','u','r','d']
-        for _,edge in enumerate(self.edges):
-            for i,_ in enumerate(direction_list):
+        direction_list = ['l', 'u', 'r', 'd']
+        for _, edge in enumerate(self.edges):
+            for i, _ in enumerate(direction_list):
                 if direction_list[i] in edge['from']:
-                    for _,checkEdge in enumerate(self.edges):
-                        if edge['from'][-3]==checkEdge['to'][-3] and checkEdge['to'][-1]==direction_list[3-i]:
+                    for _, checkEdge in enumerate(self.edges):
+                        if edge['from'][-3] == checkEdge['to'][-3] and checkEdge['to'][-1] == direction_list[3-i]:
                             flows.append({
-                                'from':edge['id'],
-                                'to':checkEdge['id'],
-                                'id':edge['from'],
-                                'begin':str(self.configs['flow_start']),
-                                'end':str(self.configs['flow_end']),
-                                'number':str(self.configs['num_cars'])
+                                'from': edge['id'],
+                                'to': checkEdge['id'],
+                                'id': edge['from'],
+                                'begin': str(self.configs['flow_start']),
+                                'end': str(self.configs['flow_end']),
+                                'number': str(self.configs['num_cars'])
                             })
         self.flows = flows
         return flows
 
     def specify_connection(self):
         connections = list()
-        
+
         self.connections = connections
         return connections
 
 
-
-configs['file_name'] = 'test_grid'
 grid_num = 4
+configs['file_name'] = '{}x{}grid'.format(grid_num, grid_num)
 a = GridNetwork(configs, grid_num)
 a.sumo_gui()
