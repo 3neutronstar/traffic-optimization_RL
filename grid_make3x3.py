@@ -6,7 +6,7 @@ E = ET.Element
 
 configs = {
     'num_lanes': 3,
-    'file_name': '3x3intersection',
+    'file_name': '3x3gird',
     'laneLength': 100.0,
     'num_cars': 1800,
     'flow_start': 0,
@@ -237,7 +237,6 @@ class Network():
                    encoding='UTF-8', xml_declaration=True)
 
     def generate_cfg(self):
-        # attrib={'xmlns:xmi':'http://www.w3.org/2001/XMLSchema-instance','xsi:noNamespaceSchemaLocation':'http://sumo.sf.net/xsd/netconvertConfiguration.xsd'}
         sumocfg = ET.Element('configuration')
         inputXML = ET.SubElement(sumocfg, 'input')
         inputXML.append(
@@ -259,8 +258,8 @@ class Network():
         time.append(E('end', attrib={'value': str(self.sim_end)}))
         indent(sumocfg)
         outputXML = ET.SubElement(sumocfg, 'output')
-        outputXML.append(
-            E('netstate-dump', attrib={'value': self.file_name+'_dump.net.xml'}))
+        # outputXML.append(
+        #     E('netstate-dump', attrib={'value': self.file_name+'_dump.net.xml'}))
         indent(sumocfg)
         dump(sumocfg)
         tree = ET.ElementTree(sumocfg)

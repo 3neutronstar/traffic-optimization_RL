@@ -2,6 +2,7 @@
 <configuration>
 	<input>
 	<net-file value="test_grid.net.xml"/>
+	<route-files value="test_grid.rou.xml"/>
 	<additional-files value="test_grid.add.xml"/>
 	</input>
 	<time>
@@ -9,7 +10,7 @@
 	<end value="10000"/>
 	</time>
 	<output>
-	<netstate-dump value="test_grid_dump.net.xml"/>
+	<netstate-dump value="c:\Users\Admin\Desktop\vscode\traffic-optimization_RL\data\test_grid_dump.net.xml"/>
 	</output>
 	</configuration>
 	

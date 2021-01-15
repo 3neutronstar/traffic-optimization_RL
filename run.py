@@ -2,7 +2,8 @@ import argparse
 import json, os, sys
 import traci
 import traci.constants as tc
-from grid_make3x3 import configs
+from grid import configs
+from grid import GridNetwork
 from sumolib import checkBinary
 
 def parse_args(args):
@@ -55,6 +56,7 @@ def main(args):
         sumoBinary = checkBinary('sumo')
 
     if flags.mode.lower()=='train':
+        sumoConfig=os.path.join()
         train(flags)
     elif flags.mode.lower()=='test':
         test(flags)

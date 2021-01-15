@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<configuration>
+	<input>
+	<net-file value="3x3grid.net.xml"/>
+	<route-files value="3x3grid.rou.xml"/>
+	<additional-files value="3x3grid.add.xml"/>
+	</input>
+	<time>
+	<begin value="0"/>
+	<end value="10000"/>
+	</time>
+	<output>
+	<netstate-dump value="c:\Users\Admin\Desktop\vscode\traffic-optimization_RL\data\3x3grid_dump.net.xml"/>
+	</output>
+	</configuration>
+	
