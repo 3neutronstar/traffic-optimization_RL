@@ -7,6 +7,8 @@ import traci.constants as tc
 import torch
 from grid import configs
 from grid import GridNetwork
+from Env.env import TLEnv
+from Agent.dqn import Trainer
 from sumolib import checkBinary
 
 
@@ -33,9 +35,14 @@ def train(flags):
     sumoCmd = [sumoBinary, "-c", "{}.sumocfg".format(configs['file_name'])]
     traci.start(sumoCmd)
     step = 0
-    # state=env.init(action)
-    while step < 1000:
-        traci.simulationStep()
+    tl_rl_list = traci.trafficlight.getIDList()
+    # state initialization
+    env = TLEnv(tl_rl_list, configs)
+    state = env.get_state()
+    # agent setting
+    agent = Trainer(configs)
+
+    while step < 10000:
         '''
         #state=env.get_state(action) #partial하게는 env에서 조정
         action=agent.get_action(state)
@@ -46,8 +53,14 @@ def train(flags):
         step += 1
         state=next_state
         '''
-
+        action = agent.get_action(state)
+        env.step(action)
+        reward = env.get_reward()
+        next_state = env.get_state()
+        state = next_state
+        traci.simulationStep()
         step += 1
+
     traci.close()
 
 

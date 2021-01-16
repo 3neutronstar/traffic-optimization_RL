@@ -9,9 +9,6 @@ class TLEnv():
         self.tl_rlList = tl_rlList
         self.tl_list = traci.trafficlight.getIDList()
         self.phase_size = len(traci.trafficlight.getPhase(self.tl_list[0]))
-        for _, rl_tl in enumerate(self.tl_list):
-        self._toState(traci)
-        return state
 
     def get_state(self):
         phase = list()
@@ -19,15 +16,19 @@ class TLEnv():
         for _, tl_rl in enumerate(self.tl_rlList):
             phase.append(traci.trafficlight.getPhase(tl_rl))
         for _, p in enumerate(phase):
-            torch.cat(state, self._toState(p))
+            state = torch.cat(state, self._toState(p))
         return state
 
     def step(self, action):
         phase = self._toPhase(action)  # action을 분해
         for _, tl_rl in enumerate(self.tl_rlList):
-            traci.trafficlight.setRedYellowGreenState()
+            traci.trafficlight.setRedYellowGreenState(tl_rl, phase)
 
     def get_reward(self):
+        '''
+        reward function
+        Max Pressure based control
+        '''
 
         return reward
 
@@ -48,7 +49,14 @@ class TLEnv():
         return phase
 
     def _toState(self, phase):  # env의 phase를 해석불가능한 state로 변환
+        state = torch.zeros(8, dtype=torch.int)
         for i in range(4):  # 4차로
+            phase = phase[1:]  # 우회전
+            state[i] = self._mappingMovement(phase[0])  # 직진신호 추출
+            phase = phase[3:]  # 직전
+            state[i+1] = self._mappingMovement(phase[0])  # 좌회전신호 추출
+            phase = phase[1:]  # 좌회전
+            phase = phase[1:]  # 유턴
 
         return state
 
@@ -61,9 +69,9 @@ class TLEnv():
             return 'y'
 
     def _mappingMovement(self, movement):
-        if movement == 'r':
-            return 0
-        elif movement == 'G':
+        if movement == 'G':
             return 1
+        elif movement == 'r':
+            return 0
         else:
-            return 'y'
+            return -1  # error
