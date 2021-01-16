@@ -5,6 +5,7 @@ import sys
 import traci
 import traci.constants as tc
 import torch
+from torch.utils.tensorboard import SummaryWriter
 from grid import configs
 from grid import GridNetwork
 from Env.env import TLEnv
@@ -41,7 +42,9 @@ def train(flags):
     state = env.get_state()
     # agent setting
     agent = Trainer(configs)
-
+    current_path = os.path.dirname(os.path.abspath(__file__))
+    writer = SummaryWriter(os.path.join(current_path, 'training_data'))
+    cum_reward = 0
     while step < 10000:
         '''
         #state=env.get_state(action) #partial하게는 env에서 조정
@@ -59,7 +62,12 @@ def train(flags):
         next_state = env.get_state()
         state = next_state
         traci.simulationStep()
+        cum_reward += reward
         step += 1
+
+    loss = agent.get_loss()  # 총 loss
+    writer.add_scalar('episode/loss', loss, step)  # 1 epoch마다
+    writer.add_scalar('episode/reward', cum_reward, step)  # 1 epoch마다
 
     traci.close()
 
@@ -79,6 +87,9 @@ def test(flags):
 
 
 def main(args):
+    use_cuda = torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
+    configs['device'] = device
     flags = parse_args(args)
     if flags.disp == 'yes':
         sumoBinary = checkBinary('sumo-gui')

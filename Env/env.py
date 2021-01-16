@@ -1,9 +1,10 @@
 import torch
 import numpy as np
 import traci
+from Env.base import Env
 
 
-class TLEnv():
+class TLEnv(Env):
     def __init__(self, tl_rlList, configs):
         self.configs = configs
         self.tl_rlList = tl_rlList
