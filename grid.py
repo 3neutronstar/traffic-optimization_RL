@@ -4,9 +4,9 @@ import math
 
 
 class GridNetwork(Network):
-    def __init__(self, configs, gridNum):
+    def __init__(self, configs, grid_num):
+        self.grid_num = grid_num
         super().__init__(configs)
-        self.gridNum = gridNum
 
     def specify_node(self):
         nodes = list()
@@ -17,15 +17,15 @@ class GridNetwork(Network):
         # .-*-*-.
         #   | |
         #   . .
-        center = float(self.gridNum)/2.0
-        for x in range(self.gridNum):
-            for y in range(self.gridNum):
+        center = float(self.grid_num)/2.0
+        for x in range(self.grid_num):
+            for y in range(self.grid_num):
                 node_info = dict()
                 node_info = {
                     'id': 'n_'+str(x)+'_'+str(y),
                     'type': 'traffic_light'
                 }
-                # if self.gridNum % 2==0: # odd due to index rule
+                # if self.grid_num % 2==0: # odd due to index rule
                 #     grid_x=self.configs['laneLength']*(x-center_x)
                 #     grid_x=self.configs['laneLength']*(center_y-y)
 
@@ -42,27 +42,27 @@ class GridNetwork(Network):
         #   | |
         # *-.-.-*
         #   | |
-        for i in range(self.gridNum):
+        for i in range(self.grid_num):
             grid_y = (center-i)*self.configs['laneLength']
             grid_x = (i-center)*self.configs['laneLength']
             node_information = [{
                 'id': 'n_'+str(i)+'_u',
                 'x': str('%.1f' % grid_x),
-                'y': str('%.1f' % (-center*self.configs['laneLength']+(self.gridNum+1)*self.configs['laneLength']))
+                'y': str('%.1f' % (-center*self.configs['laneLength']+(self.grid_num+1)*self.configs['laneLength']))
             },
                 {
                 'id': 'n_'+str(i)+'_r',
-                'x': str('%.1f' % (-center*self.configs['laneLength']+(self.gridNum)*self.configs['laneLength'])),
+                'x': str('%.1f' % (-center*self.configs['laneLength']+(self.grid_num)*self.configs['laneLength'])),
                 'y':str('%.1f' % grid_y)
             },
                 {
                 'id': 'n_'+str(i)+'_d',
                 'x': str('%.1f' % grid_x),
-                'y': str('%.1f' % (+center*self.configs['laneLength']-(self.gridNum)*self.configs['laneLength']))
+                'y': str('%.1f' % (+center*self.configs['laneLength']-(self.grid_num)*self.configs['laneLength']))
             },
                 {
                 'id': 'n_'+str(i)+'_l',
-                'x': str('%.1f' % (+center*self.configs['laneLength']-(self.gridNum+1)*self.configs['laneLength'])),
+                'x': str('%.1f' % (+center*self.configs['laneLength']-(self.grid_num+1)*self.configs['laneLength'])),
                 'y':str('%.1f' % grid_y)
             }]
             for j in range(len(node_information)):
@@ -73,14 +73,14 @@ class GridNetwork(Network):
     def specify_edge(self):
         edges = list()
         edges_dict = dict()
-        for i in range(self.gridNum):
+        for i in range(self.grid_num):
             edges_dict['n_{}_l'.format(i)] = list()
             edges_dict['n_{}_r'.format(i)] = list()
             edges_dict['n_{}_u'.format(i)] = list()
             edges_dict['n_{}_d'.format(i)] = list()
 
-        for y in range(self.gridNum):
-            for x in range(self.gridNum):
+        for y in range(self.grid_num):
+            for x in range(self.grid_num):
                 edges_dict['n_{}_{}'.format(x, y)] = list()
 
                 # outside edge making
@@ -94,23 +94,23 @@ class GridNetwork(Network):
                         'n_{}_u'.format(x))
                     edges_dict['n_{}_u'.format(x)].append(
                         'n_{}_{}'.format(x, y))
-                if y == self.gridNum-1:
+                if y == self.grid_num-1:
                     edges_dict['n_{}_{}'.format(x, y)].append(
                         'n_{}_d'.format(x))
                     edges_dict['n_{}_d'.format(x)].append(
                         'n_{}_{}'.format(x, y))
-                if x == self.gridNum-1:
+                if x == self.grid_num-1:
                     edges_dict['n_{}_{}'.format(x, y)].append(
                         'n_{}_r'.format(y))
                     edges_dict['n_{}_r'.format(y)].append(
                         'n_{}_{}'.format(x, y))
 
                 # inside edge making
-                if x+1 < self.gridNum:
+                if x+1 < self.grid_num:
                     edges_dict['n_{}_{}'.format(x, y)].append(
                         'n_{}_{}'.format(x+1, y))
 
-                if y+1 < self.gridNum:
+                if y+1 < self.grid_num:
                     edges_dict['n_{}_{}'.format(x, y)].append(
                         'n_{}_{}'.format(x, y+1))
                 if x-1 >= 0:
@@ -159,7 +159,8 @@ class GridNetwork(Network):
         return connections
 
 
-grid_num = 4
-configs['file_name'] = '{}x{}grid'.format(grid_num, grid_num)
-a = GridNetwork(configs, grid_num)
-a.sumo_gui()
+if __name__ == "__main__":
+    grid_num = 4
+    configs['file_name'] = '{}x{}grid'.format(grid_num, grid_num)
+    a = GridNetwork(configs, grid_num)
+    a.sumo_gui()

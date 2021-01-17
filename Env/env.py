@@ -1,13 +1,14 @@
 import torch
 import numpy as np
 import traci
-from Env.base import Env
+from Env.base import baseEnv
 
 
-class TLEnv(Env):
-    def __init__(self, tl_rlList, configs):
+class TLEnv(baseEnv):
+    def __init__(self, tl_rlList, optimizer, configs):
         self.configs = configs
         self.tl_rlList = tl_rlList
+        self.optimizer = optimizer
         self.tl_list = traci.trafficlight.getIDList()
         self.phase_size = len(traci.trafficlight.getPhase(self.tl_list[0]))
 

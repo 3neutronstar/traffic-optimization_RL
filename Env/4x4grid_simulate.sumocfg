@@ -1,14 +1,14 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <configuration>
-	<input>
-	<net-file value="4x4grid.net.xml"/>
-	<route-files value="4x4grid.rou.xml"/>
-	<additional-files value="4x4grid.add.xml"/>
-	</input>
-	<time>
-	<begin value="0"/>
-	<end value="10000"/>
-	</time>
-	<output/>
-	</configuration>
-	
+  <input>
+    <net-file value="4x4grid.net.xml"/>
+    <route-files value="4x4grid.rou.xml"/>
+    <additional-files value="4x4grid.add.xml"/>
+    </input>
+    <time>
+    <begin value="0"/>
+    <end value="10000"/>
+    </time>
+    <output/>
+  </configuration>
+  
