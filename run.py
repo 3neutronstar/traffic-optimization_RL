@@ -12,6 +12,7 @@ from Env.env import TLEnv
 from Agent.dqn import Trainer
 from sumolib import checkBinary
 
+
 def mappingMovement(movement):
     if movement == 'G':
         return 1
@@ -19,6 +20,7 @@ def mappingMovement(movement):
         return 0
     else:
         return -1  # error
+
 
 def parse_args(args):
     parser = argparse.ArgumentParser(
@@ -50,15 +52,14 @@ def train(flags, configs, sumoConfig):
     sumoBinary = checkBinary('sumo-gui')
     sumoCmd = [sumoBinary, "-c", sumoConfig, '--start']
     agent = Trainer(configs)
-    tl_rl_list=['n_2_2']
+    tl_rl_list = ['n_2_2']
     env = TLEnv(tl_rl_list, configs)
     NUM_EPOCHS = configs['num_epochs']
-    epoch=0
-    MAX_STEPS=configs['max_steps']
+    epoch = 0
+    MAX_STEPS = configs['max_steps']
     writer = SummaryWriter(os.path.join(
         configs['current_path'], 'training_data'))
 
-        
     while epoch < NUM_EPOCHS:
         traci.start(sumoCmd)
         step = 0
@@ -78,9 +79,9 @@ def train(flags, configs, sumoConfig):
             step += 1
             state=next_state
             '''
-            
+
             action = agent.get_action(state)
-            env.step(action) # action 적용함수
+            env.step(action)  # action 적용함수
 
             reward = env.get_reward()
             next_state = env.get_state()
@@ -118,18 +119,18 @@ def test(flags, configs, sumoConfig):
     traci.start(sumoCmd)
     step = 0
     tls_id_list = traci.trafficlight.getIDList()
-    edge_list=traci.edge.getIDList()
+    edge_list = traci.edge.getIDList()
     while step < 1000:
-        phase=list()
+        phase = list()
         traci.simulationStep()
-        inflow=0
-        outflow=0
-        for _, edge in enumerate(edge_list): # 이 부분을 밖에서 list로 구성해오면 쉬움
-            if edge[-5:]=='n_2_2': # outflow 여기에 n_2_2대신에 tl_id를 넣으면 pressure가 되는 것
-                inflow+=traci.edge.getLastStepVehicleNumber(edge)
-            elif edge[:5]=='n_2_2': # inflow
-                outflow+=traci.edge.getLastStepVehicleNumber(edge)
-        phase=traci.trafficlight.getRedYellowGreenState('n_2_2')
+        inflow = 0
+        outflow = 0
+        for _, edge in enumerate(edge_list):  # 이 부분을 밖에서 list로 구성해오면 쉬움
+            if edge[-5:] == 'n_2_2':  # outflow 여기에 n_2_2대신에 tl_id를 넣으면 pressure가 되는 것
+                inflow += traci.edge.getLastStepVehicleNumber(edge)
+            elif edge[:5] == 'n_2_2':  # inflow
+                outflow += traci.edge.getLastStepVehicleNumber(edge)
+        phase = traci.trafficlight.getRedYellowGreenState('n_2_2')
         print(phase)
         state = torch.zeros(8, dtype=torch.int16)
         for i in range(4):  # 4차로
@@ -140,7 +141,8 @@ def test(flags, configs, sumoConfig):
             phase = phase[1:]  # 좌회전
             phase = phase[1:]  # 유턴
         print(state)
-        print('in: {} out: {}, pressure: {}'.format(inflow,outflow,inflow-outflow))
+        print('in: {} out: {}, pressure: {}'.format(
+            inflow, outflow, inflow-outflow))
         # if traci.inductionloop.getLastStepVehicleNumber("0") > 0:
         step += 1
     traci.close()
@@ -158,7 +160,7 @@ def main(args):
     # check the network
     if flags.network.lower() == 'grid':
         from grid import GridNetwork  # network바꿀때 이걸로 바꾸세요(수정 예정)
-        configs['grid_num'] = 5
+        configs['grid_num'] = 1
         print(configs['grid_num'])
         network = GridNetwork(configs, grid_num=configs['grid_num'])
         print(configs['grid_num'])
@@ -185,4 +187,3 @@ def main(args):
 
 if __name__ == '__main__':
     main(sys.argv[1:])
-
