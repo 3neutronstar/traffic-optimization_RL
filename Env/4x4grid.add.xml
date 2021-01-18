@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <additional>
-    <edgeData id="edgeData_00" file="C:\Users\Admin\Desktop\vscode\traffic-optimization_RL/data/4x4grid_edge.xml" begin="0" end="10000" freq="1000"/>
-    <laneData id="laneData_00" file="C:\Users\Admin\Desktop\vscode\traffic-optimization_RL/data/4x4grid_lane.xml" begin="0" end="10000" freq="1000"/>
+    <edgeData id="edgeData_00" file="D:\traffic-optimization_RL/data/4x4grid_edge.xml" begin="0" end="10000" freq="1000"/>
+    <laneData id="laneData_00" file="D:\traffic-optimization_RL/data/4x4grid_lane.xml" begin="0" end="10000" freq="1000"/>
     </additional>
     
