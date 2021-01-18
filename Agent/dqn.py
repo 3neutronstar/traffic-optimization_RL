@@ -36,7 +36,7 @@ class QNetwork(nn.Module):
 
 
 class Trainer(RLAlgorithm):
-    def __init__(self, optimizer, configs):
+    def __init__(self, configs):
         super().__init__(configs)
         configs['batch_size'] = 32
         configs['experience_replay_size'] = 1e5
@@ -44,24 +44,28 @@ class Trainer(RLAlgorithm):
         self.input_size = self.configs['input_size']
         self.output_size = self.configs['output_size']
         self.action_space = self.configs['action_space']
+        self.gamma=self.configs['gamma']
+        self.epsilon = 0.5
+        self.experience_replay = deque(self.configs['experience_replay_size'])
+        self.batch_size = self.configs['batch_size']
+        self.optimizer = optim.Adam(
+            self.mainQNetwork.parameters(), lr=configs['learning_rate'])
+
         if self.configs['model']=='FRAP':
             from Agent.Model.FRAP import FRAP
             model=FRAP(self.input_size,self.output_size)
             model.add_module(QNetwork(self.input_size,self.output_size,self.configs))
             print(model)
+        model.to(configs['device'])
 
         self.mainQNetwork = deepcopy(model)
         self.targetQNetwork = deepcopy(model)
         self.configs['experience_replay_size'] = 20000
         for param in self.targetQNetwork.parameters():  # target Q는 hold
             param.requires_grad = False
-        self.epsilon = 0.5
         self.mainQNetwork.train()  # train모드로 설정
-        self.running_loss = 0
-        self.optimizer = optimizer
-        self.experience_replay = deque(self.configs['experience_replay_size'])
-        self.batch_size = self.configs['batch_size']
 
+        self.running_loss = 0
         if self.configs['mode'] == 'train':
             self.mainQNetwork.train()
         elif self.configs['mode'] == 'test':

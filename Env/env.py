@@ -5,10 +5,9 @@ from Env.base import baseEnv
 
 
 class TLEnv(baseEnv):
-    def __init__(self, tl_rlList, optimizer, configs):
+    def __init__(self, tl_rlList, configs):
         self.configs = configs
         self.tl_rlList = tl_rlList
-        self.optimizer = optimizer
         self.tl_list = traci.trafficlight.getIDList()
         self.edge_list = traci.edge.getIDList()
         self.interest_inEdge=dict()
@@ -38,16 +37,23 @@ class TLEnv(baseEnv):
         return state
 
     def step(self, action):
+        '''
+        agent 의 action 적용 및 reward 계산
+        '''
         phase = self._toPhase(action)  # action을 분해
+
+        #action을 environment에 등록 후 상황 살피기
         for _, tl_rl in enumerate(self.tl_rlList):
             traci.trafficlight.setRedYellowGreenState(tl_rl, phase)
+        
+        # reward calculation and save 
 
     def get_reward(self):
         '''
         reward function
         Max Pressure based control
+        각 node에 대해서 inflow 차량 수와 outflow 차량수 + 해당 방향이라는 전제에서
         '''
-
         return reward
 
     def _toPhase(self, action):  # action을 해석가능한 phase로 변환
@@ -67,7 +73,7 @@ class TLEnv(baseEnv):
         return phase
 
     def _toState(self, phase):  # env의 phase를 해석불가능한 state로 변환
-        state = torch.zeros(8, dtype=torch.int)
+        state = torch.zeros(8, dtype=torch.int16)
         for i in range(4):  # 4차로
             phase = phase[1:]  # 우회전
             state[i] = self._mappingMovement(phase[0])  # 직진신호 추출
@@ -93,3 +99,5 @@ class TLEnv(baseEnv):
             return 0
         else:
             return -1  # error
+    
+
