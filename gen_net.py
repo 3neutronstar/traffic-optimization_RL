@@ -20,10 +20,15 @@ configs = {
     'node_info': Nodes,
     'vehicle_info': Vehicles,
     'mode': 'simulate',
-    'learning_rate':1e-4,
-    'num_epochs':3000,
-    'gamma':0.99,
-    'model':'normal'
+    'learning_rate': 1e-4,
+    'num_epochs': 3000,
+    'gamma': 0.99,
+    'model': 'normal',
+    'batch_size': 32,
+    'experience_replay_size': 1e5,
+    'input_size': 16,
+    'output_size': 8,
+    'action_space': 8,
 }
 
 

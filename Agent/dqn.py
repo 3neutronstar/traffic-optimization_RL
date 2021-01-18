@@ -155,6 +155,7 @@ class Trainer(RLAlgorithm):
             self.configs['batch_size'], device=self.configs['device'], dtype=torch.float)
         next_state_values[non_final_mask] = self.targetQNetwork(
             non_final_next_states).max(1)[0].detach()
+
         # 기대 Q 값 계산
         expected_state_action_values = (
             next_state_values * self.configs['gamma']) + reward_batch
