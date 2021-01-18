@@ -71,9 +71,10 @@ def train(flags, configs, sumoConfig):
             step += 1
             state=next_state
             '''
-            optimizer.zero_grad()  # env와 agent가 network를 공유하는 경우 step마다 최초 초기화
+            
             action = agent.get_action(state)
-            env.step(action)
+            env.step(action) # action 적용함수
+
             reward = env.get_reward()
             next_state = env.get_state()
             agent.save_replay(state, action, reward, next_state)
