@@ -225,10 +225,11 @@ class Network():
         self.traffic_light = self.specify_traffic_light()
 
         additional = ET.Element('additional')
-        additional.append(E('edgeData', attrib={'id': 'edgeData_00', 'file': '{}_edgeData.xml'.format(self.file_name), 'begin': '0', 'end': str(
+        # edgeData와 landData파일의 생성위치는 data
+        additional.append(E('edgeData', attrib={'id': 'edgeData_00', 'file': '{}_edge.xml'.format('../data/'+self.file_name), 'begin': '0', 'end': str(
             self.configs['sim_end']), 'freq': '1000'}))
         indent(additional, 1)
-        additional.append(E('laneData', attrib={'id': 'laneData_00', 'file': '{}_laneData.xml'.format(self.file_name), 'begin': '0', 'end': str(
+        additional.append(E('laneData', attrib={'id': 'laneData_00', 'file': '{}_lane.xml'.format('../data/'+self.file_name), 'begin': '0', 'end': str(
             self.configs['sim_end']), 'freq': '1000'}))
         indent(additional, 1)
         if len(self.traffic_light) != 0:

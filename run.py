@@ -127,7 +127,7 @@ def main(args):
     # check the network
     if flags.network.lower() == 'grid':
         from grid import GridNetwork  # network바꿀때 이걸로 바꾸세요(수정 예정)
-        configs['grid_num'] = 4
+        configs['grid_num'] = 7
         print(configs['grid_num'])
         network = GridNetwork(configs, grid_num=configs['grid_num'])
         print(configs['grid_num'])
