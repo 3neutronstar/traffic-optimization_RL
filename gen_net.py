@@ -20,6 +20,9 @@ configs = {
     'node_info': Nodes,
     'vehicle_info': Vehicles,
     'mode': 'simulate',
+    'learning_rate':1e-4,
+    'max_steps':10000,
+    'num_epochs':3000,
 }
 
 

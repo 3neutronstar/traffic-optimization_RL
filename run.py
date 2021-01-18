@@ -7,7 +7,7 @@ import traci.constants as tc
 import torch
 from torch.utils.tensorboard import SummaryWriter
 from gen_net import configs
-
+import torch.optim as optim
 from Env.env import TLEnv
 from Agent.dqn import Trainer
 from sumolib import checkBinary
@@ -42,12 +42,14 @@ def train(flags, configs, sumoConfig):
     configs['mode'] = 'train'
     sumoBinary = checkBinary('sumo-gui')
     sumoCmd = [sumoBinary, "-c", sumoConfig, '--start']
+    optimizer = optim.Adam(
+        self.mainQNetwork.parameters(), lr=configs['learning_rate'])
     agent = Trainer(optimizer, configs)
     tl_rl_list = traci.trafficlight.getIDList()
     env = TLEnv(tl_rl_list, optimizer, configs)
-    optimizer = optim.Adam(
-        self.mainQNetwork.parameters(), lr=learning_rate)
     NUM_EPOCHS = configs['num_epochs']
+    epoch=0
+    MAX_STEPS=configs['max_steps']
     while epoch < NUM_EPOCHS:
         traci.start(sumoCmd)
         step = 0
@@ -58,7 +60,7 @@ def train(flags, configs, sumoConfig):
         writer = SummaryWriter(os.path.join(
             configs['current_path'], 'training_data'))
         total_reward = 0
-        while step < MAX_STEP:
+        while step < MAX_STEPS:
             '''
             # state=env.get_state(action) #partial하게는 env에서 조정
             action=agent.get_action(state)
