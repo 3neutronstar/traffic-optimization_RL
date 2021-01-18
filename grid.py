@@ -135,20 +135,33 @@ class GridNetwork(Network):
 
     def specify_flow(self):
         flows = list()
-        direction_list = ['l', 'u', 'r', 'd']
+        direction_list = ['l', 'u', 'd', 'r']
+        # via 제작
+        # self.grid_num
+        # for i,direction in enumerate(direction_list):
+        #     if direction=='l':
+
+        #삽입
         for _, edge in enumerate(self.edges):
             for i, _ in enumerate(direction_list):
                 if direction_list[i] in edge['from']:
                     for _, checkEdge in enumerate(self.edges):
                         if edge['from'][-3] == checkEdge['to'][-3] and checkEdge['to'][-1] == direction_list[3-i]:
+                            if checkEdge['to'][-1]==direction_list[0] or checkEdge['to'][-1]==direction_list[2]:
+                                self.configs['num_cars']=3000
+                            else:
+                                self.configs['num_cars']=1200
+
                             flows.append({
                                 'from': edge['id'],
                                 'to': checkEdge['id'],
                                 'id': edge['from'],
                                 'begin': str(self.configs['flow_start']),
                                 'end': str(self.configs['flow_end']),
-                                'number': str(self.configs['num_cars'])
+                                'number': str(self.configs['num_cars']),
+                                # 'via':str(edge['id']+" "+)        
                             })
+
         self.flows = flows
         return flows
 
@@ -160,7 +173,7 @@ class GridNetwork(Network):
 
 
 if __name__ == "__main__":
-    grid_num = 4
+    grid_num = 1
     configs['file_name'] = '{}x{}grid'.format(grid_num, grid_num)
     a = GridNetwork(configs, grid_num)
     a.sumo_gui()

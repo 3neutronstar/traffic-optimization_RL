@@ -1,9 +1,9 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <configuration>
   <input>
-    <net-file value="4x4grid.net.xml"/>
-    <route-files value="4x4grid.rou.xml"/>
-    <additional-files value="4x4grid.add.xml"/>
+    <net-file value="1x1grid.net.xml"/>
+    <route-files value="1x1grid.rou.xml"/>
+    <additional-files value="1x1grid.add.xml"/>
     </input>
     <time>
     <begin value="0"/>

@@ -14,16 +14,16 @@ configs = {
     'flow_start': 0,
     'flow_end': 9000,
     'sim_start': 0,
-    'sim_end': 10000,
+    'max_steps': 10000,
     'num_epochs': 3000,
     'edge_info': Edges,
     'node_info': Nodes,
     'vehicle_info': Vehicles,
     'mode': 'simulate',
     'learning_rate':1e-4,
-    'max_steps':10000,
     'num_epochs':3000,
-    'gamma':0.99
+    'gamma':0.99,
+    'model':'normal'
 }
 
 
@@ -47,7 +47,7 @@ class Network():
     def __init__(self, configs):
         self.configs = configs
         self.sim_start = self.configs['sim_start']
-        self.sim_end = self.configs['sim_end']
+        self.max_steps = self.configs['max_steps']
         self.file_name = self.configs['file_name']
         self.xml_node_name = self.configs['file_name']+'.nod'
         self.xml_edg_name = self.configs['file_name']+'.edg'
@@ -207,7 +207,7 @@ class Network():
         time = ET.SubElement(sumocfg, 'time')
         time.append(E('begin', attrib={'value': str(self.sim_start)}))
         indent(sumocfg)
-        time.append(E('end', attrib={'value': str(self.sim_end)}))
+        time.append(E('end', attrib={'value': str(self.max_steps)}))
         indent(sumocfg)
         outputXML = ET.SubElement(sumocfg, 'output')
         # outputXML.append(
@@ -231,10 +231,10 @@ class Network():
         additional = ET.Element('additional')
         # edgeData와 landData파일의 생성위치는 data
         additional.append(E('edgeData', attrib={'id': 'edgeData_00', 'file': '{}_edge.xml'.format(self.current_path+'/data/'+self.file_name), 'begin': '0', 'end': str(
-            self.configs['sim_end']), 'freq': '1000'}))
+            self.configs['max_steps']), 'freq': '1000'}))
         indent(additional, 1)
         additional.append(E('laneData', attrib={'id': 'laneData_00', 'file': '{}_lane.xml'.format(self.current_path+'/data/'+self.file_name), 'begin': '0', 'end': str(
-            self.configs['sim_end']), 'freq': '1000'}))
+            self.configs['max_steps']), 'freq': '1000'}))
         indent(additional, 1)
         if len(self.traffic_light) != 0:
             tlLogic = ET.SubElement(additional, 'tlLogic', attrib={

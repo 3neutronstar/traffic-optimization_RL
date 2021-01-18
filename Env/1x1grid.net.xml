@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 01/18/21 18:06:51 by Eclipse SUMO netconvert Version 1.8.0
+<!-- generated on 01/18/21 14:35:54 by Eclipse SUMO netconvert Version 1.8.0
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
-        <node-files value="C:\Users\Admin\Desktop\vscode\traffic-optimization_RL\Env\4x4grid.nod.xml"/>
-        <edge-files value="C:\Users\Admin\Desktop\vscode\traffic-optimization_RL\Env\4x4grid.edg.xml"/>
+        <node-files value="C:\Users\Admin\Desktop\vscode\traffic-optimization_RL\Env\1x1grid.nod.xml"/>
+        <edge-files value="C:\Users\Admin\Desktop\vscode\traffic-optimization_RL\Env\1x1grid.edg.xml"/>
     </input>
 
     <output>
-        <output-file value="C:\Users\Admin\Desktop\vscode\traffic-optimization_RL\Env\4x4grid.net.xml"/>
+        <output-file value="C:\Users\Admin\Desktop\vscode\traffic-optimization_RL\Env\1x1grid.net.xml"/>
     </output>
 
     <report>

@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<routes>
+    <flow from="n_0_l_to_n_0_0" to="n_0_0_to_n_0_r" id="n_0_l" begin="0" end="9000" number="1800"/>
+    <flow from="n_0_r_to_n_0_0" to="n_0_0_to_n_0_l" id="n_0_r" begin="0" end="9000" number="1800"/>
+    <flow from="n_0_u_to_n_0_0" to="n_0_0_to_n_0_d" id="n_0_u" begin="0" end="9000" number="1800"/>
+    <flow from="n_0_d_to_n_0_0" to="n_0_0_to_n_0_u" id="n_0_d" begin="0" end="9000" number="1800"/>
+    </routes>
+    

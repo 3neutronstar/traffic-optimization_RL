@@ -37,7 +37,7 @@ def parse_args(args):
         help='choose network in Env')
     # optional input parameters
     parser.add_argument(
-        '--disp', type=str, choices=['yes', 'no'], default='no',
+        '--disp', type=str, default='no',
         help='show the process while in training')
     return parser.parse_known_args(args)[0]
 
@@ -49,11 +49,9 @@ def train(flags, configs, sumoConfig):
     else:
         sumoBinary = checkBinary('sumo')
     configs['mode'] = 'train'
-    sumoBinary = checkBinary('sumo-gui')
     sumoCmd = [sumoBinary, "-c", sumoConfig, '--start']
     agent = Trainer(configs)
-    tl_rl_list = ['n_2_2']
-    env = TLEnv(tl_rl_list, configs)
+    tl_rl_list = ['n_0_0']
     NUM_EPOCHS = configs['num_epochs']
     epoch = 0
     MAX_STEPS = configs['max_steps']
@@ -62,6 +60,7 @@ def train(flags, configs, sumoConfig):
 
     while epoch < NUM_EPOCHS:
         traci.start(sumoCmd)
+        env = TLEnv(tl_rl_list,configs)
         step = 0
         done = False
         # state initialization
@@ -82,7 +81,8 @@ def train(flags, configs, sumoConfig):
 
             action = agent.get_action(state)
             env.step(action)  # action 적용함수
-
+            for _ in range(10): # 10초마다 행동 갱신
+                env.collect_state()
             reward = env.get_reward()
             next_state = env.get_state()
             agent.save_replay(state, action, reward, next_state)
