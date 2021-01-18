@@ -12,6 +12,13 @@ from Env.env import TLEnv
 from Agent.dqn import Trainer
 from sumolib import checkBinary
 
+def mappingMovement(movement):
+    if movement == 'G':
+        return 1
+    elif movement == 'r':
+        return 0
+    else:
+        return -1  # error
 
 def parse_args(args):
     parser = argparse.ArgumentParser(
@@ -42,14 +49,16 @@ def train(flags, configs, sumoConfig):
     configs['mode'] = 'train'
     sumoBinary = checkBinary('sumo-gui')
     sumoCmd = [sumoBinary, "-c", sumoConfig, '--start']
-    optimizer = optim.Adam(
-        self.mainQNetwork.parameters(), lr=configs['learning_rate'])
-    agent = Trainer(optimizer, configs)
-    tl_rl_list = traci.trafficlight.getIDList()
-    env = TLEnv(tl_rl_list, optimizer, configs)
+    agent = Trainer(configs)
+    tl_rl_list=['n_2_2']
+    env = TLEnv(tl_rl_list, configs)
     NUM_EPOCHS = configs['num_epochs']
     epoch=0
     MAX_STEPS=configs['max_steps']
+    writer = SummaryWriter(os.path.join(
+        configs['current_path'], 'training_data'))
+
+        
     while epoch < NUM_EPOCHS:
         traci.start(sumoCmd)
         step = 0
@@ -57,8 +66,6 @@ def train(flags, configs, sumoConfig):
         # state initialization
         state = env.get_state()
         # agent setting
-        writer = SummaryWriter(os.path.join(
-            configs['current_path'], 'training_data'))
         total_reward = 0
         while step < MAX_STEPS:
             '''
@@ -71,9 +78,10 @@ def train(flags, configs, sumoConfig):
             step += 1
             state=next_state
             '''
-            optimizer.zero_grad()  # env와 agent가 network를 공유하는 경우 step마다 최초 초기화
+            
             action = agent.get_action(state)
-            env.step(action)
+            env.step(action) # action 적용함수
+
             reward = env.get_reward()
             next_state = env.get_state()
             agent.save_replay(state, action, reward, next_state)
@@ -89,7 +97,7 @@ def train(flags, configs, sumoConfig):
             state = next_state
             total_reward += reward
             step += 1
-            if step == MAX_STEP:
+            if step == MAX_STEPS:
                 done = True
             agent.update(done)
             traci.simulationStep()
@@ -109,9 +117,30 @@ def test(flags, configs, sumoConfig):
     sumoCmd = [sumoBinary, "-c", sumoConfig]
     traci.start(sumoCmd)
     step = 0
-    tls_id_list = traci.junction.getIDList()
+    tls_id_list = traci.trafficlight.getIDList()
+    edge_list=traci.edge.getIDList()
     while step < 1000:
+        phase=list()
         traci.simulationStep()
+        inflow=0
+        outflow=0
+        for _, edge in enumerate(edge_list): # 이 부분을 밖에서 list로 구성해오면 쉬움
+            if edge[-5:]=='n_2_2': # outflow 여기에 n_2_2대신에 tl_id를 넣으면 pressure가 되는 것
+                inflow+=traci.edge.getLastStepVehicleNumber(edge)
+            elif edge[:5]=='n_2_2': # inflow
+                outflow+=traci.edge.getLastStepVehicleNumber(edge)
+        phase=traci.trafficlight.getRedYellowGreenState('n_2_2')
+        print(phase)
+        state = torch.zeros(8, dtype=torch.int16)
+        for i in range(4):  # 4차로
+            phase = phase[1:]  # 우회전
+            state[i] = mappingMovement(phase[0])  # 직진신호 추출
+            phase = phase[3:]  # 직전
+            state[i+1] = mappingMovement(phase[0])  # 좌회전신호 추출
+            phase = phase[1:]  # 좌회전
+            phase = phase[1:]  # 유턴
+        print(state)
+        print('in: {} out: {}, pressure: {}'.format(inflow,outflow,inflow-outflow))
         # if traci.inductionloop.getLastStepVehicleNumber("0") > 0:
         step += 1
     traci.close()
@@ -129,7 +158,7 @@ def main(args):
     # check the network
     if flags.network.lower() == 'grid':
         from grid import GridNetwork  # network바꿀때 이걸로 바꾸세요(수정 예정)
-        configs['grid_num'] = 7
+        configs['grid_num'] = 5
         print(configs['grid_num'])
         network = GridNetwork(configs, grid_num=configs['grid_num'])
         print(configs['grid_num'])
@@ -156,3 +185,4 @@ def main(args):
 
 if __name__ == '__main__':
     main(sys.argv[1:])
+
