@@ -25,13 +25,16 @@ class TLEnv(baseEnv):
         phase = self._toPhase(action)  # action을 분해
         for _, tl_rl in enumerate(self.tl_rlList):
             traci.trafficlight.setRedYellowGreenState(tl_rl, phase)
+        
+        # reward save
 
     def get_reward(self):
         '''
         reward function
         Max Pressure based control
+        각 node에 대해서 inflow 차량 수와 outflow 차량수 + 해당 방향이라는 전제에서
         '''
-
+        
         return reward
 
     def _toPhase(self, action):  # action을 해석가능한 phase로 변환
@@ -51,7 +54,7 @@ class TLEnv(baseEnv):
         return phase
 
     def _toState(self, phase):  # env의 phase를 해석불가능한 state로 변환
-        state = torch.zeros(8, dtype=torch.int)
+        state = torch.zeros(8, dtype=torch.int16)
         for i in range(4):  # 4차로
             phase = phase[1:]  # 우회전
             state[i] = self._mappingMovement(phase[0])  # 직진신호 추출

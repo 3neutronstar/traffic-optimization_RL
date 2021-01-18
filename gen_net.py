@@ -23,6 +23,7 @@ configs = {
     'learning_rate':1e-4,
     'max_steps':10000,
     'num_epochs':3000,
+    'gamma':0.99
 }
 
 

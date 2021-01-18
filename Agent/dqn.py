@@ -44,11 +44,14 @@ class Trainer(RLAlgorithm):
         self.input_size = self.configs['input_size']
         self.output_size = self.configs['output_size']
         self.action_space = self.configs['action_space']
+        self.gamma=self.configs['gamma']
         if self.configs['model']=='FRAP':
             from Agent.Model.FRAP import FRAP
             model=FRAP(self.input_size,self.output_size)
             model.add_module(QNetwork(self.input_size,self.output_size,self.configs))
             print(model)
+
+        model.to(configs['device'])
 
         self.mainQNetwork = deepcopy(model)
         self.targetQNetwork = deepcopy(model)

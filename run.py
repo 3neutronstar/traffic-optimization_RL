@@ -106,7 +106,7 @@ def train(flags, configs, sumoConfig):
 def test(flags, configs, sumoConfig):
     configs['mode'] = 'test'
     sumoBinary = checkBinary('sumo-gui')
-    sumoCmd = [sumoBinary, "-c", sumoConfig, '--start']
+    sumoCmd = [sumoBinary, "-c", sumoConfig]
     traci.start(sumoCmd)
     step = 0
     tls_id_list = traci.junction.getIDList()
