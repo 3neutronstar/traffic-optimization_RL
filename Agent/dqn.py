@@ -6,14 +6,14 @@ import numpy as np
 import torch.optim as optim
 from collections import deque
 import random
-
+from copy import deepcopy
 
 class QNetwork(nn.Module):
-    def __init__(self, configs):
+    def __init__(self, input_size,output_size,configs):
         super(QNetwork, self).__init__()
         self.configs = configs
-        self.input_size = self.configs['input_size']
-        self.output_size = self.configs['output_size']
+        self.input_size = input_size
+        self.output_size = output_size
         self.configs['fc_net'] = [40, 30]
 
         # build nn
@@ -44,14 +44,19 @@ class Trainer(RLAlgorithm):
         self.input_size = self.configs['input_size']
         self.output_size = self.configs['output_size']
         self.action_space = self.configs['action_space']
-        self.mainQNetwork = QNetwork(self.configs)
-        self.targetQNetwork = QNetwork(self.configs)
+        if self.configs['model']=='FRAP':
+            from Agent.Model.FRAP import FRAP
+            model=FRAP(self.input_size,self.output_size)
+            model.add_module(QNetwork(self.input_size,self.output_size,self.configs))
+            print(model)
+
+        self.mainQNetwork = deepcopy(model)
+        self.targetQNetwork = deepcopy(model)
         self.configs['experience_replay_size'] = 20000
         for param in self.targetQNetwork.parameters():  # target Q는 hold
             param.requires_grad = False
         self.epsilon = 0.5
         self.mainQNetwork.train()  # train모드로 설정
-        learning_rate = 0.0001
         self.running_loss = 0
         self.optimizer = optimizer
         self.experience_replay = deque(self.configs['experience_replay_size'])
