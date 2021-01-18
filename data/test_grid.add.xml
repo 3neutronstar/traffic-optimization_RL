@@ -1,6 +1,0 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<additional>
-	<edgeData id="edgeData_00" file="test_grid_edgeData.xml" begin="0" end="10000" freq="1000"/>
-	<laneData id="laneData_00" file="test_grid_laneData.xml" begin="0" end="10000" freq="1000"/>
-	</additional>
-	
