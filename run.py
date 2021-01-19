@@ -13,11 +13,10 @@ from Agent.dqn import Trainer
 from sumolib import checkBinary
 import time
 from Env.GridEnv import GridEnv
-configs['input_size']=12*len(configs['tl_rl_list'])
-configs['output_size']=8*len(configs['tl_rl_list'])
-configs['action_space']=8*len(configs['tl_rl_list'])
-configs['state_space']=12*len(configs['tl_rl_list'])
-
+configs['input_size'] = 12*len(configs['tl_rl_list'])
+configs['output_size'] = 8*len(configs['tl_rl_list'])
+configs['action_space'] = 8*len(configs['tl_rl_list'])
+configs['state_space'] = 12*len(configs['tl_rl_list'])
 
 
 def save_params(configs, time_data):
@@ -66,7 +65,8 @@ def train(flags, configs, sumoConfig):
         sumoBinary = checkBinary('sumo')
     sumoCmd = [sumoBinary, "-c", sumoConfig, '--start']
     # configs setting
-    configs['tl_rl_list']=['n_1_1']
+    # configs['tl_rl_list']=['n_1_1']
+    configs['tl_rl_list'] = ['n_0_0']
     tl_rl_list = configs['tl_rl_list']
     NUM_EPOCHS = configs['num_epochs']
     MAX_STEPS = configs['max_steps']
@@ -109,11 +109,10 @@ def train(flags, configs, sumoConfig):
 
             action = agent.get_action(state)
             env.step(action)  # action 적용함수
-            for _ in range(20):  # 10초마다 행동 갱신
+            for _ in range(10):  # 10초마다 행동 갱신
                 env.collect_state()
                 traci.simulationStep()
                 step += 1
-
 
             reward = env.get_reward()
             next_state = env.get_state()
@@ -138,16 +137,18 @@ def train(flags, configs, sumoConfig):
 
         traci.close()
         epoch += 1
-        writer.add_scalar('episode/loss', loss, step*epoch)  # 1 epoch마다
+        writer.add_scalar('episode/loss', loss/MAX_STEPS,
+                          step*epoch)  # 1 epoch마다
         writer.add_scalar('episode/reward', total_reward,
                           step*epoch)  # 1 epoch마다
         writer.add_scalar('episode/arrived_num', arrived_vehicles,
                           step*epoch)  # 1 epoch마다
         writer.flush()
         print('======== {} epoch/ loss: {} return: {} arrived number:{}'.format(epoch,
-                                                                                loss, total_reward, arrived_vehicles))
+                                                                                loss/MAX_STEPS, total_reward, arrived_vehicles))
         if epoch % 50 == 0:
-            agent.save_weights(configs['file_name']+'_{}_{}'.format(time_data,epoch))
+            agent.save_weights(
+                configs['file_name']+'_{}_{}'.format(time_data, epoch))
 
     writer.close()
 
@@ -223,8 +224,10 @@ def main(args):
     # check the network
     if flags.network.lower() == 'grid':
         from grid import GridNetwork  # network바꿀때 이걸로 바꾸세요(수정 예정)
-        configs['grid_num'] = 3
-        configs['grid_side']='in' # out mode도 만들 예정 in모드시에 내부 tl만 컨트롤
+        configs['grid_num'] = 1
+        configs['file_name'] = '{}x{}grid'.format(
+            configs['grid_num'], configs['grid_num'])
+        configs['grid_side'] = 'in'  # out mode도 만들 예정 in모드시에 내부 tl만 컨트롤
         network = GridNetwork(configs, grid_num=configs['grid_num'])
         network.generate_cfg(True, configs['mode'])
     # check the mode

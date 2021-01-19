@@ -16,26 +16,51 @@ class TL1x1Env(baseEnv):
         up right down left 순서대로 저장
 
         '''
+        # grid_num 3일 때
+        # self.interest_list = [
+        #     {
+        #         'id': 'u_1_1',
+        #         'inflow': 'n_1_0_to_n_1_1',
+        #         'outflow': 'n_1_1_to_n_1_2',
+        #     },
+        #     {
+        #         'id': 'r_1_1',
+        #         'inflow': 'n_2_1_to_n_1_1',
+        #         'outflow': 'n_1_1_to_n_0_1',
+        #     },
+        #     {
+        #         'id': 'd_1_1',
+        #         'inflow': 'n_1_2_to_n_1_1',
+        #         'outflow': 'n_1_1_to_n_1_0',
+        #     },
+        #     {
+        #         'id': 'l_1_1',
+        #         'inflow': 'n_0_1_to_n_1_1',
+        #         'outflow': 'n_1_1_to_n_2_1',
+        #     }
+        # ]
+
+        # # grid_num 1일때
         self.interest_list = [
             {
-                'id': 'u_1_1',
-                'inflow': 'n_1_0_to_n_1_1',
-                'outflow': 'n_1_1_to_n_1_2',
+                'id': 'u_0_0',
+                'inflow': 'n_0_u_to_n_0_0',
+                'outflow': 'n_0_0_to_n_0_d',
             },
             {
-                'id': 'r_1_1',
-                'inflow': 'n_2_1_to_n_1_1',
-                'outflow': 'n_1_1_to_n_0_1',
+                'id': 'r_0_0',
+                'inflow': 'n_0_r_to_n_0_0',
+                'outflow': 'n_0_0_to_n_0_l',
             },
             {
-                'id': 'd_1_1',
-                'inflow': 'n_1_2_to_n_1_1',
-                'outflow': 'n_1_1_to_n_1_0',
+                'id': 'd_0_0',
+                'inflow': 'n_0_d_to_n_0_0',
+                'outflow': 'n_0_0_to_n_0_u',
             },
             {
-                'id': 'l_1_1',
-                'inflow': 'n_0_1_to_n_1_1',
-                'outflow': 'n_1_1_to_n_2_1',
+                'id': 'l_0_0',
+                'inflow': 'n_0_l_to_n_0_0',
+                'outflow': 'n_0_0_to_n_0_r',
             }
         ]
 
@@ -47,7 +72,7 @@ class TL1x1Env(baseEnv):
         state = torch.zeros(
             (1, self.configs['state_space']), device=self.configs['device'], dtype=torch.int)  # 기준
         vehicle_state = torch.zeros(
-            (int(self.configs['state_space']-8), 1), device=self.configs['device'], dtype=torch.int) # -8은 phase크기
+            (int(self.configs['state_space']-8), 1), device=self.configs['device'], dtype=torch.int)  # -8은 phase크기
         # 변환
         for _, tl_rl in enumerate(self.tl_rl_list):
             phase.append(traci.trafficlight.getRedYellowGreenState(tl_rl))
@@ -56,9 +81,11 @@ class TL1x1Env(baseEnv):
         phase_state = self._toState(phase[0])/25.0
         for i, interest in enumerate(self.interest_list):
             # 죄회전용 추가 필요
-            vehicle_state[i]= traci.edge.getLastStepVehicleNumber(interest['inflow'])
+            vehicle_state[i] = traci.edge.getLastStepVehicleNumber(
+                interest['inflow'])
         vehicle_state = torch.transpose(vehicle_state, 0, 1)
-        state = torch.cat((vehicle_state, phase_state), dim=1)#여기 바꿨다 문제 생기면 여기임 암튼 그럼
+        state = torch.cat((vehicle_state, phase_state),
+                          dim=1)  # 여기 바꿨다 문제 생기면 여기임 암튼 그럼
 
         return state
 
@@ -118,7 +145,7 @@ class TL1x1Env(baseEnv):
         for i in range(4):  # 4차로
             phase = phase[:][1:]  # 우회전
             state[i] = self._mappingMovement(phase[0])  # 직진신호 추출
-            phase = phase[3:]  # 직전
+            phase = phase[self.configs['num_lanes']:]  # 직전
             state[i+1] = self._mappingMovement(phase[0])  # 좌회전신호 추출
             phase = phase[1:]  # 좌회전
             phase = phase[1:]  # 유턴
@@ -140,4 +167,3 @@ class TL1x1Env(baseEnv):
             return 0
         else:
             return -1  # error
-
