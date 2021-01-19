@@ -22,7 +22,7 @@ configs['state_space']=12*len(configs['tl_rl_list'])
 
 def save_params(configs, time_data):
     with open(os.path.join(configs['current_path'], 'training_data', '{}_{}.json'.format(configs['file_name'], time_data)), 'w') as fp:
-        json.dump(configs, fp)
+        json.dump(configs, fp,indent=2)
 
 
 def load_params(configs, file_name):
