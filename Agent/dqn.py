@@ -117,9 +117,7 @@ class Trainer(RLAlgorithm):
         # state_dict=self.targetQNetwork.state_dict()*self.configs['tau']+(1-self.configs['tau'])*self.mainQNetwork.state_dict()
         # self.targetQNetwork.load_state_dict(state_dict)
         # Hard Update
-        self.targetQNetwork.load_state_dict(self.mainQNetwork.state_dict()) 
-
-
+        self.targetQNetwork.load_state_dict(self.mainQNetwork.state_dict())
 
     def save_replay(self, state, action, reward, next_state):
         self.experience_replay.push(
@@ -145,7 +143,8 @@ class Trainer(RLAlgorithm):
         action_batch = torch.cat(batch.action, dim=0)
 
         # reward_batch = torch.cat(torch.tensor(batch.reward, dim=0)
-        reward_batch = torch.tensor(batch.reward).reshape(32).to(self.configs['device'])
+        reward_batch = torch.tensor(batch.reward).reshape(
+            32).to(self.configs['device'])
 
         # Q(s_t, a) 계산 - 모델이 Q(s_t)를 계산하고, 취한 행동의 칼럼을 선택한다.
 
@@ -168,7 +167,7 @@ class Trainer(RLAlgorithm):
         # loss 계산
         loss = self.criterion(state_action_values,
                               expected_state_action_values.unsqueeze(1))
-        self.running_loss=loss
+        self.running_loss = loss
         # 모델 최적화
         self.optimizer.zero_grad()
         loss.backward()
@@ -178,3 +177,14 @@ class Trainer(RLAlgorithm):
 
         if self.epsilon > 0.2:
             self.epsilon *= 0.97  # decay rate
+
+    def save_weights(self, name):
+        torch.save(self.mainQNetwork.state_dict(), os.path.join(
+            self.configs['current_path'], 'model_data', name+'.h5'))
+        torch.save(self.targetQNetwork.state_dict(), os.path.join(
+            self.configs['current_path'], 'model_data', name+'_target.h5'))
+
+    def load_weights(self, name):
+        self.mainQNetwork.load_state_dict(torch.load(os.path.join(
+            self.configs['current_path'], 'model_data', name+'.h5')))
+        self.mainQNetwork.eval()

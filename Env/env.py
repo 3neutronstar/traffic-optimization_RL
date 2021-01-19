@@ -72,8 +72,8 @@ class TLEnv(baseEnv):
         phase_state = self._toState(phase[0])
         for i, interest in enumerate(self.interest_list):
             # 죄회전용 추가 필요
-            vehicle_state[2*i +
-                          1] = traci.edge.getLastStepVehicleNumber(interest['inflow'])
+            vehicle_state[2*i + 1] \
+                = traci.edge.getLastStepVehicleNumber(interest['inflow'])
         vehicle_state = torch.transpose(vehicle_state, 0, 1)
         state = torch.cat((vehicle_state, phase_state), dim=0)
         return state

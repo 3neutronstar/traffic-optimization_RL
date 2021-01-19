@@ -23,13 +23,14 @@ configs = {
     'learning_rate': 5e-5,
     'num_epochs': 3000,
     'gamma': 0.99,
-    'tau':0.995,
+    'tau': 0.995,
     'model': 'normal',
     'batch_size': 32,
     'experience_replay_size': 1e5,
     'input_size': 16,
     'output_size': 8,
     'action_space': 8,
+    'tl_rl_list': ['n_1_1'],
 }
 
 
@@ -60,7 +61,7 @@ class Network():
         self.xml_con_name = self.configs['file_name']+'.con'
         self.xml_route_pos = self.file_name+'.rou'
         self.current_path = os.path.dirname(os.path.abspath(__file__))
-        self.current_Env_path = os.path.join(self.current_path, 'Env')
+        self.current_Env_path = os.path.join(self.current_path, 'Net_data')
         self.num_cars = str(self.configs['num_cars'])
         self.num_lanes = str(self.configs['num_lanes'])
         self.flow_start = str(self.configs['flow_start'])

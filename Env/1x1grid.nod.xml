@@ -1,9 +1,0 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<nodes>
-    <node id="n_0_0" type="traffic_light" x="-50.0" y="50.0"/>
-    <node id="n_0_u" x="-50.0" y="150.0"/>
-    <node id="n_0_r" x="50.0" y="50.0"/>
-    <node id="n_0_d" x="-50.0" y="-50.0"/>
-    <node id="n_0_l" x="-150.0" y="50.0"/>
-    </nodes>
-    
