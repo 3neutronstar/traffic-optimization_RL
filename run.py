@@ -51,7 +51,7 @@ def train(flags, configs, sumoConfig):
     configs['mode'] = 'train'
     sumoCmd = [sumoBinary, "-c", sumoConfig, '--start']
     agent = Trainer(configs)
-    tl_rl_list = ['n_0_0']
+    tl_rl_list = ['n_1_1']
     NUM_EPOCHS = configs['num_epochs']
     epoch = 0
     MAX_STEPS = configs['max_steps']
@@ -89,6 +89,15 @@ def train(flags, configs, sumoConfig):
             env.step(action)  # action 적용함수
             for _ in range(20): # 10초마다 행동 갱신
                 env.collect_state()
+                traci.simulationStep()
+                step += 1
+
+            traci.trafficlight.setRedYellowGreenState(tl_rl_list[0],'y'*28)
+            for _ in range(5):
+                traci.simulationStep()
+                env.collect_state()
+                step += 1
+
             reward = env.get_reward()
             next_state = env.get_state()
             agent.save_replay(state, action, reward, next_state)
@@ -100,6 +109,8 @@ def train(flags, configs, sumoConfig):
             agent.update(done)
             loss += agent.get_loss()  # 총 loss
             traci.simulationStep()
+            if step%200==0:
+                agent.target_update()
 
         epoch+=1
         writer.add_scalar('episode/loss', loss, step*epoch)  # 1 epoch마다
@@ -159,7 +170,7 @@ def main(args):
     # check the network
     if flags.network.lower() == 'grid':
         from grid import GridNetwork  # network바꿀때 이걸로 바꾸세요(수정 예정)
-        configs['grid_num'] = 1
+        configs['grid_num'] = 3
         print(configs['grid_num'])
         network = GridNetwork(configs, grid_num=configs['grid_num'])
         print(configs['grid_num'])

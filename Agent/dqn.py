@@ -114,7 +114,12 @@ class Trainer(RLAlgorithm):
         return self.running_loss
 
     def target_update(self):
-        self.targetQNetwork.load_state_dict(self.mainQNetwork.state_dict())
+        # state_dict=self.targetQNetwork.state_dict()*self.configs['tau']+(1-self.configs['tau'])*self.mainQNetwork.state_dict()
+        # self.targetQNetwork.load_state_dict(state_dict)
+        # Hard Update
+        self.targetQNetwork.load_state_dict(self.mainQNetwork.state_dict()) 
+
+
 
     def save_replay(self, state, action, reward, next_state):
         self.experience_replay.push(

@@ -22,24 +22,24 @@ class TLEnv(baseEnv):
         #         string=
         self.interest_list = [
             {
-                'id': 'u_0_0',
-                'inflow': 'n_0_u_to_n_0_0',
-                'outflow': 'n_0_0_to_n_0_d',
+                'id': 'u_1_1',
+                'inflow': 'n_1_0_to_n_1_1',
+                'outflow': 'n_1_1_to_n_1_2',
             },
             {
-                'id': 'r_0_0',
-                'inflow': 'n_0_r_to_n_0_0',
-                'outflow': 'n_0_0_to_n_0_l',
+                'id': 'r_1_1',
+                'inflow': 'n_2_1_to_n_1_1',
+                'outflow': 'n_1_1_to_n_0_1',
             },
             {
-                'id': 'd_0_0',
-                'inflow': 'n_0_d_to_n_0_0',
-                'outflow': 'n_0_0_to_n_0_u',
+                'id': 'd_1_1',
+                'inflow': 'n_1_2_to_n_1_1',
+                'outflow': 'n_1_1_to_n_1_0',
             },
             {
-                'id': 'l_0_0',
-                'inflow': 'n_0_l_to_n_0_0',
-                'outflow': 'n_0_0_to_n_0_r',
+                'id': 'l_1_1',
+                'inflow': 'n_0_1_to_n_1_1',
+                'outflow': 'n_1_1_to_n_2_1',
             }
         ]
 
