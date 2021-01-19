@@ -11,7 +11,7 @@ import torch.optim as optim
 from Env.env import TLEnv
 from Agent.dqn import Trainer
 from sumolib import checkBinary
-
+import time
 
 def mappingMovement(movement):
     if movement == 'G':
@@ -56,12 +56,13 @@ def train(flags, configs, sumoConfig):
     epoch = 0
     MAX_STEPS = configs['max_steps']
     writer = SummaryWriter(os.path.join(
-        configs['current_path'], 'training_data'))
+        configs['current_path'], 'training_data',time.strftime('%m-%d_%H-%M-%S', time.localtime(time.time()))))
 
     while epoch < NUM_EPOCHS:
         traci.start(sumoCmd)
         env = TLEnv(tl_rl_list,configs)
         step = 0
+        loss=0
         done = False
         # state initialization
         state = env.get_state()
@@ -77,36 +78,34 @@ def train(flags, configs, sumoConfig):
             # if traci.inductionloop.getLastStepVehicleNumber("0") > 0:
             step += 1
             state=next_state
-            '''
-
-            action = agent.get_action(state)
-            env.step(action)  # action 적용함수
-            for _ in range(10): # 10초마다 행동 갱신
-                env.collect_state()
-            reward = env.get_reward()
-            next_state = env.get_state()
-            agent.save_replay(state, action, reward, next_state)
-            '''
-            추가사항
-
+            
             store transition in D (experience replay)
             Sample random minibatch from D
 
             set yi
-
             '''
+
+            action = agent.get_action(state)
+            env.step(action)  # action 적용함수
+            for _ in range(20): # 10초마다 행동 갱신
+                env.collect_state()
+            reward = env.get_reward()
+            next_state = env.get_state()
+            agent.save_replay(state, action, reward, next_state)
             state = next_state
             total_reward += reward
             step += 1
             if step == MAX_STEPS:
                 done = True
             agent.update(done)
+            loss += agent.get_loss()  # 총 loss
             traci.simulationStep()
 
-        loss = agent.get_loss()  # 총 loss
-        writer.add_scalar('episode/loss', loss, step)  # 1 epoch마다
-        writer.add_scalar('episode/reward', total_reward, step)  # 1 epoch마다
-        print('{} epoch/ loss: {} return: {} '.format(epoch, loss, total_reward))
+        epoch+=1
+        writer.add_scalar('episode/loss', loss, step*epoch)  # 1 epoch마다
+        writer.add_scalar('episode/reward', total_reward, step*epoch)  # 1 epoch마다
+        writer.flush()
+        print('======== {} epoch/ loss: {} return: {} '.format(epoch,loss, total_reward))
         traci.close()
 
     writer.close()

@@ -140,7 +140,7 @@ class Trainer(RLAlgorithm):
         action_batch = torch.cat(batch.action, dim=0)
 
         # reward_batch = torch.cat(torch.tensor(batch.reward, dim=0)
-        reward_batch = torch.tensor(batch.reward).reshape(32)
+        reward_batch = torch.tensor(batch.reward).reshape(32).to(self.configs['device'])
 
         # Q(s_t, a) 계산 - 모델이 Q(s_t)를 계산하고, 취한 행동의 칼럼을 선택한다.
 
@@ -154,7 +154,7 @@ class Trainer(RLAlgorithm):
         next_state_values = torch.zeros(
             self.configs['batch_size'], device=self.configs['device'], dtype=torch.float)
         next_state_values[non_final_mask] = self.targetQNetwork(
-            non_final_next_states).max(1)[0].detach()
+            non_final_next_states).max(1)[0].to(self.configs['device'])
 
         # 기대 Q 값 계산
         expected_state_action_values = (
@@ -163,7 +163,7 @@ class Trainer(RLAlgorithm):
         # loss 계산
         loss = self.criterion(state_action_values,
                               expected_state_action_values.unsqueeze(1))
-
+        self.running_loss=loss
         # 모델 최적화
         self.optimizer.zero_grad()
         loss.backward()

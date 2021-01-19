@@ -148,9 +148,9 @@ class GridNetwork(Network):
                     for _, checkEdge in enumerate(self.edges):
                         if edge['from'][-3] == checkEdge['to'][-3] and checkEdge['to'][-1] == direction_list[3-i]:
                             if checkEdge['to'][-1]==direction_list[0] or checkEdge['to'][-1]==direction_list[2]:
-                                self.configs['num_cars']=3000
-                            else:
                                 self.configs['num_cars']=1200
+                            else:
+                                self.configs['num_cars']=800
 
                             flows.append({
                                 'from': edge['id'],
