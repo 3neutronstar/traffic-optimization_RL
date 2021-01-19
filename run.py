@@ -8,19 +8,16 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 from gen_net import configs
 import torch.optim as optim
-from Env.env import TLEnv
+from Env.env import TL1x1Env
 from Agent.dqn import Trainer
 from sumolib import checkBinary
 import time
+from Env.GridEnv import GridEnv
+configs['input_size']=12*len(configs['tl_rl_list'])
+configs['output_size']=8*len(configs['tl_rl_list'])
+configs['action_space']=8*len(configs['tl_rl_list'])
+configs['state_space']=12*len(configs['tl_rl_list'])
 
-
-def mappingMovement(movement):
-    if movement == 'G':
-        return 1
-    elif movement == 'r':
-        return 0
-    else:
-        return -1  # error
 
 
 def save_params(configs, time_data):
@@ -30,7 +27,7 @@ def save_params(configs, time_data):
 
 def load_params(configs, file_name):
     ''' replay_name from flags.replay_name '''
-    with open(os.path.join(configs['current_path'], 'training_data', '{}_{}.json'.format(file_name)), 'r') as fp:
+    with open(os.path.join(configs['current_path'], 'training_data', '{}.json'.format(file_name)), 'r') as fp:
         configs = json.load(fp)
     return configs
 
@@ -69,6 +66,7 @@ def train(flags, configs, sumoConfig):
         sumoBinary = checkBinary('sumo')
     sumoCmd = [sumoBinary, "-c", sumoConfig, '--start']
     # configs setting
+    configs['tl_rl_list']=['n_1_1']
     tl_rl_list = configs['tl_rl_list']
     NUM_EPOCHS = configs['num_epochs']
     MAX_STEPS = configs['max_steps']
@@ -82,7 +80,8 @@ def train(flags, configs, sumoConfig):
     epoch = 0
     while epoch < NUM_EPOCHS:
         traci.start(sumoCmd)
-        env = TLEnv(tl_rl_list, configs)
+        env = TL1x1Env(tl_rl_list, configs)
+        # env = GridEnv( configs)
         step = 0
         loss = 0
         done = False
@@ -115,11 +114,6 @@ def train(flags, configs, sumoConfig):
                 traci.simulationStep()
                 step += 1
 
-            traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'y'*28)
-            for _ in range(5):
-                traci.simulationStep()
-                env.collect_state()
-                step += 1
 
             reward = env.get_reward()
             next_state = env.get_state()
@@ -135,6 +129,12 @@ def train(flags, configs, sumoConfig):
             traci.simulationStep()
             if step % 200 == 0:
                 agent.target_update()
+            # 20초 끝나고 yellow 5초
+            traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'y'*28)
+            for _ in range(5):
+                traci.simulationStep()
+                env.collect_state()
+                step += 1
 
         traci.close()
         epoch += 1
@@ -146,8 +146,8 @@ def train(flags, configs, sumoConfig):
         writer.flush()
         print('======== {} epoch/ loss: {} return: {} arrived number:{}'.format(epoch,
                                                                                 loss, total_reward, arrived_vehicles))
-        if epoch % 10 == 0:
-            agent.save_weights(configs['file_name']+'_{}'.format(time_data))
+        if epoch % 50 == 0:
+            agent.save_weights(configs['file_name']+'_{}_{}'.format(time_data,epoch))
 
     writer.close()
 
@@ -157,23 +157,19 @@ def test(flags, configs, sumoConfig):
     configs['mode'] = 'test'
     sumoBinary = checkBinary('sumo-gui')
     sumoCmd = [sumoBinary, "-c", sumoConfig]
-    # setting the replay
-    if flags.replay_name is not None:
-        agent.load_weights(flags.replay_name)
-        configs = load_params(configs, flags.replay_name)
 
     # setting the rl list
     tl_rl_list = configs['tl_rl_list']
     MAX_STEPS = configs['max_steps']
 
     traci.start(sumoCmd)
-    tls_id_list = traci.trafficlight.getIDList()
-    edge_list = traci.edge.getIDList()
     agent = Trainer(configs)
-    env = TLEnv(tl_rl_list, configs)
+    # setting the replay
+    if flags.replay_name is not None:
+        agent.load_weights(flags.replay_name)
+        configs = load_params(configs, flags.replay_name)
+    env = TL1x1Env(tl_rl_list, configs)
     step = 0
-    loss = 0
-    done = False
     # state initialization
     state = env.get_state()
     # agent setting
@@ -228,9 +224,8 @@ def main(args):
     if flags.network.lower() == 'grid':
         from grid import GridNetwork  # network바꿀때 이걸로 바꾸세요(수정 예정)
         configs['grid_num'] = 3
-        print(configs['grid_num'])
+        configs['grid_side']='in' # out mode도 만들 예정 in모드시에 내부 tl만 컨트롤
         network = GridNetwork(configs, grid_num=configs['grid_num'])
-        print(configs['grid_num'])
         network.generate_cfg(True, configs['mode'])
     # check the mode
     if configs['mode'] == 'train':

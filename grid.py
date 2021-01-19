@@ -65,8 +65,9 @@ class GridNetwork(Network):
                 'x': str('%.1f' % (+center*self.configs['laneLength']-(self.grid_num+1)*self.configs['laneLength'])),
                 'y':str('%.1f' % grid_y)
             }]
-            for j in range(len(node_information)):
-                nodes.append(node_information[j])
+            for _,node_info in enumerate(node_information):
+                nodes.append(node_info)
+                self.configs['node_info'].append(node_info)
         self.nodes = nodes
         return nodes
 
@@ -146,11 +147,27 @@ class GridNetwork(Network):
             for i, _ in enumerate(direction_list):
                 if direction_list[i] in edge['from']:
                     for _, checkEdge in enumerate(self.edges):
-                        if edge['from'][-3] == checkEdge['to'][-3] and checkEdge['to'][-1] == direction_list[3-i]:
+                        if edge['from'][-3] == checkEdge['to'][-3] and checkEdge['to'][-1] == direction_list[3-i] and direction_list[i] in edge['from']:
+
                             # if checkEdge['to'][-1]==direction_list[1] or checkEdge['to'][-1]==direction_list[2]:
                             #     self.configs['num_cars']=800
                             # else:
                             #     self.configs['num_cars']=200
+                            via_string=str()
+                            node_x_y=edge['id'][-3] # 끝에서 사용하는 기준 x나 y
+                            if 'r' in edge['id']:
+                                for i in range(self.configs['grid_num']-1,0,-1):
+                                    via_string+='n_{}_{}_to_n_{}_{} '.format(i,node_x_y,i-1,node_x_y)
+                            elif 'l' in edge['id']:
+                                for i in range(self.configs['grid_num']-2):
+                                    via_string+='n_{}_{}_to_n_{}_{} '.format(i,node_x_y,i+1,node_x_y)
+                            elif 'u' in edge['id']:
+                                for i in range(self.configs['grid_num']-1,0,-1):
+                                    via_string+='n_{}_{}_to_n_{}_{} '.format(node_x_y,i,node_x_y,i-1)
+                            elif 'd' in edge['id']:
+                                for i in range(self.configs['grid_num']-2):
+                                    via_string+='n_{}_{}_to_n_{}_{} '.format(node_x_y,i,node_x_y,i+1)
+                                
 
                             flows.append({
                                 'from': edge['id'],
@@ -159,7 +176,7 @@ class GridNetwork(Network):
                                 'begin': str(self.configs['flow_start']),
                                 'end': str(self.configs['flow_end']),
                                 'probability':'0.388',
-                                # 'via':str(edge['id']+" "+)        
+                                'via':str(edge['id']+" ")        
                             })
 
         self.flows = flows
@@ -173,7 +190,8 @@ class GridNetwork(Network):
 
 
 if __name__ == "__main__":
-    grid_num = 1
+    grid_num = 3
+    configs['grid_num'] = 3
     configs['file_name'] = '{}x{}grid'.format(grid_num, grid_num)
     a = GridNetwork(configs, grid_num)
     a.sumo_gui()

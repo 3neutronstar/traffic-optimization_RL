@@ -95,16 +95,21 @@ class Trainer(RLAlgorithm):
             self.mainQNetwork.eval()
 
     def get_action(self, state):
+        action_set=tuple()
         sample = random.random()
         with torch.no_grad():
             self.Q = self.mainQNetwork(state)
-        _, action = torch.max(self.Q, dim=0)  # 가로로
+        for _,Q in enumerate(self.Q):
+            _, action = torch.max(Q, dim=0)  # 가로로
+            action_set+=action
         if sample < self.epsilon:
-            return action
+            return action_set
         else:
-            action = torch.tensor([random.randint(0, 1)
+            for _, _ in enumerate(self.Q):
+                a= torch.tensor([random.randint(0, 1)
                                    for i in range(self.action_space)], device=self.configs['device'])
-            return action
+                action_set+=a
+            return action_set
 
     def get_loss(self):
         return self.running_loss
@@ -116,11 +121,12 @@ class Trainer(RLAlgorithm):
         self.targetQNetwork.load_state_dict(self.mainQNetwork.state_dict())
 
     def save_replay(self, state, action, reward, next_state):
+        print(next_state)
         self.experience_replay.push(
-            state.reshape(1, -1), action, reward, next_state.reshape(1, -1))
+            state, action, reward, next_state)
 
     def update(self, done=False):
-        if len(self.experience_replay) < self.configs['batch_size']:
+        if len(self.experience_replay) < self.configs['batch_size']*3:
             return
 
         transitions = self.experience_replay.sample(self.configs['batch_size'])

@@ -21,16 +21,14 @@ configs = {
     'vehicle_info': Vehicles,
     'mode': 'simulate',
     'learning_rate': 5e-5,
-    'num_epochs': 3000,
     'gamma': 0.99,
     'tau': 0.995,
     'model': 'normal',
     'batch_size': 32,
     'experience_replay_size': 1e5,
-    'input_size': 16,
-    'output_size': 8,
-    'action_space': 8,
     'tl_rl_list': ['n_1_1'],
+    'epsilon':0.4,
+    'decay_rate':0.95
 }
 
 
