@@ -7,28 +7,22 @@ Edges = list()
 Nodes = list()
 Vehicles = list()
 configs = {
-    'num_lanes': 3,
+    'num_lanes': 2,
+    'model': 'normal',
     'file_name': '4x4grid',
+    'tl_rl_list': ['n_1_1'],
     'laneLength': 300.0,
     'num_cars': 1800,
     'flow_start': 0,
-    'flow_end': 900,
+    'flow_end': 10000,
     'sim_start': 0,
-    'max_steps': 1000,
-    'num_epochs': 3000,
+    'max_steps': 10000,
+    'num_epochs': 1000,
     'edge_info': Edges,
     'node_info': Nodes,
     'vehicle_info': Vehicles,
     'mode': 'simulate',
     'learning_rate': 5e-5,
-    'gamma': 0.99,
-    'tau': 0.995,
-    'model': 'normal',
-    'batch_size': 32,
-    'experience_replay_size': 1e5,
-    'tl_rl_list': ['n_1_1'],
-    'epsilon':0.4,
-    'decay_rate':0.95
 }
 
 
