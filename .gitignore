@@ -1,6 +1,6 @@
 __pycache__
-tensorboard
-data
-training_data
+tensorboard/*
+data/*
+training_data/*
 .vscode
 Net_data/*
