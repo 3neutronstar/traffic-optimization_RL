@@ -147,10 +147,10 @@ class GridNetwork(Network):
                 if direction_list[i] in edge['from']:
                     for _, checkEdge in enumerate(self.edges):
                         if edge['from'][-3] == checkEdge['to'][-3] and checkEdge['to'][-1] == direction_list[3-i]:
-                            if checkEdge['to'][-1]==direction_list[0] or checkEdge['to'][-1]==direction_list[2]:
-                                self.configs['num_cars']=1200
-                            else:
-                                self.configs['num_cars']=800
+                            # if checkEdge['to'][-1]==direction_list[1] or checkEdge['to'][-1]==direction_list[2]:
+                            #     self.configs['num_cars']=800
+                            # else:
+                            #     self.configs['num_cars']=200
 
                             flows.append({
                                 'from': edge['id'],
@@ -158,7 +158,7 @@ class GridNetwork(Network):
                                 'id': edge['from'],
                                 'begin': str(self.configs['flow_start']),
                                 'end': str(self.configs['flow_end']),
-                                'number': str(self.configs['num_cars']),
+                                'probability':'0.388',
                                 # 'via':str(edge['id']+" "+)        
                             })
 
