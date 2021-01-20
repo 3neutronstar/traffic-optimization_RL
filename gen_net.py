@@ -10,19 +10,19 @@ configs = {
     'num_lanes': 2,
     'model': 'normal',
     'file_name': '4x4grid',
-    'tl_rl_list': ['n_1_1'],
+    'tl_rl_list': ['n_0_0'],
     'laneLength': 300.0,
     'num_cars': 1800,
     'flow_start': 0,
-    'flow_end': 10000,
+    'flow_end': 3000,
     'sim_start': 0,
-    'max_steps': 10000,
+    'max_steps': 3000,
     'num_epochs': 1000,
     'edge_info': Edges,
     'node_info': Nodes,
     'vehicle_info': Vehicles,
     'mode': 'simulate',
-    'learning_rate': 5e-5,
+    'learning_rate': 5e-4,
 }
 
 

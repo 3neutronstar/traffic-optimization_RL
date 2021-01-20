@@ -149,12 +149,12 @@ class GridNetwork(Network):
                     for _, checkEdge in enumerate(self.edges):
                         if edge['from'][-3] == checkEdge['to'][-3] and checkEdge['to'][-1] == direction_list[3-i] and direction_list[i] in edge['from']:
 
-                            # if checkEdge['to'][-1]==direction_list[1] or checkEdge['to'][-1]==direction_list[2]:
-                            #     self.configs['num_cars']=800
-                            # else:
-                            #     self.configs['num_cars']=200
+                            if checkEdge['to'][-1]==direction_list[1] or checkEdge['to'][-1]==direction_list[2]:
+                                self.configs['probability']='0.2'
+                            else:
+                                self.configs['probability']='0.5'
                             via_string = str()
-                            node_x_y = edge['id'][-3]  # 끝에서 사용하는 기준 x나 y
+                            node_x_y = edge['id'][2] # 끝에서 사용하는 기준 x나 y
                             if 'r' in edge['id']:
                                 for i in range(self.configs['grid_num']-1, 0, -1):
                                     via_string += 'n_{}_{}_to_n_{}_{} '.format(
@@ -178,8 +178,12 @@ class GridNetwork(Network):
                                 'id': edge['from'],
                                 'begin': str(self.configs['flow_start']),
                                 'end': str(self.configs['flow_end']),
-                                'probability': '0.388',
-                                # 'via': str(edge['id']+" ")
+                                'probability': self.configs['probability'],
+                                'reroute':'false',
+                                # 'via': edge['id']+" "+via_string+" "+checkEdge['id'],
+                                'departPos':"base",
+                                'departLane':'best',
+                                'departSpeed':'max',
                             })
 
         self.flows = flows
@@ -193,7 +197,7 @@ class GridNetwork(Network):
 
 
 if __name__ == "__main__":
-    grid_num = 1
+    grid_num = 3
     configs['grid_num'] = grid_num
     configs['file_name'] = '{}x{}grid'.format(grid_num, grid_num)
     a = GridNetwork(configs, grid_num)

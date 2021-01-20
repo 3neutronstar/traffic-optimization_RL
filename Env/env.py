@@ -12,57 +12,58 @@ class TL1x1Env(baseEnv):
         self.tl_list = traci.trafficlight.getIDList()
         self.edge_list = traci.edge.getIDList()
         self.pressure = 0
+        self.phase_list=self._phase_list()
         '''
         up right down left 순서대로 저장
 
         '''
         # grid_num 3일 때
-        # self.interest_list = [
-        #     {
-        #         'id': 'u_1_1',
-        #         'inflow': 'n_1_0_to_n_1_1',
-        #         'outflow': 'n_1_1_to_n_1_2',
-        #     },
-        #     {
-        #         'id': 'r_1_1',
-        #         'inflow': 'n_2_1_to_n_1_1',
-        #         'outflow': 'n_1_1_to_n_0_1',
-        #     },
-        #     {
-        #         'id': 'd_1_1',
-        #         'inflow': 'n_1_2_to_n_1_1',
-        #         'outflow': 'n_1_1_to_n_1_0',
-        #     },
-        #     {
-        #         'id': 'l_1_1',
-        #         'inflow': 'n_0_1_to_n_1_1',
-        #         'outflow': 'n_1_1_to_n_2_1',
-        #     }
-        # ]
-
-        # # grid_num 1일때
         self.interest_list = [
             {
-                'id': 'u_0_0',
-                'inflow': 'n_0_u_to_n_0_0',
-                'outflow': 'n_0_0_to_n_0_d',
+                'id': 'u_1_1',
+                'inflow': 'n_1_0_to_n_1_1',
+                'outflow': 'n_1_1_to_n_1_2',
             },
             {
-                'id': 'r_0_0',
-                'inflow': 'n_0_r_to_n_0_0',
-                'outflow': 'n_0_0_to_n_0_l',
+                'id': 'r_1_1',
+                'inflow': 'n_2_1_to_n_1_1',
+                'outflow': 'n_1_1_to_n_0_1',
             },
             {
-                'id': 'd_0_0',
-                'inflow': 'n_0_d_to_n_0_0',
-                'outflow': 'n_0_0_to_n_0_u',
+                'id': 'd_1_1',
+                'inflow': 'n_1_2_to_n_1_1',
+                'outflow': 'n_1_1_to_n_1_0',
             },
             {
-                'id': 'l_0_0',
-                'inflow': 'n_0_l_to_n_0_0',
-                'outflow': 'n_0_0_to_n_0_r',
+                'id': 'l_1_1',
+                'inflow': 'n_0_1_to_n_1_1',
+                'outflow': 'n_1_1_to_n_2_1',
             }
         ]
+
+        # grid_num 1일때
+        # self.interest_list = [
+        #     {
+        #         'id': 'u_0_0',
+        #         'inflow': 'n_0_u_to_n_0_0',
+        #         'outflow': 'n_0_0_to_n_0_d',
+        #     },
+        #     {
+        #         'id': 'r_0_0',
+        #         'inflow': 'n_0_r_to_n_0_0',
+        #         'outflow': 'n_0_0_to_n_0_l',
+        #     },
+        #     {
+        #         'id': 'd_0_0',
+        #         'inflow': 'n_0_d_to_n_0_0',
+        #         'outflow': 'n_0_0_to_n_0_u',
+        #     },
+        #     {
+        #         'id': 'l_0_0',
+        #         'inflow': 'n_0_l_to_n_0_0',
+        #         'outflow': 'n_0_0_to_n_0_r',
+        #     }
+        # ]
 
         self.phase_size = len(
             traci.trafficlight.getRedYellowGreenState(self.tl_list[0]))
@@ -70,15 +71,15 @@ class TL1x1Env(baseEnv):
     def get_state(self):
         phase = list()
         state = torch.zeros(
-            (1, self.configs['state_space']), device=self.configs['device'], dtype=torch.int)  # 기준
+            (1, self.configs['state_space']), device=self.configs['device'], dtype=torch.float)  # 기준
         vehicle_state = torch.zeros(
-            (int(self.configs['state_space']-8), 1), device=self.configs['device'], dtype=torch.int)  # -8은 phase크기
+            (int(self.configs['state_space']-1), 1), device=self.configs['device'], dtype=torch.float)  # -8은 phase크기
         # 변환
         for _, tl_rl in enumerate(self.tl_rl_list):
             phase.append(traci.trafficlight.getRedYellowGreenState(tl_rl))
 
         # 1교차로용 n교차로는 추가요망
-        phase_state = self._toState(phase[0])/25.0
+        phase_state = self._toState(phase[0]).reshape(1,1)
         for i, interest in enumerate(self.interest_list):
             # 죄회전용 추가 필요
             vehicle_state[i] = traci.edge.getLastStepVehicleNumber(
@@ -130,26 +131,10 @@ class TL1x1Env(baseEnv):
         straight: green=1, yellow=x, red=0 <- x is for changing
         left: green=1, yellow=x, red=0 <- x is for changing
         '''
-        signal = list()
-        phase = str()
-        for _, a in enumerate(action):
-            signal.append(self._getMovement(a))
-        for i in range(4):  # 4차로
-            phase = phase + 'g'+self.configs['num_lanes']*signal[2*i] + \
-                signal[2*i+1]+'r'  # 마지막 r은 u-turn
-        return phase
+        return self.phase_list[action]
 
     def _toState(self, phase):  # env의 phase를 해석불가능한 state로 변환
-        state = torch.zeros(
-            (8, 1), device=self.configs['device'], dtype=torch.int)
-        for i in range(4):  # 4차로
-            phase = phase[:][1:]  # 우회전
-            state[i] = self._mappingMovement(phase[0])  # 직진신호 추출
-            phase = phase[self.configs['num_lanes']:]  # 직전
-            state[i+1] = self._mappingMovement(phase[0])  # 좌회전신호 추출
-            phase = phase[1:]  # 좌회전
-            phase = phase[1:]  # 유턴
-        state = torch.transpose(state, 0, 1)
+        state=torch.tensor(self.phase_list.index(phase),device=self.configs['device']).int()
         return state
 
     def _getMovement(self, num):
@@ -167,3 +152,21 @@ class TL1x1Env(baseEnv):
             return 0
         else:
             return -1  # error
+
+    def _phase_list(self):
+        num_lanes=self.configs['num_lanes']
+        g='G'
+        r='r'
+        phase_list=[
+            'g{0}{1}rg{2}{3}rg{2}{3}rg{2}{3}r'.format(g*num_lanes,g,r*num_lanes,r),
+            'g{2}{1}rg{2}{3}rg{2}{1}rg{2}{3}r'.format(g*num_lanes,g,r*num_lanes,r),
+            'g{2}{3}rg{2}{3}rg{0}{1}rg{2}{3}r'.format(g*num_lanes,g,r*num_lanes,r),
+            'g{0}{3}rg{2}{3}rg{0}{3}rg{2}{3}r'.format(g*num_lanes,g,r*num_lanes,r),
+            'g{2}{3}rg{1}{1}rg{2}{3}rg{1}{1}r'.format(g*num_lanes,g,r*num_lanes,r),
+            'g{2}{3}rg{0}{1}rg{2}{3}rg{2}{3}r'.format(g*num_lanes,g,r*num_lanes,r),
+            'g{2}{3}rg{2}{3}rg{2}{3}rg{0}{1}r'.format(g*num_lanes,g,r*num_lanes,r),
+            'g{2}{3}rg{2}{1}rg{2}{3}rg{2}{1}r'.format(g*num_lanes,g,r*num_lanes,r),
+            'g{2}{3}rg{0}{3}rg{2}{3}rg{0}{3}r'.format(g*num_lanes,g,r*num_lanes,r),
+
+        ]
+        return phase_list
