@@ -10,7 +10,7 @@ configs = {
     'num_lanes': 2,
     'model': 'normal',
     'file_name': '4x4grid',
-    'tl_rl_list': ['n_0_0'],
+    'tl_rl_list': ['n_1_1'],
     'laneLength': 300.0,
     'num_cars': 1800,
     'flow_start': 0,
