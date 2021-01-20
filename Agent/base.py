@@ -4,7 +4,7 @@ import copy
 import random
 from collections import namedtuple
 from copy import deepcopy
-
+import os
 
 class RLAlgorithm():
     def __init__(self, configs):
@@ -24,16 +24,6 @@ class RLAlgorithm():
         '''
         raise NotImplementedError
 
-    def save_weights(self, name):
-        torch.save(self.mainQNetwork.state_dict(), os.path.join(
-            self.configs['current_path'], 'training_data', 'model', name+'.h5'))
-        torch.save(self.targetQNetwork.state_dict(), os.path.join(
-            self.configs['current_path'], 'training_data', 'model', name+'_target.h5'))
-
-    def load_weights(self, name):
-        self.mainQNetwork.load_state_dict(torch.load(os.path.join(
-            self.configs['current_path'], 'training_data', 'model', name+'.h5')))
-        self.mainQNetwork.eval()
 
 
 Transition = namedtuple('Transition',

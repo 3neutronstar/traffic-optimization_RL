@@ -14,7 +14,7 @@ DEFAULT_CONFIG = {
     'tau': 0.995,
     'batch_size': 32,
     'experience_replay_size': 1e5,
-    'epsilon': 0.4,
+    'epsilon': 0.3,
     'decay_rate': 0.95
 }
 
@@ -36,10 +36,10 @@ class QNetwork(nn.Module):
         self.fc2 = nn.Linear(40, 30)
         self.fc3 = nn.Linear(30, self.output_size)
 
-    def forward(self, state):
-        x = state
-        for _, fc in enumerate(self.fc):
-            x = f.relu(fc(x))
+    def forward(self, x):
+        x=f.leaky_relu(self.fc1(x))
+        x=f.leaky_relu(self.fc2(x))
+        x=f.leaky_relu(self.fc3(x))
         return x  # q value
 
 
@@ -85,7 +85,8 @@ class Trainer(RLAlgorithm):
         sample = random.random()
         with torch.no_grad():
             self.Q = self.mainQNetwork(state)
-        _, action = torch.max(self.Q, dim=0)  # 가로로
+            # self.Q=self.Q.reshape(2,8) # Q value를 max값 선택하게
+        _, action = torch.max(self.Q, dim=1)  # 가로로
         if sample < self.epsilon:
             return action
         else:
@@ -134,14 +135,13 @@ class Trainer(RLAlgorithm):
         #     state_batch).gather(1, action_batch)  # for 3D
         state_action_values = self.mainQNetwork(
             state_batch).max(1)[0].clone().float().unsqueeze(1)
-        state_action_values.requires_grad = True
+
 
         # 모든 다음 상태를 위한 V(s_{t+1}) 계산
         next_state_values = torch.zeros(
             self.configs['batch_size'], device=self.configs['device'], dtype=torch.float)
-
         next_state_values[non_final_mask] = self.targetQNetwork(
-            non_final_next_states).max(1)[0].to(self.configs['device'])
+            non_final_next_states).max(1)[0].to(self.configs['device'])# 자신의 Q value 중에서max인 value를 불러옴
 
         # 기대 Q 값 계산
         expected_state_action_values = (
@@ -160,3 +160,14 @@ class Trainer(RLAlgorithm):
 
         if self.epsilon > 0.2:
             self.epsilon *= self.decay_rate  # decay rate
+
+    def save_weights(self, name):
+        torch.save(self.mainQNetwork.state_dict(), os.path.join(
+            self.configs['current_path'], 'training_data', 'model', name+'.h5'))
+        torch.save(self.targetQNetwork.state_dict(), os.path.join(
+            self.configs['current_path'], 'training_data', 'model', name+'_target.h5'))
+
+    def load_weights(self, name):
+        self.mainQNetwork.load_state_dict(torch.load(os.path.join(
+            self.configs['current_path'], 'training_data', 'model', name+'.h5')))
+        self.mainQNetwork.eval()
