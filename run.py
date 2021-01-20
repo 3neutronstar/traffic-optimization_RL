@@ -18,10 +18,33 @@ configs['output_size'] = 8*len(configs['tl_rl_list'])
 configs['action_space'] = 1*len(configs['tl_rl_list'])
 configs['state_space'] = 5*len(configs['tl_rl_list'])
 
+interest_list = [
+    {
+        'id': 'u_1_1',
+        'inflow': 'n_1_0_to_n_1_1',
+        'outflow': 'n_1_1_to_n_1_2',
+    },
+    {
+        'id': 'r_1_1',
+        'inflow': 'n_2_1_to_n_1_1',
+        'outflow': 'n_1_1_to_n_0_1',
+    },
+    {
+        'id': 'd_1_1',
+        'inflow': 'n_1_2_to_n_1_1',
+        'outflow': 'n_1_1_to_n_1_0',
+    },
+    {
+        'id': 'l_1_1',
+        'inflow': 'n_0_1_to_n_1_1',
+        'outflow': 'n_1_1_to_n_2_1',
+    }
+]
+
 
 def save_params(configs, time_data):
     with open(os.path.join(configs['current_path'], 'training_data', '{}_{}.json'.format(configs['file_name'], time_data)), 'w') as fp:
-        json.dump(configs, fp,indent=2)
+        json.dump(configs, fp, indent=2)
 
 
 def load_params(configs, file_name):
@@ -40,7 +63,7 @@ def parse_args(args):
     # required input parameters
     parser.add_argument(
         'mode', type=str,
-        help='train or test')
+        help='train or test, simulate')
     parser.add_argument(
         '--network', type=str, default='grid',
         help='choose network in Env')
@@ -56,7 +79,6 @@ def parse_args(args):
 
 def train(flags, configs, sumoConfig):
     # init train setting
-    configs['mode'] = 'train'
     time_data = time.strftime('%m-%d_%H-%M-%S', time.localtime(time.time()))
     # check gui option
     if flags.disp == 'yes':
@@ -78,17 +100,21 @@ def train(flags, configs, sumoConfig):
     epoch = 0
     while epoch < NUM_EPOCHS:
         traci.start(sumoCmd)
-        traci.trafficlight.setRedYellowGreenState(tl_rl_list[0],'g{0}rrg{1}rrg{0}rrg{1}rr'.format('G'*configs['num_lanes'],'r'*configs['num_lanes']))
+        traci.trafficlight.setRedYellowGreenState(tl_rl_list[0],'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format('G'*configs['num_lanes'],'G','r'*configs['num_lanes'],'r'))
         env = TL1x1Env(tl_rl_list, configs)
         # env = GridEnv( configs)
         step = 0
         loss = 0
         done = False
         # state initialization
-        state = env.get_state()
         # agent setting
         total_reward = 0
+        reward = 0
         arrived_vehicles = 0
+        # for _ in range(250): # for stable learning
+        #     traci.simulationStep()
+        #     step += 1
+        state = env.get_state()
         while step < MAX_STEPS:
             '''
             # state=env.get_state(action) #partial하게는 env에서 조정
@@ -106,38 +132,41 @@ def train(flags, configs, sumoConfig):
             set yi
             '''
 
-            action = agent.get_action(state)
+            action = agent.get_action(state, reward)
             env.step(action)  # action 적용함수
             for _ in range(20):  # 10초마다 행동 갱신
                 env.collect_state()
+                arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
                 traci.simulationStep()
                 step += 1
 
-            env.collect_state() # 1번더
+            env.collect_state()  # 1번더
             reward = env.get_reward()
             next_state = env.get_state()
-            agent.save_replay(state, action, reward, next_state)
+            agent.save_replay(state, action, reward, next_state) #dqn
             agent.update(done)
-
 
             state = next_state
             total_reward += reward
             loss += agent.get_loss()  # 총 loss
-            step += 1
             if step > MAX_STEPS:
                 done = True
             arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
+
+            step += 1
             traci.simulationStep()
-            # 20초 끝나고 yellow 5초
+            env.collect_state() 
+
+            # 20초 끝나고 yellow 4초
             traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'y'*28)
-            for _ in range(4):
-                env.collect_state() # 4번더
+
+            for _ in range(4):# 4번더
                 traci.simulationStep()
+                arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
                 env.collect_state()
                 step += 1
             if step % 200 == 0:
-                agent.target_update()
-            
+                agent.target_update() #dqn
 
         traci.close()
         epoch += 1
@@ -159,14 +188,13 @@ def train(flags, configs, sumoConfig):
 
 def test(flags, configs, sumoConfig):
     # init test setting
-    configs['mode'] = 'test'
     sumoBinary = checkBinary('sumo-gui')
     sumoCmd = [sumoBinary, "-c", sumoConfig]
 
     # setting the rl list
     tl_rl_list = configs['tl_rl_list']
     MAX_STEPS = configs['max_steps']
-
+    reward=0
     traci.start(sumoCmd)
     agent = Trainer(configs)
     # setting the replay
@@ -183,7 +211,7 @@ def test(flags, configs, sumoConfig):
     with torch.no_grad():
         while step < MAX_STEPS:
 
-            action = agent.get_action(state)
+            action = agent.get_action(state, reward)
             env.step(action)  # action 적용함수
             for _ in range(20):  # 10초마다 행동 갱신
                 env.collect_state()
@@ -198,7 +226,7 @@ def test(flags, configs, sumoConfig):
 
             reward = env.get_reward()
             next_state = env.get_state()
-            agent.save_replay(state, action, reward, next_state)
+            # agent.save_replay(state, action, reward, next_state)
             state = next_state
             total_reward += reward
             step += 1
@@ -214,6 +242,36 @@ def test(flags, configs, sumoConfig):
         traci.close()
         print('======== return: {} arrived number:{}'.format(
             total_reward, arrived_vehicles))
+
+
+def simulate(flags, configs, sumoConfig):
+    sumoBinary = checkBinary('sumo-gui')
+    sumoCmd = [sumoBinary, "-c", sumoConfig]
+    MAX_STEPS = configs['max_steps']
+    tl_rl_list = configs['tl_rl_list']
+    traci.start(sumoCmd)
+    traci.simulation.subscribe([tc.VAR_ARRIVED_VEHICLES_NUMBER])
+    avg_waiting_time = 0
+    avg_velocity = 0
+    step = 0
+    # agent setting
+    arrived_vehicles = 0
+    travel_times = 0
+    while step < MAX_STEPS:
+
+        traci.simulationStep()
+        step += 1
+        for _, edge in enumerate(interest_list):
+            avg_waiting_time += traci.edge.getWaitingTime(edge['inflow'])
+        travel_end_list = traci.simulation.getArrivedIDList()
+        if len(travel_end_list) != 0:
+            for _, vehicles in enumerate(travel_end_list):
+                travel_times += traci.vehicle.get
+        arrived_vehicles+=traci.simulation.getAllSubscriptionResults()[0x79]# throughput
+
+    traci.close()
+    print('======== arrived number:{} avg waiting time:{},avg velocity{}'.format(
+        arrived_vehicles, avg_waiting_time, avg_velocity))
 
 
 def main(args):
@@ -245,6 +303,11 @@ def main(args):
         sumoConfig = os.path.join(
             configs['current_path'], 'Net_data', configs['file_name']+'_test.sumocfg')
         test(flags, configs, sumoConfig)
+    else:  # simulate
+        configs['mode'] = 'simulate'
+        sumoConfig = os.path.join(
+            configs['current_path'], 'Net_data', configs['file_name']+'_simulate.sumocfg')
+        simulate(flags, configs, sumoConfig)
 
     # check the environment
     if 'SUMO_HOME' in os.environ:

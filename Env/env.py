@@ -158,15 +158,14 @@ class TL1x1Env(baseEnv):
         g='G'
         r='r'
         phase_list=[
-            'g{0}{1}rg{2}{3}rg{2}{3}rg{2}{3}r'.format(g*num_lanes,g,r*num_lanes,r),
-            'g{2}{1}rg{2}{3}rg{2}{1}rg{2}{3}r'.format(g*num_lanes,g,r*num_lanes,r),
-            'g{2}{3}rg{2}{3}rg{0}{1}rg{2}{3}r'.format(g*num_lanes,g,r*num_lanes,r),
-            'g{0}{3}rg{2}{3}rg{0}{3}rg{2}{3}r'.format(g*num_lanes,g,r*num_lanes,r),
-            'g{2}{3}rg{1}{1}rg{2}{3}rg{1}{1}r'.format(g*num_lanes,g,r*num_lanes,r),
-            'g{2}{3}rg{0}{1}rg{2}{3}rg{2}{3}r'.format(g*num_lanes,g,r*num_lanes,r),
-            'g{2}{3}rg{2}{3}rg{2}{3}rg{0}{1}r'.format(g*num_lanes,g,r*num_lanes,r),
-            'g{2}{3}rg{2}{1}rg{2}{3}rg{2}{1}r'.format(g*num_lanes,g,r*num_lanes,r),
-            'g{2}{3}rg{0}{3}rg{2}{3}rg{0}{3}r'.format(g*num_lanes,g,r*num_lanes,r),
+            'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(g*num_lanes,g,r*num_lanes,r),
+            'r{2}{1}gr{2}{3}rr{2}{1}gr{2}{3}r'.format(g*num_lanes,g,r*num_lanes,r),
+            'r{2}{3}rr{2}{3}rG{0}{1}gr{2}{3}r'.format(g*num_lanes,g,r*num_lanes,r),
+            'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(g*num_lanes,g,r*num_lanes,r),
+            'r{2}{3}rG{0}{1}gr{2}{3}rr{2}{3}r'.format(g*num_lanes,g,r*num_lanes,r),
+            'r{2}{3}rr{2}{3}rr{2}{3}rG{0}{1}g'.format(g*num_lanes,g,r*num_lanes,r),
+            'r{2}{3}rr{2}{1}gr{2}{3}rr{2}{1}r'.format(g*num_lanes,g,r*num_lanes,r),
+            'r{2}{3}rG{0}{3}rr{2}{3}rG{0}{3}g'.format(g*num_lanes,g,r*num_lanes,r),
 
         ]
         return phase_list
