@@ -164,13 +164,13 @@ class GridNetwork(Network):
                                     via_string += 'n_{}_{}_to_n_{}_{} '.format(
                                         i, node_x_y, i+1, node_x_y)
                             elif 'u' in edge['id']:
-                                for i in range(self.configs['grid_num']-1, 0, -1):
-                                    via_string += 'n_{}_{}_to_n_{}_{} '.format(
-                                        node_x_y, i, node_x_y, i-1)
-                            elif 'd' in edge['id']:
                                 for i in range(self.configs['grid_num']-2):
                                     via_string += 'n_{}_{}_to_n_{}_{} '.format(
                                         node_x_y, i, node_x_y, i+1)
+                            elif 'd' in edge['id']:
+                                for i in range(self.configs['grid_num']-1,0,-1):
+                                    via_string += 'n_{}_{}_to_n_{}_{} '.format(
+                                        node_x_y, i, node_x_y, i-1)
 
                             flows.append({
                                 'from': edge['id'],
@@ -180,7 +180,7 @@ class GridNetwork(Network):
                                 'end': str(self.configs['flow_end']),
                                 'probability': self.configs['probability'],
                                 'reroute': 'false',
-                                # 'via': edge['id']+" "+via_string+" "+checkEdge['id'],
+                                'via': edge['id']+" "+via_string+" "+checkEdge['id'],
                                 'departPos': "base",
                                 'departLane': 'best',
                                 'departSpeed': 'max',

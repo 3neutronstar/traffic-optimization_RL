@@ -144,6 +144,9 @@ class Network():
     def _generate_net_xml(self):
         # file_name_str=os.path.join(self.current_Env_path,self.file_name)
         file_name_str = os.path.join(self.current_Env_path, self.file_name)
+        if len(self.traffic_light) != 0:
+            os.system('netconvert -n {0}.nod.xml -e {0}.edg.xml -a {0}.add.xml -o {0}.net.xml'.format(
+                file_name_str))
         if len(self.connections) == 0:
             os.system('netconvert -n {}.nod.xml -e {}.edg.xml -o {}.net.xml'.format(
                 file_name_str, file_name_str, file_name_str))
@@ -184,8 +187,8 @@ class Network():
     def generate_cfg(self, route_exist, mode='simulate'):
         self._generate_nod_xml()
         self._generate_edg_xml()
-        self._generate_net_xml()
         self._generate_add_xml()
+        self._generate_net_xml()
         sumocfg = ET.Element('configuration')
         inputXML = ET.SubElement(sumocfg, 'input')
         inputXML.append(
