@@ -166,6 +166,5 @@ class TL1x1Env(baseEnv):
             'r{2}{3}rr{2}{3}rr{2}{3}rG{0}{1}g'.format(g*num_lanes,g,r*num_lanes,r),
             'r{2}{3}rr{2}{1}gr{2}{3}rr{2}{1}r'.format(g*num_lanes,g,r*num_lanes,r),
             'r{2}{3}rG{0}{3}rr{2}{3}rG{0}{3}g'.format(g*num_lanes,g,r*num_lanes,r),
-
         ]
         return phase_list
