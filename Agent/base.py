@@ -11,15 +11,25 @@ class RLAlgorithm():
         super().__init__()
         self.configs = configs
 
-    def get_action(self):
+    def get_action(self, state):
         '''
+        return action (torch Tensor (1,action_space))
         상속을 위한 함수
         '''
         raise NotImplementedError
 
     def get_loss(self):
         '''
+        return loss.item()
         반드시 get_action뒤에 사용
+        상속을 위한 함수
+        '''
+        raise NotImplementedError
+
+    def update(self):
+        '''
+        return None
+        반드시 get_action뒤에 사용 및 backpropagation update 함수
         상속을 위한 함수
         '''
         raise NotImplementedError

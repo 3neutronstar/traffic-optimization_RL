@@ -74,14 +74,15 @@ class Trainer(RLAlgorithm):
             self.mainQNetwork.parameters(), lr=configs['learning_rate'])
         self.targetQNetwork.eval()
         self.mainQNetwork.train()  # train모드로 설정
-
+        self.rewards = []
         self.running_loss = 0
         if self.configs['mode'] == 'train':
             self.mainQNetwork.train()
         elif self.configs['mode'] == 'test':
             self.mainQNetwork.eval()
 
-    def get_action(self, state):
+    def get_action(self, state, reward):
+        self.rewards.append(reward)
         sample = random.random()
         with torch.no_grad():
             self.Q = self.mainQNetwork(state)
