@@ -217,7 +217,7 @@ class GridNetwork(Network):
                 traffic_lights.append({
                     'id': 'n_{}_{}'.format(i, j),
                     'type': 'static',
-                    'programID': '0',
+                    'programID': 'MyProgram',
                     'offset': '0',
                     'phase': phase_set,
                 })
