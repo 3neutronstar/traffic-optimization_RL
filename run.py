@@ -100,7 +100,8 @@ def train(flags, configs, sumoConfig):
     epoch = 0
     while epoch < NUM_EPOCHS:
         traci.start(sumoCmd)
-        traci.trafficlight.setRedYellowGreenState(tl_rl_list[0],'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format('G'*configs['num_lanes'],'G','r'*configs['num_lanes'],'r'))
+        traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(
+            'G'*configs['num_lanes'], 'G', 'r'*configs['num_lanes'], 'r'))
         env = TL1x1Env(tl_rl_list, configs)
         # env = GridEnv( configs)
         step = 0
@@ -143,7 +144,7 @@ def train(flags, configs, sumoConfig):
             env.collect_state()  # 1번더
             reward = env.get_reward()
             next_state = env.get_state()
-            agent.save_replay(state, action, reward, next_state) #dqn
+            agent.save_replay(state, action, reward, next_state)  # dqn
             agent.update(done)
 
             state = next_state
@@ -155,18 +156,18 @@ def train(flags, configs, sumoConfig):
 
             step += 1
             traci.simulationStep()
-            env.collect_state() 
+            env.collect_state()
 
             # 20초 끝나고 yellow 4초
             traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'y'*28)
 
-            for _ in range(4):# 4번더
+            for _ in range(4):  # 4번더
                 traci.simulationStep()
                 arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
                 env.collect_state()
                 step += 1
             if step % 200 == 0:
-                agent.target_update() #dqn
+                agent.target_update()  # dqn
 
         traci.close()
         epoch += 1
@@ -194,7 +195,7 @@ def test(flags, configs, sumoConfig):
     # setting the rl list
     tl_rl_list = configs['tl_rl_list']
     MAX_STEPS = configs['max_steps']
-    reward=0
+    reward = 0
     traci.start(sumoCmd)
     agent = Trainer(configs)
     # setting the replay
@@ -264,14 +265,16 @@ def simulate(flags, configs, sumoConfig):
         for _, edge in enumerate(interest_list):
             avg_waiting_time += traci.edge.getWaitingTime(edge['inflow'])
         travel_end_list = traci.simulation.getArrivedIDList()
-        if len(travel_end_list) != 0:
-            for _, vehicles in enumerate(travel_end_list):
-                travel_times += traci.vehicle.get
-        arrived_vehicles+=traci.simulation.getAllSubscriptionResults()[0x79]# throughput
+        # if len(travel_end_list) != 0:
+        #     for _, vehicles in enumerate(travel_end_list):
+        # travel_times += traci.vehicle.get
+
+        arrived_vehicles += traci.simulation.getAllSubscriptionResults()[
+            ''][0x79]  # throughput
 
     traci.close()
     print('======== arrived number:{} avg waiting time:{},avg velocity{}'.format(
-        arrived_vehicles, avg_waiting_time, avg_velocity))
+        arrived_vehicles, avg_waiting_time/MAX_STEPS, avg_velocity))
 
 
 def main(args):
