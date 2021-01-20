@@ -238,14 +238,15 @@ class Network():
         additional.append(E('laneData', attrib={'id': 'laneData_00', 'file': '{}_lane.xml'.format(self.current_path+'/data/'+self.file_name), 'begin': '0', 'end': str(
             self.configs['max_steps']), 'freq': '1000'}))
         indent(additional, 1)
+        dump(additional)
         if len(self.traffic_light) != 0 or self.configs['mode'] == 'simulate':
             for _, tl in enumerate(traffic_light_set):
                 phase_set = tl.pop('phase')
                 tlLogic = ET.SubElement(additional, 'tlLogic', attrib=tl)
                 indent(additional, 1)
-            for _, phase in enumerate(phase_set):
-                tlLogic.append(E('phase', attrib=phase))
-                indent(additional, 2)
+                for _, phase in enumerate(phase_set):
+                    tlLogic.append(E('phase', attrib=phase))
+                    indent(additional, 2)
 
         dump(additional)
         tree = ET.ElementTree(additional)

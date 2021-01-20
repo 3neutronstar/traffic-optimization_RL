@@ -246,7 +246,7 @@ def test(flags, configs, sumoConfig):
 
 
 def simulate(flags, configs, sumoConfig):
-    sumoBinary = checkBinary('sumo-gui')
+    sumoBinary = checkBinary('sumo')
     sumoCmd = [sumoBinary, "-c", sumoConfig]
     MAX_STEPS = configs['max_steps']
     tl_rl_list = configs['tl_rl_list']
@@ -257,23 +257,24 @@ def simulate(flags, configs, sumoConfig):
     step = 0
     # agent setting
     arrived_vehicles = 0
-    travel_times = 0
+    avg_velocity = 0
     while step < MAX_STEPS:
 
         traci.simulationStep()
         step += 1
         for _, edge in enumerate(interest_list):
             avg_waiting_time += traci.edge.getWaitingTime(edge['inflow'])
-        travel_end_list = traci.simulation.getArrivedIDList()
-        # if len(travel_end_list) != 0:
-        #     for _, vehicles in enumerate(travel_end_list):
-        # travel_times += traci.vehicle.get
+        vehicle_list = traci.vehicle.getIDList()
+        for i, vehicle in enumerate(vehicle_list):
+            speed = traci.vehicle.getSpeed(vehicle)
+            avg_velocity = float((i)*avg_velocity+speed) / \
+                float(i+1)  # incremental avg
 
         arrived_vehicles += traci.simulation.getAllSubscriptionResults()[
             ''][0x79]  # throughput
 
     traci.close()
-    print('======== arrived number:{} avg waiting time:{},avg velocity{}'.format(
+    print('======== arrived number:{} avg waiting time:{},avg velocity:{}'.format(
         arrived_vehicles, avg_waiting_time/MAX_STEPS, avg_velocity))
 
 

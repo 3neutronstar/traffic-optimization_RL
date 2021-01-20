@@ -168,7 +168,7 @@ class GridNetwork(Network):
                                     via_string += 'n_{}_{}_to_n_{}_{} '.format(
                                         node_x_y, i, node_x_y, i+1)
                             elif 'd' in edge['id']:
-                                for i in range(self.configs['grid_num']-1,0,-1):
+                                for i in range(self.configs['grid_num']-1, 0, -1):
                                     via_string += 'n_{}_{}_to_n_{}_{} '.format(
                                         node_x_y, i, node_x_y, i-1)
 
@@ -202,16 +202,16 @@ class GridNetwork(Network):
             for j in range(self.grid_num):
                 phase_set = [
                     {'duration': '42',
-                     'state': 'g{}rg{}rg{}rg{}r'.format('G'*nl, 'r'*nl, 'G'*nl, 'r'*nl),
+                     'state': 'G{}ggr{}rrG{}ggr{}rr'.format('G'*nl, 'r'*nl, 'G'*nl, 'r'*nl),
                      },
                     {'duration': '3',
-                     'state': 'g{}rg{}rg{}rg{}r'.format('y'*nl, 'r'*nl, 'y'*nl, 'r'*nl),
+                     'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*nl, 'r'*nl, 'y'*nl, 'r'*nl),
                      },
                     {'duration': '42',
-                     'state': 'g{}rg{}rg{}rg{}r'.format('r'*nl, 'G'*nl, 'r'*nl, 'G'*nl),
+                     'state': 'r{}rrG{}ggr{}rrG{}gg'.format('r'*nl, 'G'*nl, 'r'*nl, 'G'*nl),
                      },
                     {'duration': '3',
-                     'state': 'g{}rg{}rg{}rg{}r'.format('r'*nl, 'y'*nl, 'r'*nl, 'y'*nl),
+                     'state': 'r{}rry{}yyr{}rry{}yy'.format('r'*nl, 'y'*nl, 'r'*nl, 'y'*nl),
                      }
                 ]
                 traffic_lights.append({
