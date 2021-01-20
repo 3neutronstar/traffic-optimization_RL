@@ -149,12 +149,12 @@ class GridNetwork(Network):
                     for _, checkEdge in enumerate(self.edges):
                         if edge['from'][-3] == checkEdge['to'][-3] and checkEdge['to'][-1] == direction_list[3-i] and direction_list[i] in edge['from']:
 
-                            if checkEdge['to'][-1]==direction_list[1] or checkEdge['to'][-1]==direction_list[2]:
-                                self.configs['probability']='0.2'
+                            if checkEdge['to'][-1] == direction_list[1] or checkEdge['to'][-1] == direction_list[2]:
+                                self.configs['probability'] = '0.2'
                             else:
-                                self.configs['probability']='0.5'
+                                self.configs['probability'] = '0.5'
                             via_string = str()
-                            node_x_y = edge['id'][2] # 끝에서 사용하는 기준 x나 y
+                            node_x_y = edge['id'][2]  # 끝에서 사용하는 기준 x나 y
                             if 'r' in edge['id']:
                                 for i in range(self.configs['grid_num']-1, 0, -1):
                                     via_string += 'n_{}_{}_to_n_{}_{} '.format(
@@ -179,11 +179,11 @@ class GridNetwork(Network):
                                 'begin': str(self.configs['flow_start']),
                                 'end': str(self.configs['flow_end']),
                                 'probability': self.configs['probability'],
-                                'reroute':'false',
+                                'reroute': 'false',
                                 # 'via': edge['id']+" "+via_string+" "+checkEdge['id'],
-                                'departPos':"base",
-                                'departLane':'best',
-                                'departSpeed':'max',
+                                'departPos': "base",
+                                'departLane': 'best',
+                                'departSpeed': 'max',
                             })
 
         self.flows = flows
@@ -194,6 +194,56 @@ class GridNetwork(Network):
 
         self.connections = connections
         return connections
+
+    def specify_traffic_light(self):
+        traffic_lights = []
+        nl = self.configs['num_lanes']
+        for i in range(self.grid_num):
+            for j in range(self.grid_num):
+                phase_set = [
+                    {'duration': '42',
+                     'state': 'g{}rg{}rg{}rg{}r'.format('G'*nl, 'r'*nl, 'G'*nl, 'r'*nl),
+                     },
+                    {'duration': '3',
+                     'state': 'g{}rg{}rg{}rg{}r'.format('y'*nl, 'r'*nl, 'y'*nl, 'r'*nl),
+                     },
+                    {'duration': '42',
+                     'state': 'g{}rg{}rg{}rg{}r'.format('r'*nl, 'G'*nl, 'r'*nl, 'G'*nl),
+                     },
+                    {'duration': '3',
+                     'state': 'g{}rg{}rg{}rg{}r'.format('r'*nl, 'y'*nl, 'r'*nl, 'y'*nl),
+                     }
+                ]
+                traffic_lights.append({
+                    'id': 'n_{}_{}'.format(i, j),
+                    'type': 'static',
+                    'programID': '0',
+                    'offset': '0',
+                    'phase': phase_set,
+                })
+        rl_phase_set = [
+            {'duration': '60',
+             'state': 'g{}ggr{}rrg{}ggr{}rr'.format('G'*nl, 'r'*nl, 'G'*nl, 'r'*nl),
+             },
+            {'duration': '3',
+             'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*nl, 'r'*nl, 'y'*nl, 'r'*nl),
+             },
+            {'duration': '24',
+             'state': 'r{}rrg{}ggr{}rrg{}gg'.format('r'*nl, 'G'*nl, 'r'*nl, 'G'*nl),
+             },
+            {'duration': '3',
+             'state': 'r{}rry{}yyr{}rry{}yy'.format('r'*nl, 'y'*nl, 'r'*nl, 'y'*nl),
+             }
+        ]
+        traffic_lights.append({
+            'id': 'n_1_1',
+            'type': 'static',
+            'programID': 'myProgram',
+            'offset': '0',
+            'phase': rl_phase_set,
+        })
+
+        return traffic_lights
 
 
 if __name__ == "__main__":

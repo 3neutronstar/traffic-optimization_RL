@@ -225,8 +225,8 @@ class Network():
                        pretty_print=True, encoding='UTF-8', xml_declaration=True)
 
     def _generate_add_xml(self):
-        self.traffic_light = self.specify_traffic_light()
-
+        traffic_light_set = self.specify_traffic_light()
+        self.traffic_light = traffic_light_set
         additional = ET.Element('additional')
         # edgeData와 landData파일의 생성위치는 data
         additional.append(E('edgeData', attrib={'id': 'edgeData_00', 'file': '{}_edge.xml'.format(self.current_path+'/data/'+self.file_name), 'begin': '0', 'end': str(
@@ -235,13 +235,15 @@ class Network():
         additional.append(E('laneData', attrib={'id': 'laneData_00', 'file': '{}_lane.xml'.format(self.current_path+'/data/'+self.file_name), 'begin': '0', 'end': str(
             self.configs['max_steps']), 'freq': '1000'}))
         indent(additional, 1)
-        if len(self.traffic_light) != 0:
-            tlLogic = ET.SubElement(additional, 'tlLogic', attrib={
-                                    'programID': '{}'.format('myprogram'), 'offset': '0', 'type': 'static'})
-            tlLogic.append(E('phase', attrib={'duration': '{}'.format(
-                '42'), 'state': 'rrrrrrrrrrrrrrrrrrr'}))
-            tlLogic.append(E('phase', attrib={'duration': '{}'.format(
-                '42'), 'state': 'ggggggggggggggggggg'}))
+        if len(self.traffic_light) != 0 or self.configs['mode'] == 'simulate':
+            for _, tl in enumerate(traffic_light_set):
+                phase_set = tl.pop('phase')
+                tlLogic = ET.SubElement(additional, 'tlLogic', attrib=tl)
+                indent(additional, 1)
+            for _, phase in enumerate(phase_set):
+                tlLogic.append(E('phase', attrib=phase))
+                indent(additional, 2)
+
         dump(additional)
         tree = ET.ElementTree(additional)
         tree.write(os.path.join(self.current_Env_path, self.file_name+'.add.xml'),
