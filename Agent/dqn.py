@@ -15,7 +15,7 @@ DEFAULT_CONFIG = {
     'tau': 0.995,
     'batch_size': 32,
     'experience_replay_size': 1e5,
-    'epsilon': 0.5,
+    'epsilon': 0.9,
     'epsilon_decay_rate': 0.95
 }
 
@@ -102,7 +102,7 @@ class Trainer(RLAlgorithm):
                 self.action+=tuple(action)
             return action
         else:
-            action = torch.tensor([random.randint(0, 1)
+            action = torch.tensor([random.randint(0, 7)
                                    for i in range(self.action_space)], device=self.configs['device']).view(1, 1)
             self.action+=tuple(action)
             return action
