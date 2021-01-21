@@ -73,10 +73,12 @@ def test(flags, configs, sumoConfig):
     # agent setting
     total_reward = 0
     arrived_vehicles = 0
+    action_distribution=tuple()
     with torch.no_grad():
         while step < MAX_STEPS:
 
             action = agent.get_action(state, reward)
+            action_distribution+=action
             env.step(action)  # action 적용함수
             for _ in range(20):  # 10초마다 행동 갱신
                 env.collect_state()
@@ -101,9 +103,9 @@ def test(flags, configs, sumoConfig):
             # loss += agent.get_loss()  # 총 loss
             arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
             traci.simulationStep()
-            if step % 200 == 0:
-                agent.target_update()
+            # if step % 200 == 0:
 
+        agent.target_update()
         traci.close()
         print('======== return: {} arrived number:{}'.format(
             total_reward, arrived_vehicles))

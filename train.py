@@ -63,10 +63,9 @@ def dqn_train(configs,time_data,sumoCmd):
         total_reward = 0
         reward = 0
         arrived_vehicles = 0
-        # for _ in range(250): # for stable learning
-        #     traci.simulationStep()
-        #     step += 1
         state = env.get_state()
+        action_distribution=tuple()
+        a=time.time()
         while step < MAX_STEPS:
             '''
             # state=env.get_state(action) #partial하게는 env에서 조정
@@ -85,6 +84,7 @@ def dqn_train(configs,time_data,sumoCmd):
             '''
 
             action = agent.get_action(state, reward)
+            action_distribution+=tuple(action.unsqueeze(1))
             env.step(action)  # action 적용함수
             for _ in range(20):  # 10초마다 행동 갱신
                 env.collect_state()
@@ -122,7 +122,9 @@ def dqn_train(configs,time_data,sumoCmd):
                     agent.target_update()  # dqn
                 agent.update_hyperparams(epoch) # lr and epsilon upate
 
+        b=time.time()
         traci.close()
+        print("time:", b-a)
         epoch += 1
         # once in an epoch
         update_tensorboard(writer,epoch,env,agent,arrived_vehicles)

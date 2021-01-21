@@ -16,7 +16,7 @@ DEFAULT_CONFIG = {
     'batch_size': 32,
     'experience_replay_size': 1e5,
     'epsilon': 0.5,
-    'epsilon_decay_rate': 0.97
+    'epsilon_decay_rate': 0.95
 }
 
 Transition = namedtuple('Transition',
@@ -38,9 +38,9 @@ class QNetwork(nn.Module):
         self.fc3 = nn.Linear(30, self.output_size)
 
     def forward(self, x):
-        x=f.leaky_relu(self.fc1(x))
-        x=f.leaky_relu(self.fc2(x))
-        x=f.leaky_relu(self.fc3(x))
+        x=f.relu(self.fc1(x))
+        x=f.relu(self.fc2(x))
+        x=f.softmax(self.fc3(x),dim=1)
         return x  # q value
 
 
@@ -77,6 +77,7 @@ class Trainer(RLAlgorithm):
         self.targetQNetwork.eval()
         self.mainQNetwork.train()  # train모드로 설정
         self.rewards = []
+        self.action=tuple()
         self.running_loss = 0
         if self.configs['mode'] == 'train':
             self.mainQNetwork.train()
@@ -91,10 +92,12 @@ class Trainer(RLAlgorithm):
             # self.Q=self.Q.reshape(2,8) # Q value를 max값 선택하게
         _, action = torch.max(self.Q, dim=1)  # 가로로
         if sample < self.epsilon:
+            self.action+=tuple(action.unsqueeze(1))
             return action
         else:
-            action = torch.tensor([random.randint(0, 1)
+            action = torch.tensor([random.randint(0, 7)
                                    for i in range(self.action_space)], device=self.configs['device'])
+            self.action+=tuple(action.unsqueeze(1))
             return action
 
 
@@ -124,7 +127,7 @@ class Trainer(RLAlgorithm):
         non_final_next_states = torch.cat([s for s in batch.next_state
                                            if s is not None], dim=0).float()
         state_batch = torch.cat(batch.state, dim=0)
-        action_batch = torch.cat(batch.action, dim=0)
+        # action_batch = torch.cat(batch.action, dim=0) #안쓰지만 배치함
 
         # reward_batch = torch.cat(torch.tensor(batch.reward, dim=0)
         reward_batch = torch.tensor(batch.reward).reshape(
@@ -161,8 +164,8 @@ class Trainer(RLAlgorithm):
 
     def update_hyperparams(self,epoch):
         # decay rate (epsilon greedy)
-        if self.epsilon > 0.05:
-            self.epsilon*=0.98
+        if self.epsilon > 0.005:
+            self.epsilon*=self.epsilon_decay_rate
 
         # decay learning rate
         if self.lr>0.01*self.lr:
@@ -184,5 +187,11 @@ class Trainer(RLAlgorithm):
                           self.configs['max_steps']*epoch)  # 1 epoch마다
         writer.add_scalar('hyperparameter/lr',self.lr,self.configs['max_steps']*epoch)
         writer.add_scalar('hyperparameter/epsilon',self.epsilon,self.configs['max_steps']*epoch)
+
+        
+        action_distribution=torch.cat(self.action,0)
+        writer.add_histogram('hist/episode/action_distribution', action_distribution,
+                        epoch)  # 1 epoch마다
+        self.action=tuple()
         # clear 
         self.running_loss=0

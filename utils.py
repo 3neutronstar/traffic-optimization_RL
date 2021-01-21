@@ -1,4 +1,5 @@
 import os,json
+import torch
 from gen_net import configs
 def save_params(configs, time_data):
     with open(os.path.join(configs['current_path'], 'training_data', '{}_{}.json'.format(configs['file_name'], time_data)), 'w') as fp:
@@ -17,6 +18,7 @@ def update_tensorboard(writer,epoch,env,agent,arrived_vehicles):
     agent.update_tensorboard(writer,epoch)
     writer.add_scalar('episode/arrived_num', arrived_vehicles,
                         configs['max_steps']*epoch)  # 1 epoch마다
+
     writer.flush()
 
 

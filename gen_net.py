@@ -145,7 +145,6 @@ class Network():
         # file_name_str=os.path.join(self.current_Env_path,self.file_name)
         file_name_str = os.path.join(self.current_Env_path, self.file_name)
         if len(self.traffic_light) != 0:
-            print("xxxxxx")
             os.system('netconvert -n {0}.nod.xml -e {0}.edg.xml -i {0}_tl.add.xml -o {0}.net.xml'.format(
                 file_name_str))
         elif len(self.connections) == 0:
