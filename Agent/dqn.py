@@ -162,7 +162,7 @@ class Trainer(RLAlgorithm):
     def update_hyperparams(self,epoch):
         # decay rate (epsilon greedy)
         if self.epsilon > 0.05:
-            self.epsilon*=(1.0/(1.0+self.epsilon_decay_rate*epoch))
+            self.epsilon*=0.98
 
         # decay learning rate
         if self.lr>0.01*self.lr:

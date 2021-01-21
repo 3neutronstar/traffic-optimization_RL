@@ -5,7 +5,7 @@ from Env.base import baseEnv
 from copy import deepcopy
 
 
-class TL1x1Env(baseEnv):
+class TL3x3Env(baseEnv):
     def __init__(self, tl_rl_list, configs):
         self.configs = configs
         self.tl_rl_list = tl_rl_list

@@ -19,6 +19,18 @@ class RLAlgorithm():
         '''
         raise NotImplementedError
 
+    def update_hyperparams(self,epoch):
+        '''
+        상속을 위한 함수
+        '''
+        raise NotImplementedError
+
+    def update_tensorboard(self,writer,epoch):
+        '''
+        상속을 위한 함수
+        '''
+        raise NotImplementedError
+
 
 
 Transition = namedtuple('Transition',
