@@ -166,8 +166,9 @@ def train(flags, configs, sumoConfig):
                 arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
                 env.collect_state()
                 step += 1
-            if step % 200 == 0:
+            if step % 1000 == 0:
                 agent.target_update()  # dqn
+                agent.update_hyperparams() # lr and epsilon upate
 
         traci.close()
         epoch += 1

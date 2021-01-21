@@ -14,8 +14,8 @@ DEFAULT_CONFIG = {
     'tau': 0.995,
     'batch_size': 32,
     'experience_replay_size': 1e5,
-    'epsilon': 0.3,
-    'decay_rate': 0.95
+    'epsilon': 0.5,
+    'epsilon_decay_rate': 0.95
 }
 
 Transition = namedtuple('Transition',
@@ -53,7 +53,8 @@ class Trainer(RLAlgorithm):
         self.gamma = self.configs['gamma']
         self.epsilon = self.configs['epsilon']
         self.criterion = nn.MSELoss()
-        self.decay_rate = self.configs['decay_rate']
+        self.lr=self.configs['lr']
+        self.epsilon_decay_rate = self.configs['epsilon_decay_rate']
         self.experience_replay = ReplayMemory(
             self.configs['experience_replay_size'])
         self.batch_size = self.configs['batch_size']
@@ -71,7 +72,7 @@ class Trainer(RLAlgorithm):
         self.mainQNetwork = deepcopy(model).to(self.configs['device'])
         self.targetQNetwork = deepcopy(model).to(self.configs['device'])
         self.optimizer = optim.Adam(
-            self.mainQNetwork.parameters(), lr=configs['learning_rate'])
+            self.mainQNetwork.parameters(), lr=self.lr)
         self.targetQNetwork.eval()
         self.mainQNetwork.train()  # train모드로 설정
         self.rewards = []
@@ -159,8 +160,19 @@ class Trainer(RLAlgorithm):
         #     param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
 
-        if self.epsilon > 0.2:
-            self.epsilon *= self.decay_rate  # decay rate
+    def update_hyperparams(self):
+        # decay rate (epsilon greedy)
+        if self.epsilon > 0.05:
+            self.epsilon *= self.epsilon_decay_rate
+
+        # decay learning rate
+        if self.lr>0.01*self.lr:
+            self.lr=0.95*self.lr
+        
+
+        print("learning rate: {}, epsilon: {}".format(self.lr,self.epsilon))
+
+
 
     def save_weights(self, name):
         torch.save(self.mainQNetwork.state_dict(), os.path.join(
