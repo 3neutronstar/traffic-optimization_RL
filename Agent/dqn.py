@@ -38,8 +38,8 @@ class QNetwork(nn.Module):
         self.fc3 = nn.Linear(30, self.output_size)
 
     def forward(self, x):
-        x=f.relu(self.fc1(x))
-        x=f.relu(self.fc2(x))
+        x=f.leaky_relu(self.fc1(x))
+        x=f.leaky_relu(self.fc2(x))
         x=f.softmax(self.fc3(x),dim=1)
         return x  # q value
 

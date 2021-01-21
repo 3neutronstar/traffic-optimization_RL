@@ -22,7 +22,7 @@ configs = {
     'node_info': Nodes,
     'vehicle_info': Vehicles,
     'mode': 'simulate',
-    'lr': 1e-3,
+    'lr': 5e-4,
 }
 
 
