@@ -222,18 +222,42 @@ class GridNetwork(Network):
                     'phase': phase_set,
                 })
         rl_phase_set = [
-            {'duration': '60',
+            {'duration': '20',  # 1
              'state': 'g{}ggr{}rrg{}ggr{}rr'.format('G'*nl, 'r'*nl, 'G'*nl, 'r'*nl),
              },
-            {'duration': '3',
+            {'duration': '4',
              'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*nl, 'r'*nl, 'y'*nl, 'r'*nl),
              },
-            {'duration': '24',
+            {'duration': '20',  # 2
              'state': 'r{}rrg{}ggr{}rrg{}gg'.format('r'*nl, 'G'*nl, 'r'*nl, 'G'*nl),
              },
-            {'duration': '3',
+            {'duration': '4',
              'state': 'r{}rry{}yyr{}rry{}yy'.format('r'*nl, 'y'*nl, 'r'*nl, 'y'*nl),
-             }
+             },
+            {'duration': '20',  # 2
+             'state': 'g{}ggr{}rrg{}ggr{}rr'.format('G'*nl, 'r'*nl, 'G'*nl, 'r'*nl),
+             },
+            {'duration': '4',
+             'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*nl, 'r'*nl, 'y'*nl, 'r'*nl),
+             },
+            {'duration': '20',  # 2
+             'state': 'g{}ggr{}rrg{}ggr{}rr'.format('G'*nl, 'r'*nl, 'G'*nl, 'r'*nl),
+             },
+            {'duration': '4',
+             'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*nl, 'r'*nl, 'y'*nl, 'r'*nl),
+             },
+            {'duration': '20',  # 1
+             'state': 'r{}rrg{}ggr{}rrg{}gg'.format('r'*nl, 'G'*nl, 'r'*nl, 'G'*nl),
+             },
+            {'duration': '4',
+             'state': 'r{}rry{}yyr{}rry{}yy'.format('r'*nl, 'y'*nl, 'r'*nl, 'y'*nl),
+             },
+            {'duration': '20',  # 2
+             'state': 'g{}ggr{}rrg{}ggr{}rr'.format('G'*nl, 'r'*nl, 'G'*nl, 'r'*nl),
+             },
+            {'duration': '4',
+             'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*nl, 'r'*nl, 'y'*nl, 'r'*nl),
+             },
         ]
         traffic_lights.append({
             'id': 'n_1_1',
