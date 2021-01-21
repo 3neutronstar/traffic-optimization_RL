@@ -8,14 +8,15 @@ import random
 import os
 from collections import namedtuple
 from copy import deepcopy
+from torch.utils.tensorboard import SummaryWriter
 
 DEFAULT_CONFIG = {
     'gamma': 0.99,
     'tau': 0.995,
     'batch_size': 32,
     'experience_replay_size': 1e5,
-    'epsilon': 0.3,
-    'decay_rate': 0.95
+    'epsilon': 0.5,
+    'epsilon_decay_rate': 0.97
 }
 
 Transition = namedtuple('Transition',
@@ -44,7 +45,7 @@ class QNetwork(nn.Module):
 
 
 class Trainer(RLAlgorithm):
-    def __init__(self, configs):
+    def __init__(self,configs):
         super().__init__(configs)
         self.configs = merge_dict(configs, DEFAULT_CONFIG)
         self.input_size = self.configs['input_size']
@@ -53,7 +54,8 @@ class Trainer(RLAlgorithm):
         self.gamma = self.configs['gamma']
         self.epsilon = self.configs['epsilon']
         self.criterion = nn.MSELoss()
-        self.decay_rate = self.configs['decay_rate']
+        self.lr=self.configs['lr']
+        self.epsilon_decay_rate = self.configs['epsilon_decay_rate']
         self.experience_replay = ReplayMemory(
             self.configs['experience_replay_size'])
         self.batch_size = self.configs['batch_size']
@@ -71,7 +73,7 @@ class Trainer(RLAlgorithm):
         self.mainQNetwork = deepcopy(model).to(self.configs['device'])
         self.targetQNetwork = deepcopy(model).to(self.configs['device'])
         self.optimizer = optim.Adam(
-            self.mainQNetwork.parameters(), lr=configs['learning_rate'])
+            self.mainQNetwork.parameters(), lr=self.lr)
         self.targetQNetwork.eval()
         self.mainQNetwork.train()  # train모드로 설정
         self.rewards = []
@@ -95,8 +97,6 @@ class Trainer(RLAlgorithm):
                                    for i in range(self.action_space)], device=self.configs['device'])
             return action
 
-    def get_loss(self):
-        return self.running_loss
 
     def target_update(self):
         # state_dict=self.targetQNetwork.state_dict()*self.configs['tau']+(1-self.configs['tau'])*self.mainQNetwork.state_dict()
@@ -151,7 +151,7 @@ class Trainer(RLAlgorithm):
         # loss 계산
         loss = self.criterion(state_action_values,
                               expected_state_action_values.unsqueeze(1))
-        self.running_loss = loss
+        self.running_loss += loss
         # 모델 최적화
         self.optimizer.zero_grad()
         loss.backward()
@@ -159,8 +159,14 @@ class Trainer(RLAlgorithm):
         #     param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
 
-        if self.epsilon > 0.2:
-            self.epsilon *= self.decay_rate  # decay rate
+    def update_hyperparams(self,epoch):
+        # decay rate (epsilon greedy)
+        if self.epsilon > 0.05:
+            self.epsilon*=0.98
+
+        # decay learning rate
+        if self.lr>0.01*self.lr:
+            self.lr=0.99*self.lr
 
     def save_weights(self, name):
         torch.save(self.mainQNetwork.state_dict(), os.path.join(
@@ -172,3 +178,11 @@ class Trainer(RLAlgorithm):
         self.mainQNetwork.load_state_dict(torch.load(os.path.join(
             self.configs['current_path'], 'training_data', 'model', name+'.h5')))
         self.mainQNetwork.eval()
+
+    def update_tensorboard(self,writer,epoch):
+        writer.add_scalar('episode/loss', self.running_loss/self.configs['max_steps'],
+                          self.configs['max_steps']*epoch)  # 1 epoch마다
+        writer.add_scalar('hyperparameter/lr',self.lr,self.configs['max_steps']*epoch)
+        writer.add_scalar('hyperparameter/epsilon',self.epsilon,self.configs['max_steps']*epoch)
+        # clear 
+        self.running_loss=0

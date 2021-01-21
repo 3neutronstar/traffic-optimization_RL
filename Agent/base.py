@@ -19,13 +19,18 @@ class RLAlgorithm():
         '''
         raise NotImplementedError
 
-    def get_loss(self):
+    def update_hyperparams(self,epoch):
         '''
-        return loss.item()
-        반드시 get_action뒤에 사용
         상속을 위한 함수
         '''
         raise NotImplementedError
+
+    def update_tensorboard(self,writer,epoch):
+        '''
+        상속을 위한 함수
+        '''
+        raise NotImplementedError
+
 
 
 Transition = namedtuple('Transition',
