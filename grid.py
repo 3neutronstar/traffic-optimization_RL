@@ -23,7 +23,8 @@ class GridNetwork(Network):
                 node_info = dict()
                 node_info = {
                     'id': 'n_'+str(x)+'_'+str(y),
-                    'type': 'traffic_light'
+                    'type': 'traffic_light',
+                    'tl': 'n_'+str(x)+'_'+str(y),
                 }
                 # if self.grid_num % 2==0: # odd due to index rule
                 #     grid_x=self.configs['laneLength']*(x-center_x)
@@ -217,7 +218,7 @@ class GridNetwork(Network):
                 traffic_lights.append({
                     'id': 'n_{}_{}'.format(i, j),
                     'type': 'static',
-                    'programID': 'MyProgram',
+                    'programID': 'n_{}_{}'.format(i, j),
                     'offset': '0',
                     'phase': phase_set,
                 })
@@ -234,25 +235,25 @@ class GridNetwork(Network):
             {'duration': '4',
              'state': 'r{}rry{}yyr{}rry{}yy'.format('r'*nl, 'y'*nl, 'r'*nl, 'y'*nl),
              },
-            {'duration': '20',  # 2
-             'state': 'g{}ggr{}rrg{}ggr{}rr'.format('G'*nl, 'r'*nl, 'G'*nl, 'r'*nl),
-             },
-            {'duration': '4',
-             'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*nl, 'r'*nl, 'y'*nl, 'r'*nl),
-             },
-            {'duration': '20',  # 2
+            {'duration': '20',  # 1
              'state': 'g{}ggr{}rrg{}ggr{}rr'.format('G'*nl, 'r'*nl, 'G'*nl, 'r'*nl),
              },
             {'duration': '4',
              'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*nl, 'r'*nl, 'y'*nl, 'r'*nl),
              },
             {'duration': '20',  # 1
+             'state': 'g{}ggr{}rrg{}ggr{}rr'.format('G'*nl, 'r'*nl, 'G'*nl, 'r'*nl),
+             },
+            {'duration': '4',
+             'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*nl, 'r'*nl, 'y'*nl, 'r'*nl),
+             },
+            {'duration': '20',  # 2
              'state': 'r{}rrg{}ggr{}rrg{}gg'.format('r'*nl, 'G'*nl, 'r'*nl, 'G'*nl),
              },
             {'duration': '4',
              'state': 'r{}rry{}yyr{}rry{}yy'.format('r'*nl, 'y'*nl, 'r'*nl, 'y'*nl),
              },
-            {'duration': '20',  # 2
+            {'duration': '20',  # 1
              'state': 'g{}ggr{}rrg{}ggr{}rr'.format('G'*nl, 'r'*nl, 'G'*nl, 'r'*nl),
              },
             {'duration': '4',
@@ -262,7 +263,7 @@ class GridNetwork(Network):
         traffic_lights.append({
             'id': 'n_1_1',
             'type': 'static',
-            'programID': 'myProgram',
+            'programID': 'n_1_1',
             'offset': '0',
             'phase': rl_phase_set,
         })

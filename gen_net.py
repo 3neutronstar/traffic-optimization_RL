@@ -145,9 +145,10 @@ class Network():
         # file_name_str=os.path.join(self.current_Env_path,self.file_name)
         file_name_str = os.path.join(self.current_Env_path, self.file_name)
         if len(self.traffic_light) != 0:
-            os.system('netconvert -n {0}.nod.xml -e {0}.edg.xml -i {0}.add.xml -o {0}.net.xml'.format(
+            print("xxxxxx")
+            os.system('netconvert -n {0}.nod.xml -e {0}.edg.xml -i {0}_tl.add.xml -o {0}.net.xml'.format(
                 file_name_str))
-        if len(self.connections) == 0:
+        elif len(self.connections) == 0:
             os.system('netconvert -n {}.nod.xml -e {}.edg.xml -o {}.net.xml'.format(
                 file_name_str, file_name_str, file_name_str))
         else:  # connection이 존재하는 경우 -x
@@ -201,9 +202,9 @@ class Network():
                     E('route-files', attrib={'value': self.file_name+'.rou.xml'}))
                 indent(sumocfg)
 
-        if os.path.exists(os.path.join(self.current_Env_path, self.file_name+'.add.xml')):
+        if os.path.exists(os.path.join(self.current_Env_path, self.file_name+'_data.add.xml')):
             inputXML.append(
-                E('additional-files', attrib={'value': self.file_name+'.add.xml'}))
+                E('additional-files', attrib={'value': self.file_name+'_data.add.xml'}))
             indent(sumocfg)
 
         time = ET.SubElement(sumocfg, 'time')
@@ -230,27 +231,32 @@ class Network():
     def _generate_add_xml(self):
         traffic_light_set = self.specify_traffic_light()
         self.traffic_light = traffic_light_set
-        additional = ET.Element('additional')
+        data_additional = ET.Element('additional')
         # edgeData와 landData파일의 생성위치는 data
-        additional.append(E('edgeData', attrib={'id': 'edgeData_00', 'file': '{}_edge.xml'.format(self.current_path+'/data/'+self.file_name), 'begin': '0', 'end': str(
+        data_additional.append(E('edgeData', attrib={'id': 'edgeData_00', 'file': '{}_edge.xml'.format(self.current_path+'/data/'+self.file_name), 'begin': '0', 'end': str(
             self.configs['max_steps']), 'freq': '1000'}))
-        indent(additional, 1)
-        additional.append(E('laneData', attrib={'id': 'laneData_00', 'file': '{}_lane.xml'.format(self.current_path+'/data/'+self.file_name), 'begin': '0', 'end': str(
+        indent(data_additional, 1)
+        data_additional.append(E('laneData', attrib={'id': 'laneData_00', 'file': '{}_lane.xml'.format(self.current_path+'/data/'+self.file_name), 'begin': '0', 'end': str(
             self.configs['max_steps']), 'freq': '1000'}))
-        indent(additional, 1)
-        dump(additional)
+        indent(data_additional, 1)
+        dump(data_additional)
+        tree = ET.ElementTree(data_additional)
+        tree.write(os.path.join(self.current_Env_path, self.file_name+'_data.add.xml'),
+                   pretty_print=True, encoding='UTF-8', xml_declaration=True)
+
+        tl_additional = ET.Element('additional')
         if len(self.traffic_light) != 0 or self.configs['mode'] == 'simulate':
             for _, tl in enumerate(traffic_light_set):
                 phase_set = tl.pop('phase')
-                tlLogic = ET.SubElement(additional, 'tlLogic', attrib=tl)
-                indent(additional, 1)
+                tlLogic = ET.SubElement(tl_additional, 'tlLogic', attrib=tl)
+                indent(tl_additional, 1)
                 for _, phase in enumerate(phase_set):
                     tlLogic.append(E('phase', attrib=phase))
-                    indent(additional, 2)
+                    indent(tl_additional, 2)
 
-        dump(additional)
-        tree = ET.ElementTree(additional)
-        tree.write(os.path.join(self.current_Env_path, self.file_name+'.add.xml'),
+        dump(tl_additional)
+        tree = ET.ElementTree(tl_additional)
+        tree.write(os.path.join(self.current_Env_path, self.file_name+'_tl.add.xml'),
                    pretty_print=True, encoding='UTF-8', xml_declaration=True)
 
     def test_net(self):
@@ -261,7 +267,7 @@ class Network():
 
     def sumo_gui(self):
         self.generate_cfg(True)
-        os.system('sumo-gui -c {}.sumocfg '.format(
+        os.system('sumo-gui -c {}.sumocfg'.format(
             os.path.join(self.current_Env_path, self.file_name+'_simulate')))
 
 
