@@ -1,18 +1,16 @@
 import argparse
-import json
-import os
-import sys
+import json, os, sys, time
 import traci
 import traci.constants as tc
 import torch
 from torch.utils.tensorboard import SummaryWriter
-from gen_net import configs
 import torch.optim as optim
+from gen_net import configs
 from Env.env import TL1x1Env
 from Agent.dqn import Trainer
 from sumolib import checkBinary
-import time
 from Env.GridEnv import GridEnv
+from utils import save_params,load_params,update_tensorboard
 configs['input_size'] = 5*len(configs['tl_rl_list'])
 configs['output_size'] = 8*len(configs['tl_rl_list'])
 configs['action_space'] = 1*len(configs['tl_rl_list'])
@@ -41,17 +39,6 @@ interest_list = [
     }
 ]
 
-
-def save_params(configs, time_data):
-    with open(os.path.join(configs['current_path'], 'training_data', '{}_{}.json'.format(configs['file_name'], time_data)), 'w') as fp:
-        json.dump(configs, fp, indent=2)
-
-
-def load_params(configs, file_name):
-    ''' replay_name from flags.replay_name '''
-    with open(os.path.join(configs['current_path'], 'training_data', '{}.json'.format(file_name)), 'r') as fp:
-        configs = json.load(fp)
-    return configs
 
 
 def parse_args(args):
@@ -149,7 +136,6 @@ def train(flags, configs, sumoConfig):
 
             state = next_state
             total_reward += reward
-            loss += agent.get_loss()  # 총 loss
             if step > MAX_STEPS:
                 done = True
             arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
@@ -166,21 +152,17 @@ def train(flags, configs, sumoConfig):
                 arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
                 env.collect_state()
                 step += 1
-            if step % 1000 == 0:
-                agent.target_update()  # dqn
-                agent.update_hyperparams() # lr and epsilon upate
+
+            if (epoch*MAX_STEPS+step) % 2000 == 0: # 총 몇번당 update
+                if epoch%2==0:
+                    agent.target_update()  # dqn
+                agent.update_hyperparams(epoch) # lr and epsilon upate
 
         traci.close()
         epoch += 1
-        writer.add_scalar('episode/loss', loss/MAX_STEPS,
-                          step*epoch)  # 1 epoch마다
-        writer.add_scalar('episode/reward', total_reward,
-                          step*epoch)  # 1 epoch마다
-        writer.add_scalar('episode/arrived_num', arrived_vehicles,
-                          step*epoch)  # 1 epoch마다
-        writer.flush()
-        print('======== {} epoch/ loss: {} return: {} arrived number:{}'.format(epoch,
-                                                                                loss/MAX_STEPS, total_reward, arrived_vehicles))
+        # once in an epoch
+        update_tensorboard(writer,epoch,env,agent,arrived_vehicles)
+        print('======== {} epoch/ return: {} arrived number:{}'.format(epoch, total_reward, arrived_vehicles))
         if epoch % 50 == 0:
             agent.save_weights(
                 configs['file_name']+'_{}_{}'.format(time_data, epoch))

@@ -12,6 +12,7 @@ class TL1x1Env(baseEnv):
         self.tl_list = traci.trafficlight.getIDList()
         self.edge_list = traci.edge.getIDList()
         self.pressure = 0
+        self.reward = 0
         self.phase_list=self._phase_list()
         '''
         up right down left 순서대로 저장
@@ -121,9 +122,15 @@ class TL1x1Env(baseEnv):
         Max Pressure based control
         각 node에 대해서 inflow 차량 수와 outflow 차량수 + 해당 방향이라는 전제에서
         '''
-        reward = deepcopy(self.pressure)
+        self.reward+=self.pressure
         self.pressure = 0
-        return reward
+        return self.reward
+    
+    def update_tensorboard(self,writer,epoch):
+        writer.add_scalar('episode/reward', self.reward,
+                        self.configs['max_steps']*epoch)  # 1 epoch마다
+        #clear the value once in an epoch
+        self.reward=0
 
     def _toPhase(self, action):  # action을 해석가능한 phase로 변환
         '''
