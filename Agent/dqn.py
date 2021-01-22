@@ -13,10 +13,13 @@ from torch.utils.tensorboard import SummaryWriter
 DEFAULT_CONFIG = {
     'gamma': 0.99,
     'tau': 0.995,
-    'batch_size': 32,
+    'batch_size': 64,
     'experience_replay_size': 1e5,
     'epsilon': 0.9,
-    'epsilon_decay_rate': 0.95
+    'epsilon_decay_rate': 0.98,
+    'fc_net':[16,16,16],
+    'lr':0.001,
+    'lr_decay_rate':0.98,
 }
 
 Transition = namedtuple('Transition',
@@ -27,24 +30,25 @@ class QNetwork(nn.Module):
     def __init__(self, input_size, output_size, configs):
         super(QNetwork, self).__init__()
         self.configs = merge_dict(configs, DEFAULT_CONFIG)
-        self.input_size = input_size
-        self.output_size = output_size
-        self.configs['fc_net'] = [40, 30]
+        self.state_space = input_size
+        self.action_space = output_size
 
         # build nn
-        self.fc1 = nn.Linear(self.input_size, 16)
-        self.fc2 = nn.Linear(16, 16)
-        self.fc3 = nn.Linear(16, 16)
-        self.fc4 = nn.Linear(16, self.output_size)
-        # self.fc4 = nn.Linear(30, self.output_size)
+        self.fc1 = nn.Linear(self.state_space, self.configs['fc_net'][0])
+        self.fc2 = nn.Linear(self.configs['fc_net'][0], self.configs['fc_net'][1])
+        #self.fc3 = nn.Linear(self.configs['fc_net'][1], self.configs['fc_net'][2])
+        #self.fc4 = nn.Linear(self.configs['fc_net'][2], self.action_space)
+        self.fc3 = nn.Linear(self.configs['fc_net'][1], self.action_space)
+        # self.fc4 = nn.Linear(30, self.action_space)
 
     def forward(self, x):
         x = x.float()
-        x = f.relu(self.fc1(x))
-        x = f.relu(self.fc2(x))
-        x = f.relu(self.fc3(x))
-        x = self.fc4(x)
-        #x = self.fc3(x)
+        x = f.leaky_relu(self.fc1(x))
+        x=f.dropout(x,0.4)
+        x = f.leaky_relu(self.fc2(x))
+        x=f.dropout(x,0.3)
+        # x = f.softmax(self.fc3(x))
+        x = self.fc3(x)
         #x = f.softmax(self.fc4(x), dim=0)
         return x  # q value
 
@@ -53,14 +57,14 @@ class Trainer(RLAlgorithm):
     def __init__(self, configs):
         super().__init__(configs)
         self.configs = merge_dict(configs, DEFAULT_CONFIG)
-        self.input_size = self.configs['input_size']
-        self.output_size = self.configs['output_size']
+        self.state_space = self.configs['state_space']
         self.action_space = self.configs['action_space']
+        self.action_size = self.configs['action_size']
         self.gamma = self.configs['gamma']
         self.epsilon = self.configs['epsilon']
         self.criterion = nn.MSELoss()
-        self.configs['lr'] = 0.001
         self.lr = self.configs['lr']
+        self.lr_decay_rate = self.configs['lr_decay_rate']
         self.epsilon_decay_rate = self.configs['epsilon_decay_rate']
         self.experience_replay = ReplayMemory(
             self.configs['experience_replay_size'])
@@ -68,11 +72,11 @@ class Trainer(RLAlgorithm):
 
         if self.configs['model'] == 'FRAP':
             from Agent.Model.FRAP import FRAP
-            model = FRAP(self.input_size, self.output_size)
+            model = FRAP(self.state_space, self.action_space)
             model.add_module(
-                QNetwork(self.input_size, self.output_size, self.configs))
+                QNetwork(self.state_space, self.action_space, self.configs))
         else:
-            model = QNetwork(self.input_size, self.output_size,
+            model = QNetwork(self.state_space, self.action_space,
                              configs)  # 1개 네트워크용
         model.to(self.configs['device'])
         print(model)
@@ -83,7 +87,6 @@ class Trainer(RLAlgorithm):
             self.mainQNetwork.parameters(), lr=self.lr)
         self.targetQNetwork.eval()
         self.mainQNetwork.train()  # train모드로 설정
-        self.rewards = []
         self.action = tuple()
         self.running_loss = 0
         if self.configs['mode'] == 'train':
@@ -91,25 +94,22 @@ class Trainer(RLAlgorithm):
         elif self.configs['mode'] == 'test':
             self.mainQNetwork.eval()
 
-    def get_action(self, state, reward):
-        self.rewards.append(reward)
-        sample = random.random()
-        # self.Q=self.Q.reshape(2,8) # Q value를 max값 선택하게
-        if sample > self.epsilon:
+    def get_action(self, state):
+
+        if random.random() > self.epsilon: # epsilon greedy
             with torch.no_grad():
                 action = torch.max(self.mainQNetwork(state), dim=1)[
-                    1].view(1, 1)  # 가로로
-                self.action+=tuple(action)
+                    1].view(1, 1)  # 가로로 # action 수가 늘어나면 view(1,action_size)
+                    # agent가 늘어나면 view(agents,action_size)
+                self.action+=tuple(action) # 기록용
             return action
         else:
             action = torch.tensor([random.randint(0, 7)
-                                   for i in range(self.action_space)], device=self.configs['device']).view(1, 1)
-            self.action+=tuple(action)
+                                   for i in range(self.action_size)], device=self.configs['device']).view(1, 1)
+            self.action+=tuple(action) # 기록용
             return action
 
     def target_update(self):
-        # state_dict=self.targetQNetwork.state_dict()*self.configs['tau']+(1-self.configs['tau'])*self.mainQNetwork.state_dict()
-        # self.targetQNetwork.load_state_dict(state_dict)
         # Hard Update
         self.targetQNetwork.load_state_dict(self.mainQNetwork.state_dict())
 
@@ -128,26 +128,17 @@ class Trainer(RLAlgorithm):
         non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
                                                 batch.next_state)), device=self.configs['device'], dtype=torch.bool)
 
-        #non_final_mask.reshape(self.configs['batch_size'], 1)
-        # non_final_next_states = torch.tensor([s for s in batch.next_state
-        #                                       if s is not None]).reshape(-1, 1)
         non_final_next_states = torch.cat([s for s in batch.next_state
                                            if s is not None], dim=0)
         state_batch = torch.cat(batch.state)
-        action_batch = torch.cat(batch.action, dim=0)  # 안쓰지만 배치함
+        action_batch = torch.cat(batch.action, dim=0)
 
-        # reward_batch = torch.cat(torch.tensor(batch.reward, dim=0)
         reward_batch = torch.tensor(batch.reward).to(self.configs['device'])
-        # .reshape(
-        #     self.configs['batch_size']).to(self.configs['device'])
 
-        # Q(s_t, a) 계산 - 모델이 Q(s_t)를 계산하고, 취한 행동의 칼럼을 선택한다.
+        # Q(s_t, a) 계산 - 모델이 action batch의 a'일때의 Q(s_t,a')를 계산할때, 취한 행동 a'의 column 선택(column이 Q)
 
         state_action_values = self.mainQNetwork(
-            state_batch).gather(1, action_batch)  # for 3D
-        # state_action_values = self.mainQNetwork(
-        #     state_batch)
-        # .max(1)[0].clone().float().unsqueeze(1)
+            state_batch).gather(1, action_batch)  
 
         # 모든 다음 상태를 위한 V(s_{t+1}) 계산
         next_state_values = torch.zeros(
@@ -168,17 +159,17 @@ class Trainer(RLAlgorithm):
         self.optimizer.zero_grad()
         loss.backward()
         for param in self.mainQNetwork.parameters():
-            param.grad.data.clamp_(-1, 1)
+            param.grad.data.clamp_(-1, 1) # 값을 -1과 1로 한정시켜줌 (clipping)
         self.optimizer.step()
 
     def update_hyperparams(self, epoch):
         # decay rate (epsilon greedy)
-        if self.epsilon > 0.005:
+        if self.epsilon > 0.05:
             self.epsilon *= self.epsilon_decay_rate
 
         # decay learning rate
-        if self.lr > 0.01*self.lr:
-            self.lr = 0.99*self.lr
+        if self.lr > 0.05*self.configs['lr']:
+            self.lr = self.lr_decay_rate*self.lr
 
     def save_weights(self, name):
         torch.save(self.mainQNetwork.state_dict(), os.path.join(

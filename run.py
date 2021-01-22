@@ -47,7 +47,7 @@ def train(flags, configs, sumoConfig):
 
 
 def test(flags, configs, sumoConfig):
-    from Env.env import TL1x1Env
+    from Env.env import TL3x3Env
     from Agent.dqn import Trainer
     from Env.GridEnv import GridEnv
     from utils import save_params,load_params,update_tensorboard
@@ -145,7 +145,8 @@ def simulate(flags, configs, sumoConfig):
 
 def main(args):
     use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu")
+    #device = torch.device("cuda" if use_cuda else "cpu")
+    device=torch.device('cpu')
     print("Using device: {}".format(device))
     configs['device'] = str(device)
     configs['current_path'] = os.path.dirname(os.path.abspath(__file__))

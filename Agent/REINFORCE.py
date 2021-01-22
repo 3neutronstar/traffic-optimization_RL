@@ -15,9 +15,9 @@ DEFAULT_CONFIG = {
 class PolicyNet(nn.Module):
     def __init__(self, configs):
         super(PolicyNet, self).__init__()
-        self.fc1 = nn.Linear(configs['input_size'], 40)
+        self.fc1 = nn.Linear(configs['state_space'], 40)
         self.fc2 = nn.Linear(40, 30)
-        self.fc3 = nn.Linear(30, configs['output_size'])
+        self.fc3 = nn.Linear(30, configs['action_space'])
         self.running_loss = 0
 
     def forward(self, x):
@@ -30,50 +30,41 @@ class PolicyNet(nn.Module):
 
 class Trainer(RLAlgorithm):
     def __init__(self, configs):
-        self.configs = merge_dict(configs, DEFAULT_CONFIG)
+        #self.configs = merge_dict(configs, DEFAULT_CONFIG)
+        self.configs=configs
         self.model = PolicyNet(self.configs)
         self.gamma = self.configs['gamma']
+        self.lr=self.configs['lr']
         self.optimizer = torch.optim.Adam(
-            self.model.parameters(), lr=self.configs['lr'])
-        self.saved_log_probs = []
-        self.rewards = []
-        self.eps = np.finfo(np.float32).eps.item()
+            self.model.parameters(), lr=self.lr)
+        self.data=[]
+        self.eps = torch.tensor(np.finfo(np.double).eps.item())
+        self.lr_decay_rate=0.99
 
-    def get_action(self, state, reward):
-        self.rewards.append(reward)
-        state = state.float()
-        print('state', state)
-        probs = self.model(state)
-        print('probs', probs)
-        m = Categorical(probs)
-        action = m.sample()
-        print('action', action)
-        self.saved_log_probs.append(m.log_prob(action))
-        return action.item()
-
-    def get_loss(self):
-        return self.running_loss
+    def get_action(self, state):
+        self.probability=self.model(state).float()
+        m=Categorical(self.probability)
+        action=m.sample()
+        return action
+    
+    def put_data(self,item):
+        self.data.append(item)
 
     def update(self, done=False):
-        R = 0  # Return
-        policy_loss = []
-        returns = []
-        for r in self.rewards[::-1]:  # end기준으로 최근 reward부터 옛날로
-            R = r + self.gamma * R
-            returns.insert(0, R)  # 앞으로 내용 삽입(실제로는 맨뒤부터 삽입해서 t=0까지 삽입)
-            # 내용순서는 t=0,1,2,3,4,...T)
-
-        returns = torch.tensor(returns, device=self.configs['device'])
-        returns = (returns - returns.mean()) / (returns.std() + self.eps)
-
-        for log_prob, R in zip(self.saved_log_probs, returns):
-            policy_loss.append(-log_prob * R)
-
+        Return=0
         self.optimizer.zero_grad()
-        policy_loss = torch.cat(policy_loss).sum()
-
-        self.running_loss = policy_loss
-        policy_loss.backward()
+        for reward,prob in self.data[::-1]:
+            Return=reward+self.gamma*Return #뒤에서 부터 부르면 reward에 최종 return값부터 불러짐
+            loss= -torch.log(prob)*Return # for gradient ascend 원래 loss backward는 gradient descend이므로
+            loss.backward()
         self.optimizer.step()
-        del self.rewards[:]
-        del self.saved_log_probs[:]
+        self.data=[] # 지워버리기~
+    
+    def get_prob(self):
+        return self.probability
+    
+    def update_hyperparams(self, epoch):
+
+        # decay learning rate
+        if self.lr > 0.01*self.lr:
+            self.lr = self.lr_decay_rate*self.lr

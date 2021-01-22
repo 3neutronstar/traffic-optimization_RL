@@ -31,8 +31,8 @@ def parse_args(args):
 def main(args):
     flags=parse_args(args)
     showData=flags.data
-    a_path=os.path.join(os.getcwd(),'data',flags.file_a+'.xml')
-    b_path=os.path.join(os.getcwd(),'data',flags.file_b+'.xml')
+    a_path=os.path.join(os.path.dirname(os.path.abspath(__file__)),'data',flags.file_a+'.xml')
+    b_path=os.path.join(os.path.dirname(os.path.abspath(__file__)),'data',flags.file_b+'.xml')
     if os.path.exists(a_path)==False or os.path.exists(b_path)==False:
         raise FileNotFoundError
     time_str=time.strftime('%m-%d_%H-%M-%S',time.localtime(time.time()))
