@@ -1,4 +1,3 @@
-from Agent.base import RLAlgorithm, ReplayMemory, merge_dict
 import torch
 from torch import nn
 import torch.nn.functional as f
@@ -8,6 +7,7 @@ import random
 import os
 from collections import namedtuple
 from copy import deepcopy
+from Agent.base import RLAlgorithm, ReplayMemory, merge_dict
 from torch.utils.tensorboard import SummaryWriter
 
 DEFAULT_CONFIG = {

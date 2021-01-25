@@ -28,12 +28,13 @@ def parse_args(args):
     parser.add_argument(
         '--replay_name', type=str, default=None,
         help='activate only in test mode and write file_name to load weights.')
+    parser.add_argument(
+        '--algorithm', type=str, default='dqn',
+        help='activate only in test mode and write file_name to load weights.')
     return parser.parse_known_args(args)[0]
 
 
-def train(flags, configs, sumoConfig):
-    # init train setting
-    time_data = time.strftime('%m-%d_%H-%M-%S', time.localtime(time.time()))
+def train(flags, time_data,configs, sumoConfig):
     # check gui option
     if flags.disp == 'yes':
         sumoBinary = checkBinary('sumo-gui')
@@ -41,8 +42,19 @@ def train(flags, configs, sumoConfig):
         sumoBinary = checkBinary('sumo')
     sumoCmd = [sumoBinary, "-c", sumoConfig, '--start']
     # configs setting
-    from train import dqn_train
-    dqn_train(configs,time_data,sumoCmd)
+    configs['algorithm']=flags.algorithm.lower()
+    if flags.algorithm.lower()=='dqn':
+        from train import dqn_train
+        dqn_train(configs,time_data,sumoCmd)
+    elif flags.algorithm.lower()=='reinforce':
+        from train import REINFORCE_train
+        REINFORCE_train(configs,time_data,sumoCmd)
+    elif flags.algorithm.lower()=='a2c':
+        from train import a2c_train
+        a2c_train(configs,time_data,sumoCmd)
+    elif flags.algorithm.lower()=='ppo':
+        from train import ppo_train
+        ppo_train(configs,time_data,sumoCmd)
 
 
 
@@ -152,6 +164,9 @@ def main(args):
     configs['current_path'] = os.path.dirname(os.path.abspath(__file__))
     flags = parse_args(args)
     configs['mode'] = flags.mode.lower()
+    # init train setting
+    time_data = time.strftime('%m-%d_%H-%M-%S', time.localtime(time.time()))
+    configs['time_data']=str(time_data)
 
     # check the network
     if flags.network.lower() == 'grid':
@@ -166,8 +181,8 @@ def main(args):
     if configs['mode'] == 'train':
         configs['mode'] = 'train'
         sumoConfig = os.path.join(
-            configs['current_path'], 'Net_data', configs['file_name']+'_train.sumocfg')
-        train(flags, configs, sumoConfig)
+            configs['current_path'], 'Net_data', configs['file_name']+'_train_{}.sumocfg'.format(time_data))
+        train(flags,time_data, configs, sumoConfig)
     elif configs['mode'] == 'test':
         configs['mode'] = 'test'
         sumoConfig = os.path.join(

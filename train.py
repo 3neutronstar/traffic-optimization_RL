@@ -132,7 +132,7 @@ def dqn_train(configs,time_data,sumoCmd):
     writer.close()
 
 
-def RENINFORCE_train(configs,time_data,sumoCmd):
+def REINFORCE_train(configs,time_data,sumoCmd):
     from Agent.REINFORCE import Trainer
     from Agent.REINFORCE import DEFAULT_CONFIG
     tl_rl_list = configs['tl_rl_list']
@@ -295,6 +295,88 @@ def a2c_train(configs,time_data,sumoCmd):
         agent.update_hyperparams(epoch) # lr and epsilon upate
         if epoch %2==0:
             agent.target_update()  # dqn
+        b=time.time()
+        traci.close()
+        print("time:", b-a)
+        epoch += 1
+        # once in an epoch
+        update_tensorboard(writer,epoch,env,agent,arrived_vehicles)
+        print('======== {} epoch/ return: {} arrived number:{}'.format(epoch, total_reward, arrived_vehicles))
+        if epoch % 50 == 0:
+            agent.save_weights(
+                configs['file_name']+'_{}_{}'.format(time_data, epoch))
+
+    writer.close()
+
+
+def ppo_train(configs,time_data,sumoCmd):
+    from Agent.ppo import Trainer
+    tl_rl_list = configs['tl_rl_list']
+    NUM_EPOCHS = configs['num_epochs']
+    MAX_STEPS = configs['max_steps']
+    # init agent and tensorboard writer
+    agent = Trainer(configs)
+    writer = SummaryWriter(os.path.join(
+        configs['current_path'], 'training_data', time_data))
+    # save hyper parameters
+    save_params(configs, time_data)
+    # init training
+    epoch = 0
+    while epoch < NUM_EPOCHS:
+        traci.start(sumoCmd)
+        traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(
+            'G'*configs['num_lanes'], 'G', 'r'*configs['num_lanes'], 'r'))
+        env = TL3x3Env(tl_rl_list, configs)
+        # env = GridEnv( configs)
+        step = 0
+        done = False
+        # state initialization
+        # agent setting
+        total_reward = 0
+        reward = 0
+        arrived_vehicles = 0
+        state = env.get_state()
+        action_distribution=tuple()
+        a=time.time()
+        while step < MAX_STEPS:
+
+            action = agent.get_action(state)
+            action_distribution+=tuple(action.unsqueeze(1))
+            env.step(action)  # action 적용함수
+
+            for _ in range(20):  # 10초마다 행동 갱신
+                traci.simulationStep()
+                env.collect_state()
+                step += 1
+                arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
+            next_state = env.get_state() # 다음스테이트
+
+            traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'y'*28)
+
+            for _ in range(4):  # 4번더
+                traci.simulationStep()
+                env.collect_state()
+                step += 1
+                arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
+
+            traci.simulationStep()
+            env.collect_state()
+            step += 1
+            arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
+
+            reward = env.get_reward() # 25초 지연된 보상
+            agent.memory.rewards.append(reward)
+            if step>=MAX_STEPS:
+                done=True
+            agent.memory.dones.append(done)
+            state = next_state
+            total_reward += reward
+
+        if epoch%2==0:
+            agent.update()
+        agent.update_hyperparams(epoch) # lr update
+
+
         b=time.time()
         traci.close()
         print("time:", b-a)

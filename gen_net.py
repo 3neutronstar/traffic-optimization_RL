@@ -223,7 +223,8 @@ class Network():
             tree.write(os.path.join(self.current_Env_path, self.file_name+'_test'+'.sumocfg'),
                        pretty_print=True, encoding='UTF-8', xml_declaration=True)
         elif mode == 'train':
-            tree.write(os.path.join(self.current_Env_path, self.file_name+'_train'+'.sumocfg'),
+
+            tree.write(os.path.join(self.current_Env_path, self.file_name+'_train_{}.sumocfg'.format(configs['time_data'])),
                        pretty_print=True, encoding='UTF-8', xml_declaration=True)
 
     def _generate_add_xml(self):

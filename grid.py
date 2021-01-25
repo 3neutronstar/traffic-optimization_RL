@@ -151,9 +151,9 @@ class GridNetwork(Network):
                         if edge['from'][-3] == checkEdge['to'][-3] and checkEdge['to'][-1] == direction_list[3-i] and direction_list[i] in edge['from']:
 
                             if checkEdge['to'][-1] == direction_list[1] or checkEdge['to'][-1] == direction_list[2]: #위 아래
-                                self.configs['probability'] = '0.2'
+                                self.configs['probability'] = '0.133'
                             else:
-                                self.configs['probability'] = '0.5'
+                                self.configs['probability'] = '0.388'
                             via_string = str()
                             node_x_y = edge['id'][2]  # 끝에서 사용하는 기준 x나 y
                             if 'r' in edge['id']:
@@ -181,10 +181,9 @@ class GridNetwork(Network):
                                 'end': str(self.configs['flow_end']),
                                 'probability': self.configs['probability'],
                                 'reroute': 'false',
-                                #'via': edge['id']+" "+via_string+" "+checkEdge['id'],
+                                # 'via': edge['id']+" "+via_string+" "+checkEdge['id'],
                                 'departPos': "base",
                                 'departLane': 'best',
-                                'departSpeed': 'max',
                             })
 
         self.flows = flows
