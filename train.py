@@ -1,4 +1,7 @@
-import json, os, sys, time
+import json
+import os
+import sys
+import time
 from Env.env import TL3x3Env
 from Env.GridEnv import GridEnv
 import traci
@@ -6,7 +9,7 @@ import traci.constants as tc
 import torch
 from torch.utils.tensorboard import SummaryWriter
 import torch.optim as optim
-from utils import save_params,load_params,update_tensorboard
+from utils import save_params, load_params, update_tensorboard
 from gen_net import configs
 from Agent.base import merge_dict
 configs['action_space'] = 8*len(configs['tl_rl_list'])
@@ -36,7 +39,8 @@ interest_list = [
     }
 ]
 
-def dqn_train(configs,time_data,sumoCmd):
+
+def dqn_train(configs, time_data, sumoCmd):
     from Agent.dqn import Trainer
     tl_rl_list = configs['tl_rl_list']
     NUM_EPOCHS = configs['num_epochs']
@@ -63,8 +67,8 @@ def dqn_train(configs,time_data,sumoCmd):
         reward = 0
         arrived_vehicles = 0
         state = env.get_state()
-        action_distribution=tuple()
-        a=time.time()
+        action_distribution = tuple()
+        a = time.time()
         while step < MAX_STEPS:
             '''
             # state=env.get_state(action) #partial하게는 env에서 조정
@@ -83,7 +87,7 @@ def dqn_train(configs,time_data,sumoCmd):
             '''
 
             action = agent.get_action(state)
-            action_distribution+=tuple(action.unsqueeze(1))
+            action_distribution += tuple(action.unsqueeze(1))
             env.step(action)  # action 적용함수
 
             for _ in range(20):  # 10초마다 행동 갱신
@@ -91,7 +95,7 @@ def dqn_train(configs,time_data,sumoCmd):
                 env.collect_state()
                 step += 1
                 arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
-            next_state = env.get_state() # 다음스테이트
+            next_state = env.get_state()  # 다음스테이트
 
             traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'y'*28)
 
@@ -106,25 +110,25 @@ def dqn_train(configs,time_data,sumoCmd):
             step += 1
             arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
 
-            reward = env.get_reward() # 25초 지연된 보상
+            reward = env.get_reward()  # 25초 지연된 보상
             agent.save_replay(state, action, reward, next_state)  # dqn
             agent.update(done)
             state = next_state
             total_reward += reward
 
-
             # 20초 끝나고 yellow 4초
 
-        agent.update_hyperparams(epoch) # lr and epsilon upate
-        if epoch %2==0:
+        agent.update_hyperparams(epoch)  # lr and epsilon upate
+        if epoch % 2 == 0:
             agent.target_update()  # dqn
-        b=time.time()
+        b = time.time()
         traci.close()
         print("time:", b-a)
         epoch += 1
         # once in an epoch
-        update_tensorboard(writer,epoch,env,agent,arrived_vehicles)
-        print('======== {} epoch/ return: {} arrived number:{}'.format(epoch, total_reward, arrived_vehicles))
+        update_tensorboard(writer, epoch, env, agent, arrived_vehicles)
+        print('======== {} epoch/ return: {} arrived number:{}'.format(epoch,
+                                                                       total_reward, arrived_vehicles))
         if epoch % 50 == 0:
             agent.save_weights(
                 configs['file_name']+'_{}_{}'.format(time_data, epoch))
@@ -132,7 +136,7 @@ def dqn_train(configs,time_data,sumoCmd):
     writer.close()
 
 
-def REINFORCE_train(configs,time_data,sumoCmd):
+def REINFORCE_train(configs, time_data, sumoCmd):
     from Agent.REINFORCE import Trainer
     from Agent.REINFORCE import DEFAULT_CONFIG
     tl_rl_list = configs['tl_rl_list']
@@ -143,7 +147,7 @@ def REINFORCE_train(configs,time_data,sumoCmd):
     writer = SummaryWriter(os.path.join(
         configs['current_path'], 'training_data', time_data))
     # save hyper parameters
-    save_params(merge_dict(configs,DEFAULT_CONFIG), time_data)
+    save_params(merge_dict(configs, DEFAULT_CONFIG), time_data)
     # init training
     epoch = 0
     while epoch < NUM_EPOCHS:
@@ -190,21 +194,22 @@ def REINFORCE_train(configs,time_data,sumoCmd):
             arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
 
             reward = env.get_reward()
-            prob=agent.get_prob()
-            agent.put_data((reward,prob[action]))
+            prob = agent.get_prob()
+            agent.put_data((reward, prob[action]))
 
             state = next_state
             total_reward += reward
             if step > MAX_STEPS:
                 done = True
-        
-        agent.update_hyperparams(epoch) # lr and epsilon upate
+
+        agent.update_hyperparams(epoch)  # lr and epsilon upate
         agent.update(done)
         traci.close()
         epoch += 1
         # once in an epoch
-        update_tensorboard(writer,epoch,env,agent,arrived_vehicles)
-        print('======== {} epoch/ return: {} arrived number:{}'.format(epoch, total_reward, arrived_vehicles))
+        update_tensorboard(writer, epoch, env, agent, arrived_vehicles)
+        print('======== {} epoch/ return: {} arrived number:{}'.format(epoch,
+                                                                       total_reward, arrived_vehicles))
         if epoch % 50 == 0:
             agent.save_weights(
                 configs['file_name']+'_{}_{}'.format(time_data, epoch))
@@ -212,8 +217,7 @@ def REINFORCE_train(configs,time_data,sumoCmd):
     writer.close()
 
 
-    
-def a2c_train(configs,time_data,sumoCmd):
+def a2c_train(configs, time_data, sumoCmd):
     from Agent.a2c import Trainer
     tl_rl_list = configs['tl_rl_list']
     NUM_EPOCHS = configs['num_epochs']
@@ -240,8 +244,8 @@ def a2c_train(configs,time_data,sumoCmd):
         reward = 0
         arrived_vehicles = 0
         state = env.get_state()
-        action_distribution=tuple()
-        a=time.time()
+        action_distribution = tuple()
+        a = time.time()
         while step < MAX_STEPS:
             '''
             # state=env.get_state(action) #partial하게는 env에서 조정
@@ -260,9 +264,9 @@ def a2c_train(configs,time_data,sumoCmd):
             '''
 
             action = agent.get_action(state)
-            action_distribution+=tuple(action.unsqueeze(1))
+            action_distribution += tuple(action.unsqueeze(1))
             env.step(action)  # action 적용함수
-            next_state = env.get_state() # 다음스테이트
+            next_state = env.get_state()  # 다음스테이트
 
             for _ in range(20):  # 10초마다 행동 갱신
                 traci.simulationStep()
@@ -283,25 +287,25 @@ def a2c_train(configs,time_data,sumoCmd):
             step += 1
             arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
 
-            reward = env.get_reward() # 25초 지연된 보상
+            reward = env.get_reward()  # 25초 지연된 보상
             agent.save_replay(state, action, reward, next_state)  # dqn
             agent.update(done)
             state = next_state
             total_reward += reward
 
-
             # 20초 끝나고 yellow 4초
 
-        agent.update_hyperparams(epoch) # lr and epsilon upate
-        if epoch %2==0:
+        agent.update_hyperparams(epoch)  # lr and epsilon upate
+        if epoch % 2 == 0:
             agent.target_update()  # dqn
-        b=time.time()
+        b = time.time()
         traci.close()
         print("time:", b-a)
         epoch += 1
         # once in an epoch
-        update_tensorboard(writer,epoch,env,agent,arrived_vehicles)
-        print('======== {} epoch/ return: {} arrived number:{}'.format(epoch, total_reward, arrived_vehicles))
+        update_tensorboard(writer, epoch, env, agent, arrived_vehicles)
+        print('======== {} epoch/ return: {} arrived number:{}'.format(epoch,
+                                                                       total_reward, arrived_vehicles))
         if epoch % 50 == 0:
             agent.save_weights(
                 configs['file_name']+'_{}_{}'.format(time_data, epoch))
@@ -309,7 +313,7 @@ def a2c_train(configs,time_data,sumoCmd):
     writer.close()
 
 
-def ppo_train(configs,time_data,sumoCmd):
+def ppo_train(configs, time_data, sumoCmd):
     from Agent.ppo import Trainer
     tl_rl_list = configs['tl_rl_list']
     NUM_EPOCHS = configs['num_epochs']
@@ -336,12 +340,12 @@ def ppo_train(configs,time_data,sumoCmd):
         reward = 0
         arrived_vehicles = 0
         state = env.get_state()
-        action_distribution=tuple()
-        a=time.time()
+        action_distribution = tuple()
+        a = time.time()
         while step < MAX_STEPS:
 
             action = agent.get_action(state)
-            action_distribution+=tuple(action.unsqueeze(1))
+            action_distribution += tuple(action.unsqueeze(1))
             env.step(action)  # action 적용함수
 
             for _ in range(20):  # 10초마다 행동 갱신
@@ -349,7 +353,7 @@ def ppo_train(configs,time_data,sumoCmd):
                 env.collect_state()
                 step += 1
                 arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
-            next_state = env.get_state() # 다음스테이트
+            next_state = env.get_state()  # 다음스테이트
 
             traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'y'*28)
 
@@ -364,26 +368,26 @@ def ppo_train(configs,time_data,sumoCmd):
             step += 1
             arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
 
-            reward = env.get_reward() # 25초 지연된 보상
+            reward = env.get_reward()  # 25초 지연된 보상
             agent.memory.rewards.append(reward)
-            if step>=MAX_STEPS:
-                done=True
+            if step >= MAX_STEPS:
+                done = True
             agent.memory.dones.append(done)
             state = next_state
             total_reward += reward
 
-        if epoch%2==0:
+        if epoch % agent.configs['update_period'] == 0:
             agent.update()
-        agent.update_hyperparams(epoch) # lr update
+        agent.update_hyperparams(epoch)  # lr update
 
-
-        b=time.time()
+        b = time.time()
         traci.close()
         print("time:", b-a)
         epoch += 1
         # once in an epoch
-        update_tensorboard(writer,epoch,env,agent,arrived_vehicles)
-        print('======== {} epoch/ return: {} arrived number:{}'.format(epoch, total_reward, arrived_vehicles))
+        update_tensorboard(writer, epoch, env, agent, arrived_vehicles)
+        print('======== {} epoch/ return: {} arrived number:{}'.format(epoch,
+                                                                       total_reward, arrived_vehicles))
         if epoch % 50 == 0:
             agent.save_weights(
                 configs['file_name']+'_{}_{}'.format(time_data, epoch))

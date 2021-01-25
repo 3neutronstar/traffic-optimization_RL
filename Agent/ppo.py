@@ -16,8 +16,10 @@ DEFAULT_CONFIG = {
     'k_epochs': 4,
     'eps_clip': 0.2,
     'lr_decay_rate': 0.98,
+    'update_period': 5,
 
 }
+
 
 class Memory:
     def __init__(self):
@@ -33,6 +35,7 @@ class Memory:
         del self.logprobs[:]
         del self.rewards[:]
         del self.dones[:]
+
 
 class Net(nn.Module):
     def __init__(self, memory, configs):
@@ -94,16 +97,17 @@ class Trainer(RLAlgorithm):
 
         self.model = Net(self.memory, self.configs).to(self.configs['device'])
         self.optimizer = torch.optim.Adam(
-            self.model.parameters(), lr=self.lr )
-        self.model_old = Net(self.memory, self.configs).to(self.configs['device'])
+            self.model.parameters(), lr=self.lr)
+        self.model_old = Net(self.memory, self.configs).to(
+            self.configs['device'])
         self.model_old.load_state_dict(self.model.state_dict())
-        self.running_loss=0
-        self.action=tuple()
+        self.running_loss = 0
+        self.action = tuple()
         self.criterion = nn.MSELoss()
 
     def get_action(self, state):
         action = self.model_old.act(state)
-        self.action+=tuple(action.view(1,1))
+        self.action += tuple(action.view(1, 1))
         return action
 
     def update(self):
@@ -117,13 +121,17 @@ class Trainer(RLAlgorithm):
             rewards.insert(0, discounted_reward)
 
         # Normalizing the rewards:
-        rewards = torch.tensor(rewards, dtype=torch.float32).to(self.configs['device'])
+        rewards = torch.tensor(rewards, dtype=torch.float32).to(
+            self.configs['device'])
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5)
 
         # convert list to tensor
-        old_states = torch.stack(self.memory.states).to(self.configs['device']).detach()
-        old_actions = torch.stack(self.memory.actions).to(self.configs['device']).detach()
-        old_logprobs = torch.stack(self.memory.logprobs).to(self.configs['device']).detach()
+        old_states = torch.stack(self.memory.states).to(
+            self.configs['device']).detach()
+        old_actions = torch.stack(self.memory.actions).to(
+            self.configs['device']).detach()
+        old_logprobs = torch.stack(self.memory.logprobs).to(
+            self.configs['device']).detach()
 
         # Optimize model for K epochs:
         for _ in range(self.K_epochs):
@@ -140,13 +148,14 @@ class Trainer(RLAlgorithm):
             surr2 = torch.clamp(ratios, 1-self.eps_clip,
                                 1+self.eps_clip) * advantages
             loss = -torch.min(surr1, surr2) + 0.5 * \
-                self.criterion(state_values, rewards) - 0.01*distributions_entropy
+                self.criterion(state_values, rewards) - \
+                0.01*distributions_entropy
 
             # take gradient step
             self.optimizer.zero_grad()
             loss.mean().backward()
             self.optimizer.step()
-        self.running_loss+=loss.mean()
+        self.running_loss += loss.mean()
         # Copy new weights into old model:
         self.model_old.load_state_dict(self.model.state_dict())
         self.memory.clear_memory()
@@ -168,9 +177,9 @@ class Trainer(RLAlgorithm):
         self.model_old.eval()
 
     def update_tensorboard(self, writer, epoch):
-        if epoch%2==0:
+        if epoch % self.configs['update_period'] == 0:  # 5마다 업데이트
             writer.add_scalar('episode/total_loss', self.running_loss/self.configs['max_steps'],
-                            self.configs['max_steps']*epoch)  # 1 epoch마다
+                              self.configs['max_steps']*epoch)  # 1 epoch마다
         self.running_loss = 0
         writer.add_scalar('hyperparameter/lr', self.lr,
                           self.configs['max_steps']*epoch)

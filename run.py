@@ -1,5 +1,8 @@
 import argparse
-import json, os, sys, time
+import json
+import os
+import sys
+import time
 import torch
 import torch.optim as optim
 import traci
@@ -7,6 +10,7 @@ import traci.constants as tc
 from gen_net import configs
 from sumolib import checkBinary
 from utils import interest_list
+
 
 def parse_args(args):
     parser = argparse.ArgumentParser(
@@ -34,7 +38,7 @@ def parse_args(args):
     return parser.parse_known_args(args)[0]
 
 
-def train(flags, time_data,configs, sumoConfig):
+def train(flags, time_data, configs, sumoConfig):
     # check gui option
     if flags.disp == 'yes':
         sumoBinary = checkBinary('sumo-gui')
@@ -42,27 +46,27 @@ def train(flags, time_data,configs, sumoConfig):
         sumoBinary = checkBinary('sumo')
     sumoCmd = [sumoBinary, "-c", sumoConfig, '--start']
     # configs setting
-    configs['algorithm']=flags.algorithm.lower()
-    if flags.algorithm.lower()=='dqn':
+    configs['algorithm'] = flags.algorithm.lower()
+    print("training algorithm: ", configs['algorithm'])
+    if flags.algorithm.lower() == 'dqn':
         from train import dqn_train
-        dqn_train(configs,time_data,sumoCmd)
-    elif flags.algorithm.lower()=='reinforce':
+        dqn_train(configs, time_data, sumoCmd)
+    elif flags.algorithm.lower() == 'reinforce':
         from train import REINFORCE_train
-        REINFORCE_train(configs,time_data,sumoCmd)
-    elif flags.algorithm.lower()=='a2c':
+        REINFORCE_train(configs, time_data, sumoCmd)
+    elif flags.algorithm.lower() == 'a2c':
         from train import a2c_train
-        a2c_train(configs,time_data,sumoCmd)
-    elif flags.algorithm.lower()=='ppo':
+        a2c_train(configs, time_data, sumoCmd)
+    elif flags.algorithm.lower() == 'ppo':
         from train import ppo_train
-        ppo_train(configs,time_data,sumoCmd)
-
+        ppo_train(configs, time_data, sumoCmd)
 
 
 def test(flags, configs, sumoConfig):
     from Env.env import TL3x3Env
     from Agent.dqn import Trainer
     from Env.GridEnv import GridEnv
-    from utils import save_params,load_params,update_tensorboard
+    from utils import save_params, load_params, update_tensorboard
 
     # init test setting
     sumoBinary = checkBinary('sumo-gui')
@@ -85,12 +89,12 @@ def test(flags, configs, sumoConfig):
     # agent setting
     total_reward = 0
     arrived_vehicles = 0
-    action_distribution=tuple()
+    action_distribution = tuple()
     with torch.no_grad():
         while step < MAX_STEPS:
 
             action = agent.get_action(state, reward)
-            action_distribution+=action
+            action_distribution += action
             env.step(action)  # action 적용함수
             for _ in range(20):  # 10초마다 행동 갱신
                 env.collect_state()
@@ -155,10 +159,11 @@ def simulate(flags, configs, sumoConfig):
     print('======== arrived number:{} avg waiting time:{},avg velocity:{}'.format(
         arrived_vehicles, avg_waiting_time/MAX_STEPS, avg_velocity))
 
+
 def main(args):
     use_cuda = torch.cuda.is_available()
     #device = torch.device("cuda" if use_cuda else "cpu")
-    device=torch.device('cpu')
+    device = torch.device('cpu')
     print("Using device: {}".format(device))
     configs['device'] = str(device)
     configs['current_path'] = os.path.dirname(os.path.abspath(__file__))
@@ -166,7 +171,7 @@ def main(args):
     configs['mode'] = flags.mode.lower()
     # init train setting
     time_data = time.strftime('%m-%d_%H-%M-%S', time.localtime(time.time()))
-    configs['time_data']=str(time_data)
+    configs['time_data'] = str(time_data)
 
     # check the network
     if flags.network.lower() == 'grid':
@@ -181,8 +186,8 @@ def main(args):
     if configs['mode'] == 'train':
         configs['mode'] = 'train'
         sumoConfig = os.path.join(
-            configs['current_path'], 'Net_data', configs['file_name']+'_train_{}.sumocfg'.format(time_data))
-        train(flags,time_data, configs, sumoConfig)
+            configs['current_path'], 'Net_data', configs['file_name']+'{}_train.sumocfg'.format(time_data))
+        train(flags, time_data, configs, sumoConfig)
     elif configs['mode'] == 'test':
         configs['mode'] = 'test'
         sumoConfig = os.path.join(
