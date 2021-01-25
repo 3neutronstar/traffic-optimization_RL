@@ -150,7 +150,8 @@ class GridNetwork(Network):
                     for _, checkEdge in enumerate(self.edges):
                         if edge['from'][-3] == checkEdge['to'][-3] and checkEdge['to'][-1] == direction_list[3-i] and direction_list[i] in edge['from']:
 
-                            if checkEdge['to'][-1] == direction_list[1] or checkEdge['to'][-1] == direction_list[2]: #위 아래
+                            # 위 아래
+                            if checkEdge['to'][-1] == direction_list[1] or checkEdge['to'][-1] == direction_list[2]:
                                 self.configs['probability'] = '0.133'
                             else:
                                 self.configs['probability'] = '0.388'
@@ -225,37 +226,37 @@ class GridNetwork(Network):
             {'duration': '20',  # 1
              'state': 'g{}ggr{}rrg{}ggr{}rr'.format('G'*nl, 'r'*nl, 'G'*nl, 'r'*nl),
              },
-            {'duration': '4',
+            {'duration': '5',
              'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*nl, 'r'*nl, 'y'*nl, 'r'*nl),
              },
             {'duration': '20',  # 2
              'state': 'r{}rrg{}ggr{}rrg{}gg'.format('r'*nl, 'G'*nl, 'r'*nl, 'G'*nl),
              },
-            {'duration': '4',
+            {'duration': '5',
              'state': 'r{}rry{}yyr{}rry{}yy'.format('r'*nl, 'y'*nl, 'r'*nl, 'y'*nl),
              },
             {'duration': '20',  # 1
              'state': 'g{}ggr{}rrg{}ggr{}rr'.format('G'*nl, 'r'*nl, 'G'*nl, 'r'*nl),
              },
-            {'duration': '4',
+            {'duration': '5',
              'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*nl, 'r'*nl, 'y'*nl, 'r'*nl),
              },
             {'duration': '20',  # 1
              'state': 'g{}ggr{}rrg{}ggr{}rr'.format('G'*nl, 'r'*nl, 'G'*nl, 'r'*nl),
              },
-            {'duration': '4',
+            {'duration': '5',
              'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*nl, 'r'*nl, 'y'*nl, 'r'*nl),
              },
             {'duration': '20',  # 2
              'state': 'r{}rrg{}ggr{}rrg{}gg'.format('r'*nl, 'G'*nl, 'r'*nl, 'G'*nl),
              },
-            {'duration': '4',
+            {'duration': '5',
              'state': 'r{}rry{}yyr{}rry{}yy'.format('r'*nl, 'y'*nl, 'r'*nl, 'y'*nl),
              },
             {'duration': '20',  # 1
              'state': 'g{}ggr{}rrg{}ggr{}rr'.format('G'*nl, 'r'*nl, 'G'*nl, 'r'*nl),
              },
-            {'duration': '4',
+            {'duration': '5',
              'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*nl, 'r'*nl, 'y'*nl, 'r'*nl),
              },
         ]
