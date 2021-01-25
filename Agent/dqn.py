@@ -15,11 +15,11 @@ DEFAULT_CONFIG = {
     'tau': 0.995,
     'batch_size': 128,
     'experience_replay_size': 1e5,
-    'epsilon': 0.9,
+    'epsilon': 0.5,
     'epsilon_decay_rate': 0.98,
     'fc_net':[16,16,16],
-    'lr':0.001,
-    'lr_decay_rate':0.98,
+    'lr':0.0001,
+    'lr_decay_rate':0.99,
 }
 
 Transition = namedtuple('Transition',

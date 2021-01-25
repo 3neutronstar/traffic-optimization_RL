@@ -180,7 +180,7 @@ class Trainer(RLAlgorithm):
         if epoch % self.configs['update_period'] == 0:  # 5마다 업데이트
             writer.add_scalar('episode/total_loss', self.running_loss/self.configs['max_steps'],
                               self.configs['max_steps']*epoch)  # 1 epoch마다
-        self.running_loss = 0
+            self.running_loss = 0
         writer.add_scalar('hyperparameter/lr', self.lr,
                           self.configs['max_steps']*epoch)
         action_distribution = torch.cat(self.action, 0)

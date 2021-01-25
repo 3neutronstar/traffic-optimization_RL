@@ -35,6 +35,9 @@ def parse_args(args):
     parser.add_argument(
         '--algorithm', type=str, default='dqn',
         help='activate only in test mode and write file_name to load weights.')
+    parser.add_argument(
+        '--model', type=str, default='base',
+        help='activate only in test mode and write file_name to load weights.')
     return parser.parse_known_args(args)[0]
 
 
@@ -48,6 +51,15 @@ def train(flags, time_data, configs, sumoConfig):
     # configs setting
     configs['algorithm'] = flags.algorithm.lower()
     print("training algorithm: ", configs['algorithm'])
+    if flags.model.lower()=='base':
+        configs['action_space'] = 8*len(configs['tl_rl_list'])
+        configs['action_size'] = 1*len(configs['tl_rl_list'])
+        configs['state_space'] = 5*len(configs['tl_rl_list'])
+    elif flags.model.lower()=='frap':
+        configs['action_space'] = 8*len(configs['tl_rl_list'])
+        configs['action_size'] = 1*len(configs['tl_rl_list'])
+        configs['state_space'] = 16*len(configs['tl_rl_list'])
+
     if flags.algorithm.lower() == 'dqn':
         from train import dqn_train
         dqn_train(configs, time_data, sumoCmd)

@@ -4,7 +4,10 @@ import traci
 from Env.base import baseEnv
 from copy import deepcopy
 
-
+'''
+state는 movement를 
+action은 phase를 하겠다
+'''
 class TL3x3Env(baseEnv):
     def __init__(self, tl_rl_list, configs):
         self.configs = configs
@@ -14,6 +17,7 @@ class TL3x3Env(baseEnv):
         self.pressure = 0
         self.reward = 0
         self.phase_list=self._phase_list()
+        self.left_lane_num=self.configs['num_lanes']-1
         '''
         up right down left 순서대로 저장
 
@@ -42,30 +46,6 @@ class TL3x3Env(baseEnv):
             }
         ]
 
-        # grid_num 1일때
-        # self.interest_list = [
-        #     {
-        #         'id': 'u_0_0',
-        #         'inflow': 'n_0_u_to_n_0_0',
-        #         'outflow': 'n_0_0_to_n_0_d',
-        #     },
-        #     {
-        #         'id': 'r_0_0',
-        #         'inflow': 'n_0_r_to_n_0_0',
-        #         'outflow': 'n_0_0_to_n_0_l',
-        #     },
-        #     {
-        #         'id': 'd_0_0',
-        #         'inflow': 'n_0_d_to_n_0_0',
-        #         'outflow': 'n_0_0_to_n_0_u',
-        #     },
-        #     {
-        #         'id': 'l_0_0',
-        #         'inflow': 'n_0_l_to_n_0_0',
-        #         'outflow': 'n_0_0_to_n_0_r',
-        #     }
-        # ]
-
         self.phase_size = len(
             traci.trafficlight.getRedYellowGreenState(self.tl_list[0]))
 
@@ -74,17 +54,24 @@ class TL3x3Env(baseEnv):
         state = torch.zeros(
             (1, self.configs['state_space']), device=self.configs['device'], dtype=torch.float)  # 기준
         vehicle_state = torch.zeros(
-            (int(self.configs['state_space']-1), 1), device=self.configs['device'], dtype=torch.float)  # -8은 phase크기
+            (int(self.configs['state_space']/2), 1), device=self.configs['device'], dtype=torch.float)  # -8은 phase크기
         # 변환
         for _, tl_rl in enumerate(self.tl_rl_list):
             phase.append(traci.trafficlight.getRedYellowGreenState(tl_rl))
 
         # 1교차로용 n교차로는 추가요망
-        phase_state = self._toState(phase[0]).reshape(1,1)
+        # phase state
+        phase_state = self._toState(phase[0]).view(1,-1)
+
+        # vehicle state
         for i, interest in enumerate(self.interest_list):
-            # 죄회전용 추가 필요
-            vehicle_state[i] = traci.edge.getLastStepHaltingNumber(
-                interest['inflow'])
+            left_movement=traci.lane.getLastStepHaltingNumber(interest['inflow']+'_{}'.format(self.left_lane_num))
+            #직진
+            vehicle_state[i*2] = traci.edge.getLastStepHaltingNumber(
+                interest['inflow'])-left_movement # 가장 좌측에 멈춘 친구를 왼쪽차선 이용자로 판단
+            #좌회전
+            vehicle_state[i*2] = left_movement
+            
         vehicle_state = torch.transpose(vehicle_state, 0, 1)
         state = torch.cat((vehicle_state, phase_state),
                           dim=1)  # 여기 바꿨다 문제 생기면 여기임 암튼 그럼
@@ -140,9 +127,20 @@ class TL3x3Env(baseEnv):
         '''
         return self.phase_list[action]
 
-    def _toState(self, phase):  # env의 phase를 해석불가능한 state로 변환
-        state=torch.tensor(self.phase_list.index(phase),device=self.configs['device']).int()
-        return state
+    def _toState(self, phase_set):  # env의 phase를 해석불가능한 state로 변환
+        state_set=tuple()
+        for i,phase in enumerate(phase_set):
+            state = torch.zeros(8, dtype=torch.int)
+            for i in range(4):  # 4차로
+                phase = phase[1:]  # 우회전
+                state[i] = self._mappingMovement(phase[0])  # 직진신호 추출
+                phase = phase[3:]  # 직전
+                state[i+1] = self._mappingMovement(phase[0])  # 좌회전신호 추출
+                phase = phase[1:]  # 좌회전
+                phase = phase[1:]  # 유턴
+            state_set+=state
+        state_set=torch.cat(state_set,0)
+        return state_set
 
     def _getMovement(self, num):
         if num == 1:

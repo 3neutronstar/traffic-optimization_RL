@@ -12,9 +12,7 @@ import torch.optim as optim
 from utils import save_params, load_params, update_tensorboard
 from gen_net import configs
 from Agent.base import merge_dict
-configs['action_space'] = 8*len(configs['tl_rl_list'])
-configs['action_size'] = 1*len(configs['tl_rl_list'])
-configs['state_space'] = 5*len(configs['tl_rl_list'])
+
 
 interest_list = [
     {
