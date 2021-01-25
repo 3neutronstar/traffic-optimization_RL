@@ -13,7 +13,7 @@ from torch.utils.tensorboard import SummaryWriter
 DEFAULT_CONFIG = {
     'gamma': 0.99,
     'tau': 0.995,
-    'batch_size': 64,
+    'batch_size': 128,
     'experience_replay_size': 1e5,
     'epsilon': 0.9,
     'epsilon_decay_rate': 0.98,
@@ -154,7 +154,7 @@ class Trainer(RLAlgorithm):
         # loss 계산
         loss = self.criterion(state_action_values,
                               expected_state_action_values.unsqueeze(1))
-        self.running_loss += loss
+        self.running_loss += loss/self.configs['batch_size']
         # 모델 최적화
         self.optimizer.zero_grad()
         loss.backward()
