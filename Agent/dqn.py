@@ -18,8 +18,8 @@ DEFAULT_CONFIG = {
     'epsilon': 0.9,
     'epsilon_decay_rate': 0.98,
     'fc_net': [16, 16, 16],
-    'lr': 0.0001,
-    'lr_decay_rate': 0.99,
+    'lr': 0.0005,
+    'lr_decay_rate': 0.98,
 }
 
 Transition = namedtuple('Transition',
