@@ -63,7 +63,7 @@ class TL3x3Env(baseEnv):
 
         # 1교차로용 n교차로는 추가요망
         # phase state
-        phase_state = self._toState(phase).view(1, -1)
+        phase_state = self._toState(phase).view(1, -1).to(self.configs['device'])
 
         # vehicle state
         for i, interest in enumerate(self.interest_list):

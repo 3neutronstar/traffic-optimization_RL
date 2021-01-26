@@ -100,7 +100,7 @@ class TL3x3Env(baseEnv):
         for _, interest in enumerate(self.interest_list):
             inflow_rate += traci.edge.getLastStepHaltingNumber(
                 interest['inflow'])
-            outflow_rate += traci.edge.getLastStepHaltingNumber(
+            outflow_rate += traci.edge.getLastStepVehicleNumber(
                 interest['outflow'])
         self.pressure += (outflow_rate-inflow_rate)
 

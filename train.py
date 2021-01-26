@@ -57,7 +57,7 @@ def dqn_train(configs, time_data, sumoCmd):
         traci.start(sumoCmd)
         traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(
             'G'*configs['num_lanes'], 'G', 'r'*configs['num_lanes'], 'r'))
-        before_action = torch.tensor([[1]])  # 초기화
+        before_action = torch.tensor([[1]],device=configs['device'])  # 초기화
         env = TL3x3Env(tl_rl_list, configs)
         step = 0
         done = False
@@ -95,6 +95,7 @@ def dqn_train(configs, time_data, sumoCmd):
                 env.collect_state()
                 step += 1
                 arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
+            next_state = env.get_state()  # 다음스테이트
             if before_action != action:
                 traci.trafficlight.setRedYellowGreenState(
                     tl_rl_list[0], 'y'*28)
@@ -105,7 +106,6 @@ def dqn_train(configs, time_data, sumoCmd):
                 step += 1
                 arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
 
-            next_state = env.get_state()  # 다음스테이트
             reward = env.get_reward()  # 25초 지연된 보상
             agent.save_replay(state, action, reward, next_state)  # dqn
             agent.update(done)
@@ -200,8 +200,8 @@ def REINFORCE_train(configs, time_data, sumoCmd):
             if step > MAX_STEPS:
                 done = True
 
-        agent.update_hyperparams(epoch)  # lr and epsilon upate
         agent.update(done)
+        agent.update_hyperparams(epoch)  # lr and epsilon upate
         traci.close()
         epoch += 1
         # once in an epoch

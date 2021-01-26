@@ -13,9 +13,9 @@ from torch.utils.tensorboard import SummaryWriter
 DEFAULT_CONFIG = {
     'gamma': 0.99,
     'tau': 0.995,
-    'batch_size': 128,
+    'batch_size': 64,
     'experience_replay_size': 1e5,
-    'epsilon': 0.5,
+    'epsilon': 0.9,
     'epsilon_decay_rate': 0.98,
     'fc_net': [16, 16, 16],
     'lr': 0.0001,
@@ -43,7 +43,6 @@ class QNetwork(nn.Module):
         # self.fc4 = nn.Linear(30, self.action_space)
 
     def forward(self, x):
-        x = x.float()
         x = f.leaky_relu(self.fc1(x))
         x = f.dropout(x, 0.4)
         x = f.leaky_relu(self.fc2(x))
@@ -57,6 +56,8 @@ class QNetwork(nn.Module):
 class Trainer(RLAlgorithm):
     def __init__(self, configs):
         super().__init__(configs)
+        os.mkdir(os.path.join(
+            self.configs['current_path'], 'training_data',self.configs['time_data'] ,'model'))
         self.configs = merge_dict(configs, DEFAULT_CONFIG)
         self.state_space = self.configs['state_space']
         self.action_space = self.configs['action_space']
@@ -73,9 +74,9 @@ class Trainer(RLAlgorithm):
 
         if self.configs['model'].lower() == 'frap':
             from Agent.Model.FRAP import FRAP
-            model = FRAP(self.state_space, self.action_space)
-            model.add_module('QNetwork',
-                             QNetwork(self.state_space, self.action_space, self.configs))
+            model = FRAP(self.state_space, self.action_space,self.configs['device'])
+            # model.add_module('QNetwork',
+            #                  QNetwork(self.state_space, self.action_space, self.configs))
         else:
             model = QNetwork(self.state_space, self.action_space,
                              self.configs)  # 1개 네트워크용
@@ -86,14 +87,13 @@ class Trainer(RLAlgorithm):
         self.targetQNetwork.load_state_dict(self.mainQNetwork.state_dict())
         self.optimizer = optim.Adam(
             self.mainQNetwork.parameters(), lr=self.lr)
-        self.targetQNetwork.eval()
-        self.mainQNetwork.train()  # train모드로 설정
         self.action = tuple()
         self.running_loss = 0
         if self.configs['mode'] == 'train':
             self.mainQNetwork.train()
         elif self.configs['mode'] == 'test':
             self.mainQNetwork.eval()
+        self.targetQNetwork.eval()
 
     def get_action(self, state):
 
@@ -131,6 +131,7 @@ class Trainer(RLAlgorithm):
 
         non_final_next_states = torch.cat([s for s in batch.next_state
                                            if s is not None], dim=0)
+
         state_batch = torch.cat(batch.state)
         action_batch = torch.cat(batch.action, dim=0)
 
@@ -174,13 +175,13 @@ class Trainer(RLAlgorithm):
 
     def save_weights(self, name):
         torch.save(self.mainQNetwork.state_dict(), os.path.join(
-            self.configs['current_path'], 'training_data', 'model', name+'.h5'))
+            self.configs['current_path'], 'training_data',self.configs['time_data'] ,'model', name+'.h5'))
         torch.save(self.targetQNetwork.state_dict(), os.path.join(
-            self.configs['current_path'], 'training_data', 'model', name+'_target.h5'))
+            self.configs['current_path'], 'training_data',self.configs['time_data'], 'model', name+'_target.h5'))
 
     def load_weights(self, name):
         self.mainQNetwork.load_state_dict(torch.load(os.path.join(
-            self.configs['current_path'], 'training_data', 'model', name+'.h5')))
+            self.configs['current_path'], 'training_data',self.configs['time_data'], 'model', name+'.h5')))
         self.mainQNetwork.eval()
 
     def update_tensorboard(self, writer, epoch):
