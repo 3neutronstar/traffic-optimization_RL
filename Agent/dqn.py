@@ -78,10 +78,10 @@ class Trainer(RLAlgorithm):
                              QNetwork(self.state_space, self.action_space, self.configs))
         else:
             model = QNetwork(self.state_space, self.action_space,
-                             configs)  # 1개 네트워크용
+                             self.configs)  # 1개 네트워크용
         model.to(self.configs['device'])
         self.mainQNetwork = deepcopy(model).to(self.configs['device'])
-        print(self.mainQNetwork)
+        print("========NETWORK==========\n", self.mainQNetwork)
         self.targetQNetwork = deepcopy(model).to(self.configs['device'])
         self.targetQNetwork.load_state_dict(self.mainQNetwork.state_dict())
         self.optimizer = optim.Adam(
@@ -99,7 +99,6 @@ class Trainer(RLAlgorithm):
 
         if random.random() > self.epsilon:  # epsilon greedy
             with torch.no_grad():
-                print(state)
                 action = torch.max(self.mainQNetwork(state), dim=1)[1].view(
                     1, 1)  # 가로로 # action 수가 늘어나면 view(1,action_size)
                 # agent가 늘어나면 view(agents,action_size)
