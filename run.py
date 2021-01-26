@@ -203,7 +203,7 @@ def main(args):
     if configs['mode'] == 'train':
         configs['mode'] = 'train'
         sumoConfig = os.path.join(
-            configs['current_path'], 'Net_data', configs['file_name']+'{}_train.sumocfg'.format(time_data))
+            configs['current_path'], 'training_data', time_data, 'net_data', configs['file_name']+'_train.sumocfg')
         train(flags, time_data, configs, sumoConfig)
     elif configs['mode'] == 'test':
         configs['mode'] = 'test'

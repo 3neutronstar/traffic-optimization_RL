@@ -57,6 +57,7 @@ def dqn_train(configs, time_data, sumoCmd):
         traci.start(sumoCmd)
         traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(
             'G'*configs['num_lanes'], 'G', 'r'*configs['num_lanes'], 'r'))
+        before_action = torch.tensor([[1]])  # 초기화
         env = TL3x3Env(tl_rl_list, configs)
         step = 0
         done = False
@@ -94,26 +95,23 @@ def dqn_train(configs, time_data, sumoCmd):
                 env.collect_state()
                 step += 1
                 arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
-            next_state = env.get_state()  # 다음스테이트
+            if before_action != action:
+                traci.trafficlight.setRedYellowGreenState(
+                    tl_rl_list[0], 'y'*28)
 
-            traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'y'*28)
-
-            for _ in range(4):  # 4번더
+            for _ in range(5):  # 4번더
                 traci.simulationStep()
                 env.collect_state()
                 step += 1
                 arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
 
-            traci.simulationStep()
-            env.collect_state()
-            step += 1
-            arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
-
+            next_state = env.get_state()  # 다음스테이트
             reward = env.get_reward()  # 25초 지연된 보상
             agent.save_replay(state, action, reward, next_state)  # dqn
             agent.update(done)
             state = next_state
             total_reward += reward
+            before_action = action
 
             # 20초 끝나고 yellow 4초
 
@@ -210,7 +208,6 @@ def REINFORCE_train(configs, time_data, sumoCmd):
         update_tensorboard(writer, epoch, env, agent, arrived_vehicles)
         print('======== {} epoch/ return: {} arrived number:{}'.format(epoch,
                                                                        total_reward, arrived_vehicles))
-        
 
     writer.close()
 

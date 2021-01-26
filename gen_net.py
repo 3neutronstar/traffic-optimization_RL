@@ -46,14 +46,20 @@ class Network():
         self.configs = configs
         self.sim_start = self.configs['sim_start']
         self.max_steps = self.configs['max_steps']
+        self.current_path = os.path.dirname(os.path.abspath(__file__))
         if self.configs['mode'] == 'train':
-            self.file_name = self.configs['file_name'] + \
-                self.configs['time_data']
+            self.file_name = self.configs['file_name']
+            os.mkdir(os.path.join(self.current_path, 'training_data',
+                                  self.configs['time_data']))
+            os.mkdir(os.path.join(self.current_path, 'training_data',
+                                  self.configs['time_data'], 'net_data'))
+            self.current_Env_path = os.path.join(
+                self.current_path, 'training_data', self.configs['time_data'], 'net_data')
         else:
             self.file_name = self.configs['file_name']
+            self.current_Env_path = os.path.join(
+                self.current_path, 'Net_data')
 
-        self.current_path = os.path.dirname(os.path.abspath(__file__))
-        self.current_Env_path = os.path.join(self.current_path, 'Net_data')
         self.num_cars = str(self.configs['num_cars'])
         self.num_lanes = str(self.configs['num_lanes'])
         self.flow_start = str(self.configs['flow_start'])
@@ -212,8 +218,6 @@ class Network():
         time.append(E('end', attrib={'value': str(self.max_steps)}))
         indent(sumocfg)
         outputXML = ET.SubElement(sumocfg, 'output')
-        # outputXML.append(
-        #     E('netstate-dump', attrib={'value': os.path.join(self.current_Env_path, self.file_name+'_dump.net.xml')}))
         indent(sumocfg)
         dump(sumocfg)
         tree = ET.ElementTree(sumocfg)
