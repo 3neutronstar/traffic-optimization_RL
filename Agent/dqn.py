@@ -17,9 +17,9 @@ DEFAULT_CONFIG = {
     'experience_replay_size': 1e5,
     'epsilon': 0.5,
     'epsilon_decay_rate': 0.98,
-    'fc_net':[16,16,16],
-    'lr':0.0001,
-    'lr_decay_rate':0.99,
+    'fc_net': [16, 16, 16],
+    'lr': 0.0001,
+    'lr_decay_rate': 0.99,
 }
 
 Transition = namedtuple('Transition',
@@ -29,13 +29,14 @@ Transition = namedtuple('Transition',
 class QNetwork(nn.Module):
     def __init__(self, input_size, output_size, configs):
         super(QNetwork, self).__init__()
-        self.configs = merge_dict(configs, DEFAULT_CONFIG)
+        self.configs = configs
         self.state_space = input_size
         self.action_space = output_size
 
         # build nn
         self.fc1 = nn.Linear(self.state_space, self.configs['fc_net'][0])
-        self.fc2 = nn.Linear(self.configs['fc_net'][0], self.configs['fc_net'][1])
+        self.fc2 = nn.Linear(
+            self.configs['fc_net'][0], self.configs['fc_net'][1])
         #self.fc3 = nn.Linear(self.configs['fc_net'][1], self.configs['fc_net'][2])
         #self.fc4 = nn.Linear(self.configs['fc_net'][2], self.action_space)
         self.fc3 = nn.Linear(self.configs['fc_net'][1], self.action_space)
@@ -44,9 +45,9 @@ class QNetwork(nn.Module):
     def forward(self, x):
         x = x.float()
         x = f.leaky_relu(self.fc1(x))
-        x=f.dropout(x,0.4)
+        x = f.dropout(x, 0.4)
         x = f.leaky_relu(self.fc2(x))
-        x=f.dropout(x,0.3)
+        x = f.dropout(x, 0.3)
         # x = f.softmax(self.fc3(x))
         x = self.fc3(x)
         #x = f.softmax(self.fc4(x), dim=0)
@@ -70,17 +71,17 @@ class Trainer(RLAlgorithm):
             self.configs['experience_replay_size'])
         self.batch_size = self.configs['batch_size']
 
-        if self.configs['model'] == 'FRAP':
+        if self.configs['model'].lower() == 'frap':
             from Agent.Model.FRAP import FRAP
             model = FRAP(self.state_space, self.action_space)
-            model.add_module(
-                QNetwork(self.state_space, self.action_space, self.configs))
+            model.add_module('QNetwork',
+                             QNetwork(self.state_space, self.action_space, self.configs))
         else:
             model = QNetwork(self.state_space, self.action_space,
                              configs)  # 1개 네트워크용
         model.to(self.configs['device'])
-        print(model)
         self.mainQNetwork = deepcopy(model).to(self.configs['device'])
+        print(self.mainQNetwork)
         self.targetQNetwork = deepcopy(model).to(self.configs['device'])
         self.targetQNetwork.load_state_dict(self.mainQNetwork.state_dict())
         self.optimizer = optim.Adam(
@@ -96,17 +97,18 @@ class Trainer(RLAlgorithm):
 
     def get_action(self, state):
 
-        if random.random() > self.epsilon: # epsilon greedy
+        if random.random() > self.epsilon:  # epsilon greedy
             with torch.no_grad():
-                action = torch.max(self.mainQNetwork(state), dim=1)[
-                    1].view(1, 1)  # 가로로 # action 수가 늘어나면 view(1,action_size)
-                    # agent가 늘어나면 view(agents,action_size)
-                self.action+=tuple(action) # 기록용
+                print(state)
+                action = torch.max(self.mainQNetwork(state), dim=1)[1].view(
+                    1, 1)  # 가로로 # action 수가 늘어나면 view(1,action_size)
+                # agent가 늘어나면 view(agents,action_size)
+                self.action += tuple(action)  # 기록용
             return action
         else:
             action = torch.tensor([random.randint(0, 7)
                                    for i in range(self.action_size)], device=self.configs['device']).view(1, 1)
-            self.action+=tuple(action) # 기록용
+            self.action += tuple(action)  # 기록용
             return action
 
     def target_update(self):
@@ -138,7 +140,7 @@ class Trainer(RLAlgorithm):
         # Q(s_t, a) 계산 - 모델이 action batch의 a'일때의 Q(s_t,a')를 계산할때, 취한 행동 a'의 column 선택(column이 Q)
 
         state_action_values = self.mainQNetwork(
-            state_batch).gather(1, action_batch)  
+            state_batch).gather(1, action_batch)
 
         # 모든 다음 상태를 위한 V(s_{t+1}) 계산
         next_state_values = torch.zeros(
@@ -159,12 +161,12 @@ class Trainer(RLAlgorithm):
         self.optimizer.zero_grad()
         loss.backward()
         for param in self.mainQNetwork.parameters():
-            param.grad.data.clamp_(-1, 1) # 값을 -1과 1로 한정시켜줌 (clipping)
+            param.grad.data.clamp_(-1, 1)  # 값을 -1과 1로 한정시켜줌 (clipping)
         self.optimizer.step()
 
     def update_hyperparams(self, epoch):
         # decay rate (epsilon greedy)
-        if self.epsilon > 0.05:
+        if self.epsilon > 0.005:
             self.epsilon *= self.epsilon_decay_rate
 
         # decay learning rate

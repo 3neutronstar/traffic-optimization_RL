@@ -34,10 +34,13 @@ def parse_args(args):
         help='activate only in test mode and write file_name to load weights.')
     parser.add_argument(
         '--algorithm', type=str, default='dqn',
-        help='activate only in test mode and write file_name to load weights.')
+        help='choose algorithm dqn, reinforce, a2c, ppo.')
     parser.add_argument(
         '--model', type=str, default='base',
-        help='activate only in test mode and write file_name to load weights.')
+        help='choose model base and FRAP.')
+    parser.add_argument(
+        '--gpu', type=bool, default=True,
+        help='choose model base and FRAP.')
     return parser.parse_known_args(args)[0]
 
 
@@ -51,14 +54,16 @@ def train(flags, time_data, configs, sumoConfig):
     # configs setting
     configs['algorithm'] = flags.algorithm.lower()
     print("training algorithm: ", configs['algorithm'])
-    if flags.model.lower()=='base':
+    if flags.model.lower() == 'base':
         configs['action_space'] = 8*len(configs['tl_rl_list'])
         configs['action_size'] = 1*len(configs['tl_rl_list'])
         configs['state_space'] = 5*len(configs['tl_rl_list'])
-    elif flags.model.lower()=='frap':
+        configs['model'] = 'base'
+    elif flags.model.lower() == 'frap':
         configs['action_space'] = 8*len(configs['tl_rl_list'])
         configs['action_size'] = 1*len(configs['tl_rl_list'])
         configs['state_space'] = 16*len(configs['tl_rl_list'])
+        configs['model'] = 'frap'
 
     if flags.algorithm.lower() == 'dqn':
         from train import dqn_train
@@ -158,11 +163,11 @@ def simulate(flags, configs, sumoConfig):
         step += 1
         for _, edge in enumerate(interest_list):
             avg_waiting_time += traci.edge.getWaitingTime(edge['inflow'])
-        vehicle_list = traci.vehicle.getIDList()
-        for i, vehicle in enumerate(vehicle_list):
-            speed = traci.vehicle.getSpeed(vehicle)
-            avg_velocity = float((i)*avg_velocity+speed) / \
-                float(i+1)  # incremental avg
+        # vehicle_list = traci.vehicle.getIDList()
+        # for i, vehicle in enumerate(vehicle_list):
+        #     speed = traci.vehicle.getSpeed(vehicle)
+        #     avg_velocity = float((i)*avg_velocity+speed) / \
+        #         float(i+1)  # incremental avg
 
         arrived_vehicles += traci.simulation.getAllSubscriptionResults()[
             ''][0x79]  # throughput
@@ -173,13 +178,13 @@ def simulate(flags, configs, sumoConfig):
 
 
 def main(args):
+    flags = parse_args(args)
     use_cuda = torch.cuda.is_available()
-    #device = torch.device("cuda" if use_cuda else "cpu")
-    device = torch.device('cpu')
+    device = torch.device("cuda" if use_cuda and flags.gpu == True else "cpu")
+    #device = torch.device('cpu')
     print("Using device: {}".format(device))
     configs['device'] = str(device)
     configs['current_path'] = os.path.dirname(os.path.abspath(__file__))
-    flags = parse_args(args)
     configs['mode'] = flags.mode.lower()
     # init train setting
     time_data = time.strftime('%m-%d_%H-%M-%S', time.localtime(time.time()))

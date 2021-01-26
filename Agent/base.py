@@ -19,18 +19,17 @@ class RLAlgorithm():
         '''
         raise NotImplementedError
 
-    def update_hyperparams(self,epoch):
+    def update_hyperparams(self, epoch):
         '''
         상속을 위한 함수
         '''
         raise NotImplementedError
 
-    def update_tensorboard(self,writer,epoch):
+    def update_tensorboard(self, writer, epoch):
         '''
         상속을 위한 함수
         '''
         raise NotImplementedError
-
 
 
 Transition = namedtuple('Transition',
@@ -62,6 +61,7 @@ def merge_dict(d1, d2):
     merged = copy.deepcopy(d1)
     for key in d2.keys():
         if key in merged.keys():
+            print(key)
             raise KeyError
         merged[key] = d2[key]
     return merged

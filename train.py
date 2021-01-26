@@ -2,8 +2,6 @@ import json
 import os
 import sys
 import time
-from Env.env import TL3x3Env
-from Env.GridEnv import GridEnv
 import traci
 import traci.constants as tc
 import torch
@@ -40,6 +38,10 @@ interest_list = [
 
 def dqn_train(configs, time_data, sumoCmd):
     from Agent.dqn import Trainer
+    if configs['model'] == 'base':
+        from Env.env import TL3x3Env
+    elif configs['model'] == 'frap':
+        from Env.FRAP import TL3x3Env
     tl_rl_list = configs['tl_rl_list']
     NUM_EPOCHS = configs['num_epochs']
     MAX_STEPS = configs['max_steps']
@@ -56,7 +58,6 @@ def dqn_train(configs, time_data, sumoCmd):
         traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(
             'G'*configs['num_lanes'], 'G', 'r'*configs['num_lanes'], 'r'))
         env = TL3x3Env(tl_rl_list, configs)
-        # env = GridEnv( configs)
         step = 0
         done = False
         # state initialization
@@ -137,6 +138,7 @@ def dqn_train(configs, time_data, sumoCmd):
 def REINFORCE_train(configs, time_data, sumoCmd):
     from Agent.REINFORCE import Trainer
     from Agent.REINFORCE import DEFAULT_CONFIG
+    from Env.env import TL3x3Env
     tl_rl_list = configs['tl_rl_list']
     NUM_EPOCHS = configs['num_epochs']
     MAX_STEPS = configs['max_steps']
@@ -215,6 +217,10 @@ def REINFORCE_train(configs, time_data, sumoCmd):
 
 def a2c_train(configs, time_data, sumoCmd):
     from Agent.a2c import Trainer
+    if configs['model'] == 'base':
+        from Env.env import TL3x3Env
+    elif configs['model'] == 'frap':
+        from Env.FRAP import TL3x3Env
     tl_rl_list = configs['tl_rl_list']
     NUM_EPOCHS = configs['num_epochs']
     MAX_STEPS = configs['max_steps']
@@ -230,6 +236,7 @@ def a2c_train(configs, time_data, sumoCmd):
         traci.start(sumoCmd)
         traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(
             'G'*configs['num_lanes'], 'G', 'r'*configs['num_lanes'], 'r'))
+        before_action = torch.tensor([1])
         env = TL3x3Env(tl_rl_list, configs)
         # env = GridEnv( configs)
         step = 0
@@ -262,14 +269,15 @@ def a2c_train(configs, time_data, sumoCmd):
             action_distribution += tuple(action.unsqueeze(1))
             env.step(action)  # action 적용함수
             next_state = env.get_state()  # 다음스테이트
-
             for _ in range(20):  # 10초마다 행동 갱신
                 traci.simulationStep()
                 env.collect_state()
                 step += 1
                 arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
 
-            traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'y'*28)
+            if action != before_action:  # 다음 신호와 현재 신호가 다르면 yellow로 모두 변환
+                traci.trafficlight.setRedYellowGreenState(
+                    tl_rl_list[0], 'y'*28)
 
             for _ in range(4):  # 4번더
                 traci.simulationStep()
@@ -287,6 +295,7 @@ def a2c_train(configs, time_data, sumoCmd):
             agent.update()
             state = next_state
             total_reward += reward
+            before_action = action
 
             # 20초 끝나고 yellow 4초
 
@@ -310,6 +319,10 @@ def a2c_train(configs, time_data, sumoCmd):
 
 def ppo_train(configs, time_data, sumoCmd):
     from Agent.ppo import Trainer
+    if configs['model'] == 'base':
+        from Env.env import TL3x3Env
+    elif configs['model'] == 'frap':
+        from Env.FRAP import TL3x3Env
     tl_rl_list = configs['tl_rl_list']
     NUM_EPOCHS = configs['num_epochs']
     MAX_STEPS = configs['max_steps']

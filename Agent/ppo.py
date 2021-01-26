@@ -134,22 +134,24 @@ class Trainer(RLAlgorithm):
             self.configs['device']).detach()
 
         # Optimize model for K epochs:
-        for _ in range(self.K_epochs):
+        for _ in range(self.K_epochs):  # k번 업데이트
             # Evaluating old actions and values :
             logprobs, state_values, distributions_entropy = self.model.evaluate(
                 old_states, old_actions)
 
             # Finding the ratio (pi_theta / pi_theta__old):
+            # old쪽은 중복(old action쪽과)
             ratios = torch.exp(logprobs - old_logprobs.detach())
 
             # Finding Surrogate Loss:
-            advantages = rewards - state_values.detach()
-            surr1 = ratios * advantages
+            advantages = rewards - state_values.detach()  # detach이유는 중복되기 때문
+            surr1 = ratios * advantages  # ratio가 Conservative policy iteration
             surr2 = torch.clamp(ratios, 1-self.eps_clip,
                                 1+self.eps_clip) * advantages
             loss = -torch.min(surr1, surr2) + 0.5 * \
                 self.criterion(state_values, rewards) - \
-                0.01*distributions_entropy
+                0.01*distributions_entropy  # criterion 부분은 value loss이며 reward는 cumulative이므로 사용가능
+            # 마지막항은  entropy bonus항
 
             # take gradient step
             self.optimizer.zero_grad()
