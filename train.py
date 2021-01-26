@@ -95,9 +95,9 @@ def dqn_train(configs, time_data, sumoCmd):
                 step += 1
                 arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
             next_state = env.get_state()  # 다음스테이트
-            if before_action != action:
-                traci.trafficlight.setRedYellowGreenState(
-                    tl_rl_list[0], 'y'*28)
+
+            traci.trafficlight.setRedYellowGreenState(
+                tl_rl_list[0], 'y'*28)
 
             for _ in range(5):  # 4번더
                 traci.simulationStep()
@@ -110,7 +110,6 @@ def dqn_train(configs, time_data, sumoCmd):
             agent.update(done)
             state = next_state
             total_reward += reward
-            before_action = action
 
             # 20초 끝나고 yellow 4초
 
