@@ -3,5 +3,5 @@ tensorboard/*
 data/*
 training_data/model/*
 training_data/*
-.vscode
+.vscode/*
 Net_data/*
