@@ -54,10 +54,10 @@ def dqn_train(configs, time_data, sumoCmd):
     epoch = 0
     while epoch < NUM_EPOCHS:
         traci.start(sumoCmd)
-        traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(
-            'G'*configs['num_lanes'], 'G', 'r'*configs['num_lanes'], 'r'))
         before_action = torch.tensor([[1]], device=configs['device'])  # 초기화
         env = TL3x3Env(configs)
+        traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(
+            'G'*configs['num_lanes'], 'G', 'r'*configs['num_lanes'], 'r'))
         step = 0
         done = False
         # state initialization

@@ -11,8 +11,8 @@ class GridEnv(baseEnv):
         self.configs = configs
         self.tl_list = traci.trafficlight.getIDList()
         self.tl_rl_list = self.configs['tl_rl_list']
+        self.side_list = ['u', 'r', 'd', 'l']
         self.interest_list = self._generate_interest_list()
-        print(self.interest_list)
         self.phase_size = len(
             traci.trafficlight.getRedYellowGreenState(self.tl_list[0]))
         self.pressure = 0
@@ -20,14 +20,24 @@ class GridEnv(baseEnv):
         self.vehicle_state_space = 4
         self.phase_state_space = 1
         self.action_size = len(self.tl_rl_list)
+        self.left_lane_num = self.configs['num_lanes']-1
+        self.node_interest_pair = dict()
+        for _, node in enumerate(self.configs['node_info']):
+            if node['id'][-1] not in self.side_list:
+                self.node_interest_pair['{}'.format(
+                    node['id'])] = list()
+                for _, interest in enumerate(self.interest_list):
+                    if node['id'][-3:] == interest['id'][-3:]:  # 좌표만 받기
+                        self.node_interest_pair['{}'.format(
+                            node['id'])].append(interest)
+        print(self.node_interest_pair)
 
     def _generate_interest_list(self):
         interest_list = list()
-        side_list = ['u', 'r', 'd', 'l']
         node_list = self.configs['node_info']
         x_y_end = self.configs['grid_num']-1
         for _, node in enumerate(node_list):
-            if node['id'][-1] not in side_list:
+            if node['id'][-1] not in self.side_list:
                 x = int(node['id'][-3])
                 y = int(node['id'][-1])
                 left_x = x-1
@@ -93,30 +103,26 @@ class GridEnv(baseEnv):
             vehicle_state = torch.zeros(
                 (int(self.configs['state_space']-self.phase_state_space), self.action_size), device=self.configs['device'], dtype=torch.int)
             phase.append(traci.trafficlight.getRedYellowGreenState(tl_rl))
-            # 1교차로용 n교차로는 추가요망
-            phase_state = self._toState(phase[i])
+            # n교차로
+            phase_state = self._toState(phase).view(
+                1, -1).to(self.configs['device'])
 
-        # 변환
-        # 1교차로용 n교차로는 추가요망
-        # phase state
-        phase_state = self._toState(phase).view(
-            1, -1).to(self.configs['device'])
+            # vehicle state
+            for j, interest in enumerate(self.interest_list):
+                left_movement = traci.lane.getLastStepHaltingNumber(
+                    interest['inflow']+'_{}'.format(self.left_lane_num))
+                # 직진
+                vehicle_state[j*2] = traci.edge.getLastStepHaltingNumber(
+                    interest['inflow'])-left_movement  # 가장 좌측에 멈춘 친구를 왼쪽차선 이용자로 판단
+                # 좌회전
+                vehicle_state[j*2+1] = left_movement
 
-        # vehicle state
-        for i, interest in enumerate(self.interest_list):
-            left_movement = traci.lane.getLastStepHaltingNumber(
-                interest['inflow']+'_{}'.format(self.left_lane_num))
-            # 직진
-            vehicle_state[i*2] = traci.edge.getLastStepHaltingNumber(
-                interest['inflow'])-left_movement  # 가장 좌측에 멈춘 친구를 왼쪽차선 이용자로 판단
-            # 좌회전
-            vehicle_state[i*2] = left_movement
-
-        vehicle_state = torch.transpose(vehicle_state, 0, 1)
-        state = torch.cat((vehicle_state, phase_state),
-                          dim=1)  # 여기 바꿨다 문제 생기면 여기임 암튼 그럼
-
-        return state
+            vehicle_state = torch.transpose(vehicle_state, 0, 1)
+            state = torch.cat((vehicle_state, phase_state),
+                              dim=1)  # 여기 바꿨다 문제 생기면 여기임 암튼 그럼
+            state_set += tuple(state)
+        state_set = torch.cat(state_set, dim=1)
+        return state_set
 
     def collect_state(self):
         '''
