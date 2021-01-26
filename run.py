@@ -40,7 +40,7 @@ def parse_args(args):
         help='choose model base and FRAP.')
     parser.add_argument(
         '--gpu', type=bool, default=True,
-        help='choose model base and FRAP.')
+        help='choose gpu or cpu.')
     return parser.parse_known_args(args)[0]
 
 
@@ -54,7 +54,12 @@ def train(flags, time_data, configs, sumoConfig):
     # configs setting
     configs['algorithm'] = flags.algorithm.lower()
     print("training algorithm: ", configs['algorithm'])
-    if flags.model.lower() == 'base':
+    if flags.algorithm.lower() == 'super_dqn':
+        configs['action_space'] = 8*len(configs['tl_rl_list'])
+        configs['action_size'] = 1*len(configs['tl_rl_list'])
+        configs['state_space'] = 5*len(configs['tl_rl_list'])
+        configs['model'] = 'base'
+    elif flags.model.lower() == 'base':
         configs['action_space'] = 8*len(configs['tl_rl_list'])
         configs['action_size'] = 1*len(configs['tl_rl_list'])
         configs['state_space'] = 5*len(configs['tl_rl_list'])
@@ -77,6 +82,9 @@ def train(flags, time_data, configs, sumoConfig):
     elif flags.algorithm.lower() == 'ppo':
         from train import ppo_train
         ppo_train(configs, time_data, sumoCmd)
+    elif flags.algorithm.lower() == 'super_dqn':
+        from train import super_dqn_train
+        super_dqn_train(configs, time_data, sumoCmd)
 
 
 def test(flags, configs, sumoConfig):
