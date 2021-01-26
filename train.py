@@ -208,9 +208,7 @@ def REINFORCE_train(configs, time_data, sumoCmd):
         update_tensorboard(writer, epoch, env, agent, arrived_vehicles)
         print('======== {} epoch/ return: {} arrived number:{}'.format(epoch,
                                                                        total_reward, arrived_vehicles))
-        if epoch % 50 == 0:
-            agent.save_weights(
-                configs['file_name']+'_{}_{}'.format(time_data, epoch))
+        
 
     writer.close()
 
@@ -235,7 +233,6 @@ def a2c_train(configs, time_data, sumoCmd):
         env = TL3x3Env(tl_rl_list, configs)
         # env = GridEnv( configs)
         step = 0
-        done = False
         # state initialization
         # agent setting
         total_reward = 0
@@ -287,7 +284,7 @@ def a2c_train(configs, time_data, sumoCmd):
 
             reward = env.get_reward()  # 25초 지연된 보상
             agent.save_replay(state, action, reward, next_state)  # dqn
-            agent.update(done)
+            agent.update()
             state = next_state
             total_reward += reward
 
