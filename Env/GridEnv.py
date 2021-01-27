@@ -145,10 +145,10 @@ class GridEnv(baseEnv):
         '''
         agent 의 action 적용 및 reward 계산
         '''
-        action = action.view(-1, self.action_size)
+        action=action.view(1,-1,self.action_size)
         # action을 environment에 등록 후 상황 살피기
         for i, tl_rl in enumerate(self.tl_rl_list):
-            phase = self._toPhase(action[i])  # action을 분해
+            phase = self._toPhase(action[0][0][i])  # action을 분해
             traci.trafficlight.setRedYellowGreenState(tl_rl, phase)
 
         # reward calculation and save
@@ -175,7 +175,6 @@ class GridEnv(baseEnv):
         straight: green=1, yellow=x, red=0 <- x is for changing
         left: green=1, yellow=x, red=0 <- x is for changing
         '''
-        print(action)
         return self.phase_list[action]
 
     def _toState(self, phase):  # env의 phase를 해석불가능한 state로 변환

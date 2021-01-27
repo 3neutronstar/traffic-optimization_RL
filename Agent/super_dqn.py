@@ -13,7 +13,7 @@ from torch.utils.tensorboard import SummaryWriter
 DEFAULT_CONFIG = {
     'gamma': 0.99,
     'tau': 0.995,
-    'batch_size': 64,
+    'batch_size': 8,
     'experience_replay_size': 1e5,
     'epsilon': 0.9,
     'epsilon_decay_rate': 0.98,
@@ -30,19 +30,19 @@ class QNetwork(nn.Module):
     def __init__(self, input_size, output_size, configs):
         super(QNetwork, self).__init__()
         self.configs = configs
-        self.state_space = input_size
-        self.action_space = output_size
-        self.action_size = len(self.configs['tl_rl_list'])
+        self.num_agent = len(self.configs['tl_rl_list'])
+        self.action_space = self.configs['action_space']
+        self.state_space = self.configs['state_space']
         # build nn
-        self.fc1 = nn.Linear(self.state_space,
-                             self.configs['fc_net'][0]*self.action_size)
+        self.fc1 = nn.Linear(self.state_space*self.num_agent,
+                             self.configs['fc_net'][0]*self.num_agent)
         self.fc2 = nn.Linear(
-            self.configs['fc_net'][0]*self.action_size, self.configs['fc_net'][1]*self.action_size)
+            self.configs['fc_net'][0]*self.num_agent, self.configs['fc_net'][1]*self.num_agent)
         self.fc3 = nn.Linear(
-            self.configs['fc_net'][1]*self.action_size, self.configs['fc_net'][2]*self.action_size)
-        # self.fc3 = nn.Linear(self.configs['fc_net'][1]*self.action_size, self.action_space)
+            self.configs['fc_net'][1]*self.num_agent, self.configs['fc_net'][2]*self.num_agent)
+        # self.fc3 = nn.Linear(self.configs['fc_net'][1]*self.num_agent, self.action_space)
         self.fc4 = nn.Linear(
-            self.configs['fc_net'][2]*self.action_size, self.action_space)
+            self.configs['fc_net'][2]*self.num_agent, self.action_space*self.num_agent)
         # self.fc4 = nn.Linear(30, self.action_space)
 
     def forward(self, x):
@@ -54,7 +54,7 @@ class QNetwork(nn.Module):
         x = f.leaky_relu(self.fc3(x))
         x = f.dropout(x, 0.2)
         x = f.leaky_relu(self.fc4(x))
-        x = x.view(-1, self.action_size, 8)  # 1차원 batch, 2차원 agent, 3차원 Q
+        x = x.view(-1, self.num_agent,self.action_space)  # 1차원 batch, 2차원 agent, 3차원 Q
         #x = f.softmax(self.fc4(x), dim=0)
         return x  # q value
 
@@ -65,6 +65,7 @@ class Trainer(RLAlgorithm):
         os.mkdir(os.path.join(
             self.configs['current_path'], 'training_data', self.configs['time_data'], 'model'))
         self.configs = merge_dict(configs, DEFAULT_CONFIG)
+        self.num_agent=len(self.configs['tl_rl_list'])
         self.state_space = self.configs['state_space']
         self.action_space = self.configs['action_space']
         self.action_size = self.configs['action_size']
@@ -80,12 +81,12 @@ class Trainer(RLAlgorithm):
 
         if self.configs['model'].lower() == 'frap':
             from Agent.Model.FRAP import FRAP
-            model = FRAP(self.state_space, self.action_space,
+            model = FRAP(self.state_space*self.num_agent, self.action_space*self.num_agent,
                          self.configs['device'])
             # model.add_module('QNetwork',
             #                  QNetwork(self.state_space, self.action_space, self.configs))
         else:
-            model = QNetwork(self.state_space, self.action_space,
+            model = QNetwork(self.state_space*self.num_agent, self.action_space*self.num_agent,
                              self.configs)  # 1개 네트워크용
         model.to(self.configs['device'])
         self.mainQNetwork = deepcopy(model).to(self.configs['device'])
@@ -105,14 +106,13 @@ class Trainer(RLAlgorithm):
     def get_action(self, state):
         if random.random() > self.epsilon:  # epsilon greedy
             with torch.no_grad():
-                action = torch.max(self.mainQNetwork(state), dim=1)[1]
-                print(action)  # 가로로 # action 수가 늘어나면 view(1,action_size)
+                action = torch.max(self.mainQNetwork(state), dim=2)[1].view(-1,self.num_agent,self.action_size) #dim 2에서 고름
                 # agent가 늘어나면 view(agents,action_size)
                 self.action += tuple(action)  # 기록용
             return action
         else:
             action = torch.tensor([random.randint(0, 7)
-                                   for i in range(self.action_size)], device=self.configs['device']).view(self.action_size, 1)
+                                   for i in range(self.num_agent)], device=self.configs['device']).view(-1, self.num_agent,self.action_size)
             self.action += tuple(action)  # 기록용
             return action
 
@@ -132,13 +132,14 @@ class Trainer(RLAlgorithm):
         batch = Transition(*zip(*transitions))
 
         non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
-                                                batch.next_state)), device=self.configs['device'], dtype=torch.bool)
+                                                batch.next_state)), device=self.configs['device'], dtype=torch.bool).view(-1,1)
+        print(non_final_mask)
+        print(len(batch.next_state))
 
         non_final_next_states = torch.cat([s for s in batch.next_state
-                                           if s is not None], dim=0)
-        print(batch.state)
+                                           if s is not None], dim=1).view(-1,self.num_agent*self.state_space)
         state_batch = torch.cat(batch.state)
-        action_batch = torch.cat(batch.action, dim=0)
+        action_batch = torch.cat(batch.action, dim=1)
 
         reward_batch = torch.tensor(batch.reward).to(self.configs['device'])
 
@@ -147,9 +148,10 @@ class Trainer(RLAlgorithm):
 
         next_state_values = torch.zeros(
             self.configs['batch_size'], device=self.configs['device'], dtype=torch.float)
-
+        print(self.targetQNetwork(
+            non_final_next_states).max(dim=1)[0].detach().to(self.configs['device']))
         next_state_values[non_final_mask] = self.targetQNetwork(
-            non_final_next_states).max(1)[0].detach().to(self.configs['device'])  # .to(self.configs['device'])  # 자신의 Q value 중에서max인 value를 불러옴
+            non_final_next_states).max(dim=1)[0].detach().to(self.configs['device'])  # .to(self.configs['device'])  # 자신의 Q value 중에서max인 value를 불러옴
 
         # 기대 Q 값 계산
         expected_state_action_values = (

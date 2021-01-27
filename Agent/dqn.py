@@ -71,15 +71,16 @@ class Trainer(RLAlgorithm):
         self.experience_replay = ReplayMemory(
             self.configs['experience_replay_size'])
         self.batch_size = self.configs['batch_size']
+        self.num_agent=len(self.configs['tl_rl_list'])
 
         if self.configs['model'].lower() == 'frap':
             from Agent.Model.FRAP import FRAP
-            model = FRAP(self.state_space, self.action_space,
+            model = FRAP(self.state_space*self.num_agent, self.action_space*self.num_agent,
                          self.configs['device'])
             # model.add_module('QNetwork',
             #                  QNetwork(self.state_space, self.action_space, self.configs))
         else:
-            model = QNetwork(self.state_space, self.action_space,
+            model = QNetwork(self.state_space*self.num_agent, self.action_space*self.num_agent,
                              self.configs)  # 1개 네트워크용
         model.to(self.configs['device'])
         self.mainQNetwork = deepcopy(model).to(self.configs['device'])

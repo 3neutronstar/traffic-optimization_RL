@@ -55,19 +55,19 @@ def train(flags, time_data, configs, sumoConfig):
     configs['algorithm'] = flags.algorithm.lower()
     print("training algorithm: ", configs['algorithm'])
     if flags.algorithm.lower() == 'super_dqn':
-        configs['action_space'] = 8*((configs['grid_num'])**2)
-        configs['action_size'] = 1*((configs['grid_num']**2))
-        configs['state_space'] = 16*((configs['grid_num'])**2)
+        configs['action_space'] = 8
+        configs['action_size'] = 1
+        configs['state_space'] = 16
         configs['model'] = 'base'
     elif flags.model.lower() == 'base':
-        configs['action_space'] = 8*len(configs['tl_rl_list'])
-        configs['action_size'] = 1*len(configs['tl_rl_list'])
-        configs['state_space'] = 5*len(configs['tl_rl_list'])
+        configs['action_space'] = 8
+        configs['action_size'] = 1
+        configs['state_space'] = 5
         configs['model'] = 'base'
     elif flags.model.lower() == 'frap':
-        configs['action_space'] = 8*len(configs['tl_rl_list'])
-        configs['action_size'] = 1*len(configs['tl_rl_list'])
-        configs['state_space'] = 16*len(configs['tl_rl_list'])
+        configs['action_space'] = 8
+        configs['action_size'] = 1
+        configs['state_space'] = 16
         configs['model'] = 'frap'
 
     if flags.algorithm.lower() == 'dqn':
