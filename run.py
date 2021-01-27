@@ -39,7 +39,7 @@ def parse_args(args):
         '--model', type=str, default='base',
         help='choose model base and FRAP.')
     parser.add_argument(
-        '--gpu', type=bool, default=True,
+        '--gpu', type=bool, default=False,
         help='choose model base and FRAP.')
     return parser.parse_known_args(args)[0]
 

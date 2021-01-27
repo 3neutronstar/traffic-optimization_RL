@@ -1,10 +1,10 @@
+import os, json
 import torch
 from torch import nn
 import copy
 import random
 from collections import namedtuple
 from copy import deepcopy
-import os
 
 
 class RLAlgorithm():
@@ -30,6 +30,17 @@ class RLAlgorithm():
         상속을 위한 함수
         '''
         raise NotImplementedError
+
+    def save_params(self, time_data):
+        with open(os.path.join(self.configs['current_path'], 'training_data', '{}_{}.json'.format(self.configs['file_name'], time_data)), 'w') as fp:
+            json.dump(self.configs, fp, indent=2)
+
+
+    def load_params(self, file_name):
+        ''' replay_name from flags.replay_name '''
+        with open(os.path.join(self.configs['current_path'], 'training_data', '{}.json'.format(file_name)), 'r') as fp:
+            configs = json.load(fp)
+        return configs
 
 
 Transition = namedtuple('Transition',

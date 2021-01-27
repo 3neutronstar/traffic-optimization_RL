@@ -10,13 +10,14 @@ from Agent.base import RLAlgorithm, merge_dict, ReplayMemory
 DEFAULT_CONFIG = {
     'gamma': 0.99,
     'lr': 0.0001,
-    'decay_rate': 0.98,
     'actor_layers': [30, 30],
     'critic_layers': [30, 30],
-    'k_epochs': 4,
+    'num_sgd_iter': 15,
     'eps_clip': 0.2,
-    'lr_decay_rate': 0.98,
+    'lr_decay_rate': 0.99,
     'update_period': 5,
+    'vf_loss_coeff':1.0,
+    'entropy_coeff':0.01,
 
 }
 
@@ -93,11 +94,12 @@ class Trainer(RLAlgorithm):
         self.eps_clip = self.configs['eps_clip']
         self.lr = self.configs['lr']
         self.lr_decay_rate = self.configs['lr_decay_rate']
-        self.K_epochs = self.configs['k_epochs']
-
+        self.num_sgd_iter = self.configs['num_sgd_iter']
+        self.vf_loss_coeff=self.configs['vf_loss_coeff']
         self.model = Net(self.memory, self.configs).to(self.configs['device'])
         self.optimizer = torch.optim.Adam(
             self.model.parameters(), lr=self.lr)
+        self.entropy_coeff=self.configs['entropy_coeff']
         self.model_old = Net(self.memory, self.configs).to(
             self.configs['device'])
         self.model_old.load_state_dict(self.model.state_dict())
@@ -134,7 +136,7 @@ class Trainer(RLAlgorithm):
             self.configs['device']).detach()
 
         # Optimize model for K epochs:
-        for _ in range(self.K_epochs):  # k번 업데이트
+        for _ in range(self.num_sgd_iter):  # k번 업데이트
             # Evaluating old actions and values :
             logprobs, state_values, distributions_entropy = self.model.evaluate(
                 old_states, old_actions)
@@ -148,9 +150,9 @@ class Trainer(RLAlgorithm):
             surr1 = ratios * advantages  # ratio가 Conservative policy iteration
             surr2 = torch.clamp(ratios, 1-self.eps_clip,
                                 1+self.eps_clip) * advantages
-            loss = -torch.min(surr1, surr2) + 0.5 * \
+            loss = -torch.min(surr1, surr2) + self.vf_loss_coeff * \
                 self.criterion(state_values, rewards) - \
-                0.01*distributions_entropy  # criterion 부분은 value loss이며 reward는 cumulative이므로 사용가능
+                self.entropy_coeff*distributions_entropy  # criterion 부분은 value loss이며 reward는 cumulative이므로 사용가능
             # 마지막항은  entropy bonus항
 
             # take gradient step

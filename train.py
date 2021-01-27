@@ -7,7 +7,7 @@ import traci.constants as tc
 import torch
 from torch.utils.tensorboard import SummaryWriter
 import torch.optim as optim
-from utils import save_params, load_params, update_tensorboard
+from utils import update_tensorboard
 from gen_net import configs
 from Agent.base import merge_dict
 
@@ -50,7 +50,7 @@ def dqn_train(configs, time_data, sumoCmd):
     writer = SummaryWriter(os.path.join(
         configs['current_path'], 'training_data', time_data))
     # save hyper parameters
-    save_params(configs, time_data)
+    agent.save_params(time_data)
     # init training
     epoch = 0
     while epoch < NUM_EPOCHS:
@@ -143,7 +143,7 @@ def REINFORCE_train(configs, time_data, sumoCmd):
     writer = SummaryWriter(os.path.join(
         configs['current_path'], 'training_data', time_data))
     # save hyper parameters
-    save_params(merge_dict(configs, DEFAULT_CONFIG), time_data)
+    agent.save_params(t(configs, DEFAULT_CONFIG), time_data)
     # init training
     epoch = 0
     while epoch < NUM_EPOCHS:
@@ -224,7 +224,7 @@ def a2c_train(configs, time_data, sumoCmd):
     writer = SummaryWriter(os.path.join(
         configs['current_path'], 'training_data', time_data))
     # save hyper parameters
-    save_params(configs, time_data)
+    agent.save_params(time_data)
     # init training
     epoch = 0
     while epoch < NUM_EPOCHS:
@@ -326,7 +326,7 @@ def ppo_train(configs, time_data, sumoCmd):
     writer = SummaryWriter(os.path.join(
         configs['current_path'], 'training_data', time_data))
     # save hyper parameters
-    save_params(configs, time_data)
+    agent.save_params(time_data)
     # init training
     epoch = 0
     while epoch < NUM_EPOCHS:
