@@ -5,23 +5,6 @@ import torch.nn.functional as F
 
 class FRAP(nn.Module):
     def __init__(self, input_size, output_size,device):
-        #         16 번째 파라미터
-        # Traceback (most recent call last):
-        #   File "run.py", line 228, in <module>
-        #     main(sys.argv[1:])
-        #   File "run.py", line 207, in main
-        #     train(flags, time_data, configs, sumoConfig)
-        #   File "run.py", line 70, in train
-        #     dqn_train(configs, time_data, sumoCmd)
-        #   File "C:\Users\Admin\Desktop\vscode\traffic-optimization_RL\train.py", line 111, in dqn_train
-        #     agent.update(done)
-        #   File "C:\Users\Admin\Desktop\vscode\traffic-optimization_RL\Agent\dqn.py", line 170, in update
-        #     param.grad.data.clamp_(-1, 1)  # 값을 -1과 1로 한정시켜줌 (clipping)
-        # AttributeError: 'NoneType' object has no attribute 'data'
-        # Error: tcpip::Socket::recvAndCheck @ recv: peer shutdown
-        # Quitting (on error).
-        # 처음 있는 fc에 input size 정해줄것
-        # 마지막에 있는 fc에 output size 정해줄것
         self.device=device
         phase_input_size = 1
         vehicle_input_size = 1
@@ -38,45 +21,48 @@ class FRAP(nn.Module):
             [1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 0.5]],device=device).view(1, 1, 7,8)  # 완전 겹치면 1, 겹치다 말면 0.5 자기자신은 0
         self.demand_model_phase = [nn.Sequential(
             nn.Linear(phase_input_size, 2),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.Linear(2, 4),
-            nn.LeakyReLU(),
+            nn.ReLU(),
         ).to(device) for _ in range(8)]
         self.demand_model_vehicle = [nn.Sequential(
             nn.Linear(vehicle_input_size, 2),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.Linear(2, 4),
-            nn.LeakyReLU(),
+            nn.ReLU(),
         ).to(device) for _ in range(8)]
         self.embedding = nn.Sequential(
             nn.Linear(8, 16),
-            nn.LeakyReLU()
+            nn.ReLU()
         ).to(device)
         self.conv_pair = nn.Sequential(
             nn.Conv2d(32, 20, kernel_size=(1, 1)),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.Conv2d(20, 20, kernel_size=(1, 1)),
-            nn.LeakyReLU(),
+            nn.ReLU(),
         ).to(device)
         self.conv_mask_pair = nn.Sequential(
             nn.Conv2d(1, 4, kernel_size=(1, 1)),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.Conv2d(4, 20, kernel_size=(1, 1)),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.Conv2d(20, 20, kernel_size=(1, 1)),
-            nn.LeakyReLU(),
+            nn.ReLU(),
         ).to(device)
         self.conv_competition = nn.Sequential(
             nn.Conv2d(20, 8, kernel_size=(1, 1)),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.Conv2d(8, 1, kernel_size=(1, 1)),
-            nn.LeakyReLU(), #여기까지 끝남
+            nn.ReLU(), #여기까지 끝남
         ).to(device)
         self.Qnetwork=nn.Sequential(
             nn.Linear(8,16),
-            nn.LeakyReLU(),
+            nn.ReLU(),
+            nn.Linear(16,16),
+            nn.ReLU(),
+            nn.Dropout(0.3),
             nn.Linear(16,output_size),
-            nn.LeakyReLU(),
+            nn.ReLU(),
         )
 
     def forward(self, state):

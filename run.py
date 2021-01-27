@@ -1,11 +1,11 @@
 import argparse
-import json
-import os
-import sys
+import json,os, sys
 import time
 import torch
 import torch.optim as optim
 import traci
+import random
+import numpy as np
 import traci.constants as tc
 from gen_net import configs
 from sumolib import checkBinary
@@ -186,6 +186,10 @@ def simulate(flags, configs, sumoConfig):
 
 
 def main(args):
+    random_seed=20000
+    random.seed(random_seed)
+    torch.manual_seed(random_seed)
+    np.random.seed(random_seed)
     flags = parse_args(args)
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda and flags.gpu == True else "cpu")

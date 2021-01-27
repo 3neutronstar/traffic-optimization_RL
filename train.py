@@ -44,6 +44,7 @@ def dqn_train(configs, time_data, sumoCmd):
         from Env.FRAP import TL3x3Env
     NUM_EPOCHS = configs['num_epochs']
     MAX_STEPS = configs['max_steps']
+    tl_rl_list = configs['tl_rl_list']
     # init agent and tensorboard writer
     agent = Trainer(configs)
     writer = SummaryWriter(os.path.join(
@@ -54,7 +55,6 @@ def dqn_train(configs, time_data, sumoCmd):
     epoch = 0
     while epoch < NUM_EPOCHS:
         traci.start(sumoCmd)
-        before_action = torch.tensor([[1]], device=configs['device'])  # 초기화
         env = TL3x3Env(configs)
         traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(
             'G'*configs['num_lanes'], 'G', 'r'*configs['num_lanes'], 'r'))
@@ -360,16 +360,12 @@ def ppo_train(configs, time_data, sumoCmd):
 
             traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'y'*28)
 
-            for _ in range(4):  # 4번더
+            for _ in range(5):  # 4번더
                 traci.simulationStep()
                 env.collect_state()
                 step += 1
                 arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
 
-            traci.simulationStep()
-            env.collect_state()
-            step += 1
-            arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
 
             reward = env.get_reward()  # 25초 지연된 보상
             agent.memory.rewards.append(reward)
@@ -378,10 +374,9 @@ def ppo_train(configs, time_data, sumoCmd):
             agent.memory.dones.append(done)
             state = next_state
             total_reward += reward
-
-        if epoch % agent.configs['update_period'] == 0:
+        if epoch%5==0:
             agent.update()
-        agent.update_hyperparams(epoch)  # lr update
+            agent.update_hyperparams(epoch)  # lr update
 
         b = time.time()
         traci.close()
@@ -417,7 +412,7 @@ def super_dqn_train(configs, time_data, sumoCmd):
     writer = SummaryWriter(os.path.join(
         configs['current_path'], 'training_data', time_data))
     # save hyper parameters
-    save_params(configs, time_data)
+    agent.save_params(time_data)
     # init training
     epoch = 0
     while epoch < NUM_EPOCHS:

@@ -9,10 +9,10 @@ from Agent.base import RLAlgorithm, merge_dict, ReplayMemory
 
 DEFAULT_CONFIG = {
     'gamma': 0.99,
-    'lr': 0.0001,
+    'lr': 0.001,
     'actor_layers': [30, 30],
     'critic_layers': [30, 30],
-    'num_sgd_iter': 15,
+    'num_sgd_iter': 4,
     'eps_clip': 0.2,
     'lr_decay_rate': 0.99,
     'update_period': 5,
@@ -183,7 +183,7 @@ class Trainer(RLAlgorithm):
     def update_tensorboard(self, writer, epoch):
         if epoch % self.configs['update_period'] == 0:  # 5마다 업데이트
             writer.add_scalar('episode/total_loss', self.running_loss/self.configs['max_steps'],
-                              self.configs['max_steps']*epoch)  # 1 epoch마다
+                                self.configs['max_steps']*epoch)  # 1 epoch마다
             self.running_loss = 0
         writer.add_scalar('hyperparameter/lr', self.lr,
                           self.configs['max_steps']*epoch)
