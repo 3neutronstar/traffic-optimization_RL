@@ -136,7 +136,7 @@ class Trainer(RLAlgorithm):
 
         non_final_next_states = torch.cat([s for s in batch.next_state
                                            if s is not None], dim=0)
-
+        print(batch.state)
         state_batch = torch.cat(batch.state)
         action_batch = torch.cat(batch.action, dim=0)
 
