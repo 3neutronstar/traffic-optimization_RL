@@ -54,7 +54,7 @@ class QNetwork(nn.Module):
         x = f.leaky_relu(self.fc3(x))
         x = f.dropout(x, 0.2)
         x = f.leaky_relu(self.fc4(x))
-        x = x.view(self.action_size, 8)
+        x = x.view(-1, self.action_size, 8)  # 1차원 batch, 2차원 agent, 3차원 Q
         #x = f.softmax(self.fc4(x), dim=0)
         return x  # q value
 
@@ -105,8 +105,8 @@ class Trainer(RLAlgorithm):
     def get_action(self, state):
         if random.random() > self.epsilon:  # epsilon greedy
             with torch.no_grad():
-                action = torch.max(self.mainQNetwork(state), dim=1)[1].view(
-                    self.action_size, 1)  # 가로로 # action 수가 늘어나면 view(1,action_size)
+                action = torch.max(self.mainQNetwork(state), dim=1)[1]
+                print(action)  # 가로로 # action 수가 늘어나면 view(1,action_size)
                 # agent가 늘어나면 view(agents,action_size)
                 self.action += tuple(action)  # 기록용
             return action

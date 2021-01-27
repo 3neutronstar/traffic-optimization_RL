@@ -366,7 +366,6 @@ def ppo_train(configs, time_data, sumoCmd):
                 step += 1
                 arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
 
-
             reward = env.get_reward()  # 25초 지연된 보상
             agent.memory.rewards.append(reward)
             if step >= MAX_STEPS:
@@ -374,7 +373,7 @@ def ppo_train(configs, time_data, sumoCmd):
             agent.memory.dones.append(done)
             state = next_state
             total_reward += reward
-        if epoch%5==0:
+        if epoch % 5 == 0:
             agent.update()
             agent.update_hyperparams(epoch)  # lr update
 
@@ -417,8 +416,9 @@ def super_dqn_train(configs, time_data, sumoCmd):
     epoch = 0
     while epoch < NUM_EPOCHS:
         traci.start(sumoCmd)
-        traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(
-            'G'*configs['num_lanes'], 'G', 'r'*configs['num_lanes'], 'r'))
+        for tl_rl in tl_rl_list:
+            traci.trafficlight.setRedYellowGreenState(tl_rl, 'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(
+                'G'*configs['num_lanes'], 'G', 'r'*configs['num_lanes'], 'r'))
         env = GridEnv(configs)
         step = 0
         done = False

@@ -121,10 +121,10 @@ class GridEnv(baseEnv):
             vehicle_state = torch.transpose(vehicle_state, 0, 1)
 
             state = torch.cat((vehicle_state, phase_state),  # vehicle
-                              dim=1)  # 여기 바꿨다 문제 생기면 여기임 암튼 그럼
+                              dim=1).view(1, 1, -1)  # 여기 바꿨다 문제 생기면 여기임 암튼 그럼
 
             state_set += tuple(state)
-        state_set = torch.cat(state_set, dim=0).float()
+        state_set = torch.cat(state_set, dim=1).float()
 
         return state_set
 
@@ -145,7 +145,7 @@ class GridEnv(baseEnv):
         '''
         agent 의 action 적용 및 reward 계산
         '''
-
+        action = action.view(-1, self.action_size)
         # action을 environment에 등록 후 상황 살피기
         for i, tl_rl in enumerate(self.tl_rl_list):
             phase = self._toPhase(action[i])  # action을 분해
@@ -175,6 +175,7 @@ class GridEnv(baseEnv):
         straight: green=1, yellow=x, red=0 <- x is for changing
         left: green=1, yellow=x, red=0 <- x is for changing
         '''
+        print(action)
         return self.phase_list[action]
 
     def _toState(self, phase):  # env의 phase를 해석불가능한 state로 변환
