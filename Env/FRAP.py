@@ -11,9 +11,9 @@ action은 phase를 하겠다
 
 
 class TL3x3Env(baseEnv):
-    def __init__(self, tl_rl_list, configs):
+    def __init__(self, configs):
         self.configs = configs
-        self.tl_rl_list = tl_rl_list
+        self.tl_rl_list = self.configs['tl_rl_list']
         self.tl_list = traci.trafficlight.getIDList()
         self.edge_list = traci.edge.getIDList()
         self.pressure = 0
@@ -63,7 +63,8 @@ class TL3x3Env(baseEnv):
 
         # 1교차로용 n교차로는 추가요망
         # phase state
-        phase_state = self._toState(phase).view(1, -1).to(self.configs['device'])
+        phase_state = self._toState(phase).view(
+            1, -1).to(self.configs['device'])
 
         # vehicle state
         for i, interest in enumerate(self.interest_list):

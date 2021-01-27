@@ -68,7 +68,7 @@ class GridNetwork(Network):
             }]
             for _, node_info in enumerate(node_information):
                 nodes.append(node_info)
-                self.configs['node_info'].append(node_info)
+        self.configs['node_info'] = nodes
         self.nodes = nodes
         return nodes
 
@@ -133,6 +133,7 @@ class GridNetwork(Network):
                 }
                 edges.append(edge_info)
         self.edges = edges
+        self.configs['edge_info'] = edges
         return edges
 
     def specify_flow(self):
@@ -188,6 +189,7 @@ class GridNetwork(Network):
                             })
 
         self.flows = flows
+        self.configs['vehicle_info'] = flows
         return flows
 
     def specify_connection(self):

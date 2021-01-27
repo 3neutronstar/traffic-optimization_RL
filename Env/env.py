@@ -6,14 +6,14 @@ from copy import deepcopy
 
 
 class TL3x3Env(baseEnv):
-    def __init__(self, tl_rl_list, configs):
+    def __init__(self, configs):
         self.configs = configs
-        self.tl_rl_list = tl_rl_list
+        self.tl_rl_list = self.configs['tl_rl_list']
         self.tl_list = traci.trafficlight.getIDList()
         self.edge_list = traci.edge.getIDList()
         self.pressure = 0
         self.reward = 0
-        self.phase_list=self._phase_list()
+        self.phase_list = self._phase_list()
         '''
         up right down left 순서대로 저장
 
@@ -80,7 +80,7 @@ class TL3x3Env(baseEnv):
             phase.append(traci.trafficlight.getRedYellowGreenState(tl_rl))
 
         # 1교차로용 n교차로는 추가요망
-        phase_state = self._toState(phase[0]).reshape(1,1)
+        phase_state = self._toState(phase[0]).reshape(1, 1)
         for i, interest in enumerate(self.interest_list):
             # 죄회전용 추가 필요
             vehicle_state[i] = traci.edge.getLastStepHaltingNumber(
@@ -122,15 +122,15 @@ class TL3x3Env(baseEnv):
         Max Pressure based control
         각 node에 대해서 inflow 차량 수와 outflow 차량수 + 해당 방향이라는 전제에서
         '''
-        self.reward+=self.pressure
+        self.reward += self.pressure
         self.pressure = 0
         return self.reward
-    
-    def update_tensorboard(self,writer,epoch):
+
+    def update_tensorboard(self, writer, epoch):
         writer.add_scalar('episode/reward', self.reward,
-                        self.configs['max_steps']*epoch)  # 1 epoch마다
-        #clear the value once in an epoch
-        self.reward=0
+                          self.configs['max_steps']*epoch)  # 1 epoch마다
+        # clear the value once in an epoch
+        self.reward = 0
 
     def _toPhase(self, action):  # action을 해석가능한 phase로 변환
         '''
@@ -141,7 +141,8 @@ class TL3x3Env(baseEnv):
         return self.phase_list[action]
 
     def _toState(self, phase):  # env의 phase를 해석불가능한 state로 변환
-        state=torch.tensor(self.phase_list.index(phase),device=self.configs['device']).int()
+        state = torch.tensor(self.phase_list.index(
+            phase), device=self.configs['device']).int()
         return state
 
     def _getMovement(self, num):
@@ -161,17 +162,25 @@ class TL3x3Env(baseEnv):
             return -1  # error
 
     def _phase_list(self):
-        num_lanes=self.configs['num_lanes']
-        g='G'
-        r='r'
-        phase_list=[
-            'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(g*num_lanes,g,r*num_lanes,r),
-            'r{2}{1}gr{2}{3}rr{2}{1}gr{2}{3}r'.format(g*num_lanes,g,r*num_lanes,r),
-            'r{2}{3}rr{2}{3}rG{0}{1}gr{2}{3}r'.format(g*num_lanes,g,r*num_lanes,r),
-            'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(g*num_lanes,g,r*num_lanes,r), # current
-            'r{2}{3}rG{0}{1}gr{2}{3}rr{2}{3}r'.format(g*num_lanes,g,r*num_lanes,r),
-            'r{2}{3}rr{2}{3}rr{2}{3}rG{0}{1}g'.format(g*num_lanes,g,r*num_lanes,r),
-            'r{2}{3}rr{2}{1}gr{2}{3}rr{2}{1}r'.format(g*num_lanes,g,r*num_lanes,r),
-            'r{2}{3}rG{0}{3}rr{2}{3}rG{0}{3}g'.format(g*num_lanes,g,r*num_lanes,r), #current
+        num_lanes = self.configs['num_lanes']
+        g = 'G'
+        r = 'r'
+        phase_list = [
+            'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(
+                g*num_lanes, g, r*num_lanes, r),
+            'r{2}{1}gr{2}{3}rr{2}{1}gr{2}{3}r'.format(
+                g*num_lanes, g, r*num_lanes, r),
+            'r{2}{3}rr{2}{3}rG{0}{1}gr{2}{3}r'.format(
+                g*num_lanes, g, r*num_lanes, r),
+            'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(
+                g*num_lanes, g, r*num_lanes, r),  # current
+            'r{2}{3}rG{0}{1}gr{2}{3}rr{2}{3}r'.format(
+                g*num_lanes, g, r*num_lanes, r),
+            'r{2}{3}rr{2}{3}rr{2}{3}rG{0}{1}g'.format(
+                g*num_lanes, g, r*num_lanes, r),
+            'r{2}{3}rr{2}{1}gr{2}{3}rr{2}{1}r'.format(
+                g*num_lanes, g, r*num_lanes, r),
+            'r{2}{3}rG{0}{3}rr{2}{3}rG{0}{3}g'.format(
+                g*num_lanes, g, r*num_lanes, r),  # current
         ]
         return phase_list
