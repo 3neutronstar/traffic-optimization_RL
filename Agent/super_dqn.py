@@ -17,7 +17,7 @@ DEFAULT_CONFIG = {
     'experience_replay_size': 1e5,
     'epsilon': 0.9,
     'epsilon_decay_rate': 0.98,
-    'fc_net': [16, 16, 16],
+    'fc_net': [32, 32, 16],
     'lr': 0.0001,
     'lr_decay_rate': 0.99,
 }
@@ -32,14 +32,17 @@ class QNetwork(nn.Module):
         self.configs = configs
         self.state_space = input_size
         self.action_space = output_size
-
+        self.action_size = len(self.configs['tl_rl_list'])
         # build nn
-        self.fc1 = nn.Linear(self.state_space, self.configs['fc_net'][0])
+        self.fc1 = nn.Linear(self.state_space,
+                             self.configs['fc_net'][0]*self.action_size)
         self.fc2 = nn.Linear(
-            self.configs['fc_net'][0], self.configs['fc_net'][1])
-        #self.fc3 = nn.Linear(self.configs['fc_net'][1], self.configs['fc_net'][2])
-        #self.fc4 = nn.Linear(self.configs['fc_net'][2], self.action_space)
-        self.fc3 = nn.Linear(self.configs['fc_net'][1], self.action_space)
+            self.configs['fc_net'][0]*self.action_size, self.configs['fc_net'][1]*self.action_size)
+        self.fc3 = nn.Linear(
+            self.configs['fc_net'][1]*self.action_size, self.configs['fc_net'][2]*self.action_size)
+        # self.fc3 = nn.Linear(self.configs['fc_net'][1]*self.action_size, self.action_space)
+        self.fc4 = nn.Linear(
+            self.configs['fc_net'][2]*self.action_size, self.action_space)
         # self.fc4 = nn.Linear(30, self.action_space)
 
     def forward(self, x):
@@ -48,7 +51,10 @@ class QNetwork(nn.Module):
         x = f.leaky_relu(self.fc2(x))
         x = f.dropout(x, 0.3)
         # x = f.softmax(self.fc3(x))
-        x = self.fc3(x)
+        x = f.leaky_relu(self.fc3(x))
+        x = f.dropout(x, 0.2)
+        x = f.leaky_relu(self.fc4(x))
+        x = x.view(self.action_size, 8)
         #x = f.softmax(self.fc4(x), dim=0)
         return x  # q value
 
@@ -97,17 +103,16 @@ class Trainer(RLAlgorithm):
         self.targetQNetwork.eval()
 
     def get_action(self, state):
-
         if random.random() > self.epsilon:  # epsilon greedy
             with torch.no_grad():
                 action = torch.max(self.mainQNetwork(state), dim=1)[1].view(
-                    1, 1)  # 가로로 # action 수가 늘어나면 view(1,action_size)
+                    self.action_size, 1)  # 가로로 # action 수가 늘어나면 view(1,action_size)
                 # agent가 늘어나면 view(agents,action_size)
                 self.action += tuple(action)  # 기록용
             return action
         else:
             action = torch.tensor([random.randint(0, 7)
-                                   for i in range(self.action_size)], device=self.configs['device']).view(1, 1)
+                                   for i in range(self.action_size)], device=self.configs['device']).view(self.action_size, 1)
             self.action += tuple(action)  # 기록용
             return action
 
@@ -126,7 +131,6 @@ class Trainer(RLAlgorithm):
         transitions = self.experience_replay.sample(self.configs['batch_size'])
         batch = Transition(*zip(*transitions))
 
-        # 최종 상태가 아닌 마스크를 계산하고 배치 요소를 연결합니다.
         non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
                                                 batch.next_state)), device=self.configs['device'], dtype=torch.bool)
 
@@ -138,12 +142,9 @@ class Trainer(RLAlgorithm):
 
         reward_batch = torch.tensor(batch.reward).to(self.configs['device'])
 
-        # Q(s_t, a) 계산 - 모델이 action batch의 a'일때의 Q(s_t,a')를 계산할때, 취한 행동 a'의 column 선택(column이 Q)
-
         state_action_values = self.mainQNetwork(
             state_batch).gather(1, action_batch)
 
-        # 모든 다음 상태를 위한 V(s_{t+1}) 계산
         next_state_values = torch.zeros(
             self.configs['batch_size'], device=self.configs['device'], dtype=torch.float)
 

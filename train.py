@@ -419,7 +419,6 @@ def super_dqn_train(configs, time_data, sumoCmd):
         traci.start(sumoCmd)
         traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(
             'G'*configs['num_lanes'], 'G', 'r'*configs['num_lanes'], 'r'))
-        before_action = torch.tensor([[1]], device=configs['device'])  # 초기화
         env = GridEnv(configs)
         step = 0
         done = False
@@ -432,21 +431,6 @@ def super_dqn_train(configs, time_data, sumoCmd):
         action_distribution = tuple()
         a = time.time()
         while step < MAX_STEPS:
-            '''
-            # state=env.get_state(action) #partial하게는 env에서 조정
-            action=agent.get_action(state)
-            env.step(action)
-            reward=env.get_reward()
-            next_state=env.get_state()
-            # if traci.inductionloop.getLastStepVehicleNumber("0") > 0:
-            store transition in D (experience replay)
-            Sample random minibatch from D
-            step += 1
-            state=next_state
-
-
-            set yi
-            '''
 
             action = agent.get_action(state)
             action_distribution += tuple(action.unsqueeze(1))
@@ -458,9 +442,9 @@ def super_dqn_train(configs, time_data, sumoCmd):
                 step += 1
                 arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
             next_state = env.get_state()  # 다음스테이트
-            if before_action != action:
-                traci.trafficlight.setRedYellowGreenState(
-                    tl_rl_list[0], 'y'*28)
+
+            traci.trafficlight.setRedYellowGreenState(
+                tl_rl_list[0], 'y'*28)
 
             for _ in range(5):  # 4번더
                 traci.simulationStep()
@@ -473,7 +457,6 @@ def super_dqn_train(configs, time_data, sumoCmd):
             agent.update(done)
             state = next_state
             total_reward += reward
-            before_action = action
 
             # 20초 끝나고 yellow 4초
 

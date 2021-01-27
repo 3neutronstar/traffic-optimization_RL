@@ -16,12 +16,14 @@ class GridEnv(baseEnv):
         self.phase_size = len(
             traci.trafficlight.getRedYellowGreenState(self.tl_list[0]))
         self.pressure = 0
+        self.reward = 0
         self.state_space = self.configs['state_space']
-        self.vehicle_state_space = 4
-        self.phase_state_space = 1
+        self.vehicle_state_space = 8
+        self.phase_state_space = 8
         self.action_size = len(self.tl_rl_list)
         self.left_lane_num = self.configs['num_lanes']-1
         self.node_interest_pair = dict()
+        self.phase_list = self._phase_list()
         for _, node in enumerate(self.configs['node_info']):
             if node['id'][-1] not in self.side_list:
                 self.node_interest_pair['{}'.format(
@@ -30,7 +32,6 @@ class GridEnv(baseEnv):
                     if node['id'][-3:] == interest['id'][-3:]:  # 좌표만 받기
                         self.node_interest_pair['{}'.format(
                             node['id'])].append(interest)
-        print(self.node_interest_pair)
 
     def _generate_interest_list(self):
         interest_list = list()
@@ -98,30 +99,33 @@ class GridEnv(baseEnv):
         state_set = tuple()
         phase = list()
         for i, tl_rl in enumerate(self.tl_rl_list):
-            state = torch.zeros(
-                (self.action_size, self.configs['state_space']), device=self.configs['device'], dtype=torch.int)  # 기준
+            state = torch.zeros(  # 1개 단위로 만들어서 붙임
+                (1, self.configs['state_space']), device=self.configs['device'], dtype=torch.int)  # 기준
             vehicle_state = torch.zeros(
-                (int(self.configs['state_space']-self.phase_state_space), self.action_size), device=self.configs['device'], dtype=torch.int)
-            phase.append(traci.trafficlight.getRedYellowGreenState(tl_rl))
+                (self.vehicle_state_space, 1), device=self.configs['device'], dtype=torch.int)
+            phase = traci.trafficlight.getRedYellowGreenState(tl_rl)
             # n교차로
             phase_state = self._toState(phase).view(
                 1, -1).to(self.configs['device'])
 
             # vehicle state
-            for j, interest in enumerate(self.interest_list):
-                left_movement = traci.lane.getLastStepHaltingNumber(
-                    interest['inflow']+'_{}'.format(self.left_lane_num))
-                # 직진
-                vehicle_state[j*2] = traci.edge.getLastStepHaltingNumber(
-                    interest['inflow'])-left_movement  # 가장 좌측에 멈춘 친구를 왼쪽차선 이용자로 판단
-                # 좌회전
-                vehicle_state[j*2+1] = left_movement
-
+            for interest in self.node_interest_pair:
+                for j, pair in enumerate(self.node_interest_pair[interest]):
+                    left_movement = traci.lane.getLastStepHaltingNumber(
+                        pair['inflow']+'_{}'.format(self.left_lane_num))  # 멈춘애들 계산
+                    # 직진
+                    vehicle_state[j*2] = traci.edge.getLastStepHaltingNumber(
+                        pair['inflow'])-left_movement  # 가장 좌측에 멈춘 친구를 왼쪽차선 이용자로 판단
+                    # 좌회전
+                    vehicle_state[j*2+1] = left_movement
             vehicle_state = torch.transpose(vehicle_state, 0, 1)
-            state = torch.cat((vehicle_state, phase_state),
+
+            state = torch.cat((vehicle_state, phase_state),  # vehicle
                               dim=1)  # 여기 바꿨다 문제 생기면 여기임 암튼 그럼
+
             state_set += tuple(state)
-        state_set = torch.cat(state_set, dim=1)
+        state_set = torch.cat(state_set, dim=0).float()
+
         return state_set
 
     def collect_state(self):
@@ -141,10 +145,10 @@ class GridEnv(baseEnv):
         '''
         agent 의 action 적용 및 reward 계산
         '''
-        phase = self._toPhase(action)  # action을 분해
 
         # action을 environment에 등록 후 상황 살피기
-        for _, tl_rl in enumerate(self.tl_rl_list):
+        for i, tl_rl in enumerate(self.tl_rl_list):
+            phase = self._toPhase(action[i])  # action을 분해
             traci.trafficlight.setRedYellowGreenState(tl_rl, phase)
 
         # reward calculation and save
@@ -173,20 +177,17 @@ class GridEnv(baseEnv):
         '''
         return self.phase_list[action]
 
-    def _toState(self, phase_set):  # env의 phase를 해석불가능한 state로 변환
-        state_set = tuple()
-        for i, phase in enumerate(phase_set):
-            state = torch.zeros(8, dtype=torch.int)
-            for i in range(4):  # 4차로
-                phase = phase[1:]  # 우회전
-                state[i] = self._mappingMovement(phase[0])  # 직진신호 추출
-                phase = phase[self.configs['num_lanes']-1:]  # 직전
-                state[i+1] = self._mappingMovement(phase[0])  # 좌회전신호 추출
-                phase = phase[1:]  # 좌회전
-                phase = phase[1:]  # 유턴
-            state_set += tuple(state.view(1, -1))
-        state_set = torch.cat(state_set, 0)
-        return state_set
+    def _toState(self, phase):  # env의 phase를 해석불가능한 state로 변환
+        state = torch.zeros(self.phase_state_space, dtype=torch.int)
+        for i in range(4):  # 4차로
+            phase = phase[1:]  # 우회전
+            state[i] = self._mappingMovement(phase[0])  # 직진신호 추출
+            phase = phase[self.configs['num_lanes']-1:]  # 직전
+            state[i+1] = self._mappingMovement(phase[0])  # 좌회전신호 추출
+            phase = phase[1:]  # 좌회전
+            phase = phase[1:]  # 유턴
+        state = state.view(1, -1).float()
+        return state
 
     def _getMovement(self, num):
         if num == 1:

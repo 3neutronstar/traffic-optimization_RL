@@ -57,7 +57,7 @@ class Trainer(RLAlgorithm):
     def __init__(self, configs):
         super().__init__(configs)
         os.mkdir(os.path.join(
-            self.configs['current_path'], 'training_data',self.configs['time_data'] ,'model'))
+            self.configs['current_path'], 'training_data', self.configs['time_data'], 'model'))
         self.configs = merge_dict(configs, DEFAULT_CONFIG)
         self.state_space = self.configs['state_space']
         self.action_space = self.configs['action_space']
@@ -74,7 +74,8 @@ class Trainer(RLAlgorithm):
 
         if self.configs['model'].lower() == 'frap':
             from Agent.Model.FRAP import FRAP
-            model = FRAP(self.state_space, self.action_space,self.configs['device'])
+            model = FRAP(self.state_space, self.action_space,
+                         self.configs['device'])
             # model.add_module('QNetwork',
             #                  QNetwork(self.state_space, self.action_space, self.configs))
         else:
@@ -175,13 +176,13 @@ class Trainer(RLAlgorithm):
 
     def save_weights(self, name):
         torch.save(self.mainQNetwork.state_dict(), os.path.join(
-            self.configs['current_path'], 'training_data',self.configs['time_data'] ,'model', name+'.h5'))
+            self.configs['current_path'], 'training_data', self.configs['time_data'], 'model', name+'.h5'))
         torch.save(self.targetQNetwork.state_dict(), os.path.join(
-            self.configs['current_path'], 'training_data',self.configs['time_data'], 'model', name+'_target.h5'))
+            self.configs['current_path'], 'training_data', self.configs['time_data'], 'model', name+'_target.h5'))
 
     def load_weights(self, name):
         self.mainQNetwork.load_state_dict(torch.load(os.path.join(
-            self.configs['current_path'], 'training_data',self.configs['time_data'], 'model', name+'.h5')))
+            self.configs['current_path'], 'training_data', self.configs['time_data'], 'model', name+'.h5')))
         self.mainQNetwork.eval()
 
     def update_tensorboard(self, writer, epoch):
