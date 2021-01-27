@@ -54,7 +54,8 @@ class QNetwork(nn.Module):
         x = f.leaky_relu(self.fc3(x))
         x = f.dropout(x, 0.2)
         x = f.leaky_relu(self.fc4(x))
-        x = x.view(-1, self.num_agent,self.action_space)  # 1차원 batch, 2차원 agent, 3차원 Q
+        # 1차원 batch, 2차원 agent, 3차원 Q
+        x = x.view(-1, self.num_agent, self.action_space)
         #x = f.softmax(self.fc4(x), dim=0)
         return x  # q value
 
@@ -65,7 +66,7 @@ class Trainer(RLAlgorithm):
         os.mkdir(os.path.join(
             self.configs['current_path'], 'training_data', self.configs['time_data'], 'model'))
         self.configs = merge_dict(configs, DEFAULT_CONFIG)
-        self.num_agent=len(self.configs['tl_rl_list'])
+        self.num_agent = len(self.configs['tl_rl_list'])
         self.state_space = self.configs['state_space']
         self.action_space = self.configs['action_space']
         self.action_size = self.configs['action_size']
@@ -106,13 +107,14 @@ class Trainer(RLAlgorithm):
     def get_action(self, state):
         if random.random() > self.epsilon:  # epsilon greedy
             with torch.no_grad():
-                action = torch.max(self.mainQNetwork(state), dim=2)[1].view(-1,self.num_agent,self.action_size) #dim 2에서 고름
+                action = torch.max(self.mainQNetwork(state), dim=2)[
+                    1].view(-1, self.num_agent, self.action_size)  # dim 2에서 고름
                 # agent가 늘어나면 view(agents,action_size)
                 self.action += tuple(action)  # 기록용
             return action
         else:
             action = torch.tensor([random.randint(0, 7)
-                                   for i in range(self.num_agent)], device=self.configs['device']).view(-1, self.num_agent,self.action_size)
+                                   for i in range(self.num_agent)], device=self.configs['device']).view(-1, self.num_agent, self.action_size)
             self.action += tuple(action)  # 기록용
             return action
 
@@ -132,30 +134,26 @@ class Trainer(RLAlgorithm):
         batch = Transition(*zip(*transitions))
 
         non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
-                                                batch.next_state)), device=self.configs['device'], dtype=torch.bool).view(-1,1)
-        print(non_final_mask)
-        print(len(batch.next_state))
+                                                batch.next_state))*self.num_agent, device=self.configs['device'], dtype=torch.bool)
 
         non_final_next_states = torch.cat([s for s in batch.next_state
-                                           if s is not None], dim=1).view(-1,self.num_agent*self.state_space)
+                                           if s is not None], dim=1).view(-1, self.num_agent*self.state_space)
         state_batch = torch.cat(batch.state)
         action_batch = torch.cat(batch.action, dim=1)
 
-        reward_batch = torch.tensor(batch.reward).to(self.configs['device'])
+        reward_batch = torch.tensor(batch.reward).to(
+            self.configs['device']).view(-1, 1)
 
         state_action_values = self.mainQNetwork(
             state_batch).gather(1, action_batch)
-
         next_state_values = torch.zeros(
-            self.configs['batch_size'], device=self.configs['device'], dtype=torch.float)
-        print(self.targetQNetwork(
-            non_final_next_states).max(dim=1)[0].detach().to(self.configs['device']))
+            (self.configs['batch_size']*self.num_agent), device=self.configs['device'], dtype=torch.float)
         next_state_values[non_final_mask] = self.targetQNetwork(
-            non_final_next_states).max(dim=1)[0].detach().to(self.configs['device'])  # .to(self.configs['device'])  # 자신의 Q value 중에서max인 value를 불러옴
-
+            non_final_next_states).max(dim=2)[0].detach().to(self.configs['device']).view(-1)  # .to(self.configs['device'])  # 자신의 Q value 중에서max인 value를 불러옴
+        next_state_values = next_state_values.view(-1, self.num_agent)
         # 기대 Q 값 계산
         expected_state_action_values = (
-            next_state_values * self.configs['gamma']) + reward_batch
+            next_state_values * self.configs['gamma']) + torch.cat(9*tuple(reward_batch/9), dim=0).view(-1, self.num_agent)
 
         # loss 계산
         loss = self.criterion(state_action_values,
