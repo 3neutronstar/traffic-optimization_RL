@@ -13,7 +13,7 @@ from torch.utils.tensorboard import SummaryWriter
 DEFAULT_CONFIG = {
     'gamma': 0.99,
     'tau': 0.995,
-    'batch_size': 8,
+    'batch_size': 32,
     'experience_replay_size': 1e5,
     'epsilon': 0.9,
     'epsilon_decay_rate': 0.98,
@@ -142,22 +142,25 @@ class Trainer(RLAlgorithm):
         action_batch = torch.cat(batch.action, dim=1)
 
         reward_batch = torch.tensor(batch.reward).to(
-            self.configs['device']).view(-1, 1)
+            self.configs['device']).view(-1, 1) # batch,1
 
         state_action_values = self.mainQNetwork(
-            state_batch).gather(1, action_batch)
+            state_batch).gather(1, action_batch).view(-1,self.num_agent) # batchxagent
+
+        # 1차원으로 눌러서 mapping 하고
         next_state_values = torch.zeros(
-            (self.configs['batch_size']*self.num_agent), device=self.configs['device'], dtype=torch.float)
+            (self.configs['batch_size']*self.num_agent), device=self.configs['device'], dtype=torch.float) # batch*agent
         next_state_values[non_final_mask] = self.targetQNetwork(
             non_final_next_states).max(dim=2)[0].detach().to(self.configs['device']).view(-1)  # .to(self.configs['device'])  # 자신의 Q value 중에서max인 value를 불러옴
-        next_state_values = next_state_values.view(-1, self.num_agent)
+        # 다시 원래 차원으로 돌리기
+        next_state_values = next_state_values.view(-1, self.num_agent,self.action_size)
         # 기대 Q 값 계산
         expected_state_action_values = (
-            next_state_values * self.configs['gamma']) + torch.cat(9*tuple(reward_batch/9), dim=0).view(-1, self.num_agent)
+            next_state_values * self.configs['gamma']) + torch.cat(self.num_agent*tuple(reward_batch), dim=0).view(-1, self.num_agent,1)
 
         # loss 계산
-        loss = self.criterion(state_action_values,
-                              expected_state_action_values.unsqueeze(1))
+        loss = self.criterion(state_action_values.unsqueeze(2),
+                              expected_state_action_values.unsqueeze(2)) # 행동이 하나이므로 2차원에 대해 unsqueeze
         self.running_loss += loss/self.configs['batch_size']
         # 모델 최적화
         self.optimizer.zero_grad()
