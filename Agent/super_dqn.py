@@ -15,10 +15,10 @@ DEFAULT_CONFIG = {
     'tau': 0.995,
     'batch_size': 32,
     'experience_replay_size': 1e5,
-    'epsilon': 0.5,
+    'epsilon': 0.9,
     'epsilon_decay_rate': 0.98,
     'fc_net': [32, 32, 16],
-    'lr': 0.0001,
+    'lr': 0.00005,
     'lr_decay_rate': 0.98,
 }
 
@@ -147,8 +147,7 @@ class Trainer(RLAlgorithm):
                                            if s is not None], dim=1).view(-1, self.num_agent*self.state_space)
         state_batch = torch.cat(batch.state)
         action_batch = torch.cat(batch.action)
-        reward_batch = torch.tensor(batch.reward).to(
-            self.configs['device']).view(-1, 1) # batch,1
+        reward_batch = torch.cat(batch.reward) # batch x num_agent
 
         state_action_values = self.mainQNetwork(
             state_batch).gather(2, action_batch).view(-1,self.num_agent,self.action_size) # batchxagent
@@ -162,8 +161,7 @@ class Trainer(RLAlgorithm):
         next_state_values = next_state_values.view(-1, self.num_agent,self.action_size)
         # 기대 Q 값 계산
         expected_state_action_values = (
-            next_state_values * self.configs['gamma']) + torch.cat(self.num_agent*tuple(reward_batch/float(self.num_agent)), dim=0).view(-1, self.num_agent,self.action_size)
-
+            next_state_values * self.configs['gamma']) + reward_batch
         # loss 계산
         loss = self.criterion(state_action_values.unsqueeze(2),
                               expected_state_action_values.unsqueeze(2)) # 행동이 하나이므로 2차원에 대해 unsqueeze

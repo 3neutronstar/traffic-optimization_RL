@@ -18,7 +18,7 @@ DEFAULT_CONFIG = {
     'epsilon': 0.9,
     'epsilon_decay_rate': 0.98,
     'fc_net': [16, 16, 16],
-    'lr': 0.0001, # no via
+    'lr': 0.00005, # no via
     #'lr': 0.001, # via
 
     'lr_decay_rate': 0.98,
@@ -136,8 +136,8 @@ class Trainer(RLAlgorithm):
         non_final_next_states = torch.cat([s for s in batch.next_state
                                            if s is not None], dim=0)
 
-        state_batch = torch.cat(batch.state)
-        action_batch = torch.cat(batch.action, dim=0)
+        state_batch = torch.cat(batch.state) # dim=0인 이유는 batch 끼리 cat 하는 것이기 때문임
+        action_batch = torch.cat(batch.action)
 
         reward_batch = torch.tensor(batch.reward).to(self.configs['device'])
 

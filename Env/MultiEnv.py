@@ -11,6 +11,7 @@ class GridEnv(baseEnv):
         self.configs = configs
         self.tl_list = traci.trafficlight.getIDList()
         self.tl_rl_list = self.configs['tl_rl_list']
+        self.num_agent=len(self.tl_rl_list)
         self.side_list = ['u', 'r', 'd', 'l']
         self.interest_list = self._generate_interest_list()
         self.phase_size = len(
@@ -24,7 +25,8 @@ class GridEnv(baseEnv):
         self.left_lane_num = self.configs['num_lanes']-1
         self.node_interest_pair = dict()
         self.phase_list = self._phase_list()
-        for _, node in enumerate(self.configs['node_info']):
+        self.nodes=self.configs['node_info']
+        for _, node in enumerate(self.nodes):
             if node['id'][-1] not in self.side_list:
                 self.node_interest_pair['{}'.format(
                     node['id'])] = list()
@@ -98,7 +100,7 @@ class GridEnv(baseEnv):
     def get_state(self):
         state_set = tuple()
         phase = list()
-        for i, tl_rl in enumerate(self.tl_rl_list):
+        for _, tl_rl in enumerate(self.tl_rl_list):
             state = torch.zeros(  # 1개 단위로 만들어서 붙임
                 (1, self.configs['state_space']), device=self.configs['device'], dtype=torch.int)  # 기준
             vehicle_state = torch.zeros(
@@ -132,14 +134,18 @@ class GridEnv(baseEnv):
         '''
         갱신 및 점수 확정용 함수
         '''
-        inflow_rate = 0
-        outflow_rate = 0
-        for _, interest in enumerate(self.interest_list):
-            inflow_rate += traci.edge.getLastStepHaltingNumber(
-                interest['inflow'])
-            outflow_rate += traci.edge.getLastStepVehicleNumber(
-                interest['outflow'])
-        self.pressure += (outflow_rate-inflow_rate)
+        self.pressure=torch.zeros(1,self.num_agent,1,dtype=torch.float,device=self.configs['device']) 
+        for i,node in enumerate(self.nodes): # 각 노드
+            inflow_rate = 0
+            outflow_rate = 0
+            for interest in self.node_interest_pair[node]: # 각 노드의 inflow와 outflow edge들 전체
+                inflow_rate += traci.edge.getLastStepHaltingNumber(
+                    interest['inflow'])
+                outflow_rate += traci.edge.getLastStepVehicleNumber(
+                    interest['outflow'])
+            tmp_pressure=outflow_rate-inflow_rate
+            self.pressure[i]+=tmp_pressure
+
 
     def step(self, action):
         '''

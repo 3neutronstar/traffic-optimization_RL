@@ -103,7 +103,7 @@ class TL3x3Env(baseEnv):
                 interest['inflow'])
             outflow_rate += traci.edge.getLastStepVehicleNumber(
                 interest['outflow'])
-        self.pressure += (outflow_rate-inflow_rate)
+        self.pressure += (inflow_rate-outflow_rate)
 
     def step(self, action):
         '''
@@ -123,7 +123,7 @@ class TL3x3Env(baseEnv):
         Max Pressure based control
         각 node에 대해서 inflow 차량 수와 outflow 차량수 + 해당 방향이라는 전제에서
         '''
-        self.reward += self.pressure
+        self.reward -= self.pressure
         self.pressure = 0
         return self.reward
 
