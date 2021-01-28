@@ -329,6 +329,7 @@ def ppo_train(configs, time_data, sumoCmd):
     agent.save_params(time_data)
     # init training
     epoch = 0
+    ppo_update_step=0
     while epoch < NUM_EPOCHS:
         traci.start(sumoCmd)
         traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(
@@ -350,6 +351,7 @@ def ppo_train(configs, time_data, sumoCmd):
             action = agent.get_action(state)
             action_distribution += tuple(action.unsqueeze(1))
             env.step(action)  # action 적용함수
+            ppo_update_step+=1
 
             for _ in range(20):  # 10초마다 행동 갱신
                 traci.simulationStep()
@@ -373,9 +375,10 @@ def ppo_train(configs, time_data, sumoCmd):
             agent.memory.dones.append(done)
             state = next_state
             total_reward += reward
-        if epoch % 5 == 0:
-            agent.update()
-            agent.update_hyperparams(epoch)  # lr update
+            if ppo_update_step % 400 == 0:
+                agent.update()
+                agent.update_hyperparams(epoch)  # lr update
+                ppo_update_step=0
 
         b = time.time()
         traci.close()

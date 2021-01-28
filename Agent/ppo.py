@@ -163,6 +163,8 @@ class Trainer(RLAlgorithm):
         # Copy new weights into old model:
         self.model_old.load_state_dict(self.model.state_dict())
         self.memory.clear_memory()
+        # ppo 는 업데이트 주기가 다르므로 loss를 update 시마다 시행 (변경 가능)
+        
 
     def update_hyperparams(self, epoch):
         # decay learning rate
@@ -181,9 +183,13 @@ class Trainer(RLAlgorithm):
         self.model_old.eval()
 
     def update_tensorboard(self, writer, epoch):
-        if epoch % self.configs['update_period'] == 0:  # 5마다 업데이트
+        # if epoch % self.configs['update_period'] == 0:  # 5마다 업데이트
+        #     writer.add_scalar('episode/total_loss', self.running_loss/self.configs['max_steps'],
+        #                         self.configs['max_steps']*epoch)  # 1 epoch마다
+        #     self.running_loss = 0
+        if self.running_loss!=0:
             writer.add_scalar('episode/total_loss', self.running_loss/self.configs['max_steps'],
-                                self.configs['max_steps']*epoch)  # 1 epoch마다
+                                    self.configs['max_steps']*epoch)  # 1 epoch마다
             self.running_loss = 0
         writer.add_scalar('hyperparameter/lr', self.lr,
                           self.configs['max_steps']*epoch)

@@ -18,7 +18,7 @@ DEFAULT_CONFIG = {
     'epsilon': 0.5,
     'epsilon_decay_rate': 0.98,
     'fc_net': [32, 32, 16],
-    'lr': 0.0005,
+    'lr': 0.0001,
     'lr_decay_rate': 0.98,
 }
 
@@ -105,23 +105,23 @@ class Trainer(RLAlgorithm):
         self.targetQNetwork.eval()
 
     def get_action(self, state):
-        with torch.no_grad():
-            action=torch.max(self.mainQNetwork(state),dim=2)[1].view(-1,self.num_agent,self.action_size)
-            for i in range(self.num_agent):
-                if random.random()<self.epsilon:
-                    action[0][i]=random.randint(0,7)
+        # with torch.no_grad():
+        #     action=torch.max(self.mainQNetwork(state),dim=2)[1].view(-1,self.num_agent,self.action_size)
+        #     for i in range(self.num_agent):
+        #         if random.random()<self.epsilon:
+        #             action[0][i]=random.randint(0,7)
 
         # 전체를 날리는 epsilon greedy
-        # if random.random() > self.epsilon:  # epsilon greedy
-        #     with torch.no_grad():
-        #         action = torch.max(self.mainQNetwork(state), dim=2)[
-        #             1].view(-1, self.num_agent, self.action_size)  # dim 2에서 고름
-        #         # agent가 늘어나면 view(agents,action_size)
-        #         self.action += tuple(action)  # 기록용
-        #     return action
-        # else:
-        #     action = torch.tensor([random.randint(0, 7)
-        #                            for i in range(self.num_agent)], device=self.configs['device']).view(-1, self.num_agent, self.action_size)
+        if random.random() > self.epsilon:  # epsilon greedy
+            with torch.no_grad():
+                action = torch.max(self.mainQNetwork(state), dim=2)[
+                    1].view(-1, self.num_agent, self.action_size)  # dim 2에서 고름
+                # agent가 늘어나면 view(agents,action_size)
+                self.action += tuple(action)  # 기록용
+            return action
+        else:
+            action = torch.tensor([random.randint(0, 7)
+                                   for i in range(self.num_agent)], device=self.configs['device']).view(-1, self.num_agent, self.action_size)
             self.action += tuple(action)  # 기록용
             return action
 
@@ -163,7 +163,7 @@ class Trainer(RLAlgorithm):
         next_state_values = next_state_values.view(-1, self.num_agent,self.action_size)
         # 기대 Q 값 계산
         expected_state_action_values = (
-            next_state_values * self.configs['gamma']) + torch.cat(self.num_agent*tuple(reward_batch), dim=0).view(-1, self.num_agent,self.action_size)
+            next_state_values * self.configs['gamma']) + torch.cat(self.num_agent*tuple(reward_batch/float(self.num_agent)), dim=0).view(-1, self.num_agent,self.action_size)
 
         # loss 계산
         loss = self.criterion(state_action_values.unsqueeze(2),
