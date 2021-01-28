@@ -145,7 +145,7 @@ class Trainer(RLAlgorithm):
             self.configs['device']).view(-1, 1) # batch,1
 
         state_action_values = self.mainQNetwork(
-            state_batch).gather(1, action_batch).view(-1,self.num_agent) # batchxagent
+            state_batch).gather(1, action_batch).view(-1,self.num_agent,self.action_size) # batchxagent
 
         # 1차원으로 눌러서 mapping 하고
         next_state_values = torch.zeros(
@@ -156,8 +156,8 @@ class Trainer(RLAlgorithm):
         next_state_values = next_state_values.view(-1, self.num_agent,self.action_size)
         # 기대 Q 값 계산
         expected_state_action_values = (
-            next_state_values * self.configs['gamma']) + torch.cat(self.num_agent*tuple(reward_batch), dim=0).view(-1, self.num_agent,1)
-
+            next_state_values * self.configs['gamma']) + torch.cat(self.num_agent*tuple(reward_batch), dim=0).view(-1, self.num_agent,self.action_size)
+            
         # loss 계산
         loss = self.criterion(state_action_values.unsqueeze(2),
                               expected_state_action_values.unsqueeze(2)) # 행동이 하나이므로 2차원에 대해 unsqueeze
