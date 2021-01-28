@@ -21,7 +21,6 @@ class PolicyNet(nn.Module):
         self.running_loss = 0
 
     def forward(self, x):
-        out = x
         x = F.leaky_relu(self.fc1(x))
         x = F.leaky_relu(self.fc2(x))
         x = F.softmax(self.fc3(x), dim=1)
@@ -30,8 +29,8 @@ class PolicyNet(nn.Module):
 
 class Trainer(RLAlgorithm):
     def __init__(self, configs):
-        #self.configs = merge_dict(configs, DEFAULT_CONFIG)
-        self.configs=configs
+        self.configs = merge_dict(configs, DEFAULT_CONFIG)
+        #self.configs=configs
         self.model = PolicyNet(self.configs)
         self.gamma = self.configs['gamma']
         self.lr=self.configs['lr']
@@ -58,7 +57,7 @@ class Trainer(RLAlgorithm):
             loss= -torch.log(prob)*Return # for gradient ascend 원래 loss backward는 gradient descend이므로
             loss.backward()
         self.optimizer.step()
-        self.data=[] # 지워버리기~
+        self.data=[] # 지워버리기
     
     def get_prob(self):
         return self.probability

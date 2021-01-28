@@ -183,7 +183,7 @@ class GridNetwork(Network):
                                 'end': str(self.configs['flow_end']),
                                 'probability': self.configs['probability'],
                                 'reroute': 'false',
-                                'via': edge['id']+" "+via_string+" "+checkEdge['id'],
+                                # 'via': edge['id']+" "+via_string+" "+checkEdge['id'],
                                 'departPos': "base",
                                 'departLane': 'best',
                             })
@@ -274,7 +274,7 @@ class GridNetwork(Network):
 
 
 if __name__ == "__main__":
-    grid_num = 3
+    grid_num = 2
     configs['grid_num'] = grid_num
     configs['file_name'] = '{}x{}grid'.format(grid_num, grid_num)
     a = GridNetwork(configs, grid_num)

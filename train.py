@@ -143,7 +143,7 @@ def REINFORCE_train(configs, time_data, sumoCmd):
     writer = SummaryWriter(os.path.join(
         configs['current_path'], 'training_data', time_data))
     # save hyper parameters
-    agent.save_params(t(configs, DEFAULT_CONFIG), time_data)
+    agent.save_params( time_data)
     # init training
     epoch = 0
     while epoch < NUM_EPOCHS:
@@ -171,23 +171,14 @@ def REINFORCE_train(configs, time_data, sumoCmd):
                 env.collect_state()
                 step += 1
                 arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
-                '''
-                응 뭐해야될지 알겠지? 모델링 다시해 ㅋㅋㅋㅋ step에다가 어지간한거 다 때려박자 ㅎ...
-
-                '''
             # 20초 끝나고 yellow 4초
             traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'y'*28)
 
-            for _ in range(4):  # 4번더
+            for _ in range(5):  # 4번더
                 traci.simulationStep()
                 env.collect_state()
                 step += 1
                 arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
-
-            traci.simulationStep()
-            env.collect_state()
-            step += 1
-            arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
 
             reward = env.get_reward()
             prob = agent.get_prob()
@@ -398,7 +389,7 @@ def ppo_train(configs, time_data, sumoCmd):
 def super_dqn_train(configs, time_data, sumoCmd):
     from Agent.super_dqn import Trainer
     if configs['model'] == 'base':
-        from Env.GridEnv import GridEnv
+        from Env.MultiEnv import GridEnv
     # elif configs['model'] == 'frap':
     #     from Env.FRAP import TL3x3Env # will be added
     side_list = ['u', 'r', 'd', 'l']

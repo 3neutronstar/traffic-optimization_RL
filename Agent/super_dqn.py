@@ -146,13 +146,12 @@ class Trainer(RLAlgorithm):
         non_final_next_states = torch.cat([s for s in batch.next_state
                                            if s is not None], dim=1).view(-1, self.num_agent*self.state_space)
         state_batch = torch.cat(batch.state)
-        action_batch = torch.cat(batch.action, dim=1)
-
+        action_batch = torch.cat(batch.action)
         reward_batch = torch.tensor(batch.reward).to(
             self.configs['device']).view(-1, 1) # batch,1
 
         state_action_values = self.mainQNetwork(
-            state_batch).gather(1, action_batch).view(-1,self.num_agent,self.action_size) # batchxagent
+            state_batch).gather(2, action_batch).view(-1,self.num_agent,self.action_size) # batchxagent
 
         # 1차원으로 눌러서 mapping 하고
         next_state_values = torch.zeros(

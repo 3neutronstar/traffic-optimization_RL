@@ -206,6 +206,8 @@ def main(args):
     if flags.network.lower() == 'grid':
         from grid import GridNetwork  # network바꿀때 이걸로 바꾸세요(수정 예정)
         configs['grid_num'] = 3
+        if flags.algorithm.lower()=='super_dqn':
+            configs['grid_num']=3
         configs['file_name'] = '{}x{}grid'.format(
             configs['grid_num'], configs['grid_num'])
         configs['grid_side'] = 'in'  # out mode도 만들 예정 in모드시에 내부 tl만 컨트롤
