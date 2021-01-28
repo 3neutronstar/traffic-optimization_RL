@@ -15,7 +15,7 @@ DEFAULT_CONFIG = {
     'tau': 0.995,
     'batch_size': 32,
     'experience_replay_size': 1e5,
-    'epsilon': 0.9,
+    'epsilon': 0.5,
     'epsilon_decay_rate': 0.98,
     'fc_net': [32, 32, 16],
     'lr': 0.0001,
@@ -105,16 +105,23 @@ class Trainer(RLAlgorithm):
         self.targetQNetwork.eval()
 
     def get_action(self, state):
-        if random.random() > self.epsilon:  # epsilon greedy
-            with torch.no_grad():
-                action = torch.max(self.mainQNetwork(state), dim=2)[
-                    1].view(-1, self.num_agent, self.action_size)  # dim 2에서 고름
-                # agent가 늘어나면 view(agents,action_size)
-                self.action += tuple(action)  # 기록용
-            return action
-        else:
-            action = torch.tensor([random.randint(0, 7)
-                                   for i in range(self.num_agent)], device=self.configs['device']).view(-1, self.num_agent, self.action_size)
+        with torch.no_grad():
+            action=torch.max(self.mainQNetwork(state),dim=2)[1].view(-1,self.num_agent,self.action_size)
+            for i in range(self.num_agent):
+                if random.random()<self.epsilon:
+                    action[0][i]=random.randint(0,7)
+
+        # 전체를 날리는 epsilon greedy
+        # if random.random() > self.epsilon:  # epsilon greedy
+        #     with torch.no_grad():
+        #         action = torch.max(self.mainQNetwork(state), dim=2)[
+        #             1].view(-1, self.num_agent, self.action_size)  # dim 2에서 고름
+        #         # agent가 늘어나면 view(agents,action_size)
+        #         self.action += tuple(action)  # 기록용
+        #     return action
+        # else:
+        #     action = torch.tensor([random.randint(0, 7)
+        #                            for i in range(self.num_agent)], device=self.configs['device']).view(-1, self.num_agent, self.action_size)
             self.action += tuple(action)  # 기록용
             return action
 
@@ -157,7 +164,7 @@ class Trainer(RLAlgorithm):
         # 기대 Q 값 계산
         expected_state_action_values = (
             next_state_values * self.configs['gamma']) + torch.cat(self.num_agent*tuple(reward_batch), dim=0).view(-1, self.num_agent,self.action_size)
-            
+
         # loss 계산
         loss = self.criterion(state_action_values.unsqueeze(2),
                               expected_state_action_values.unsqueeze(2)) # 행동이 하나이므로 2차원에 대해 unsqueeze
