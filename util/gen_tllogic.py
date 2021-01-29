@@ -1,0 +1,80 @@
+import xml.etree.cElementTree as ET
+from xml.etree.ElementTree import dump
+from lxml import etree as ET
+import os
+import argparse
+import sys
+from xml.etree.ElementTree import parse
+E = ET.Element
+def parse_args(args):
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="Traffic Light Logic output file",
+        epilog="python run.py file_name (.xml will be added")
+
+    # optional input parameters
+    parser.add_argument(
+        '--file_path',type=str,default=None,
+        help='comparision group file name')
+    parser.add_argument(
+        '--file',type=str,default=None,
+        help='comparision group file name')
+    return parser.parse_known_args(args)[0]
+
+def tl_logic(file_path):
+    # file load
+    tree=parse(file_path)
+    # file write setup
+    tl_additional = ET.Element('additional')
+
+    # find and write
+    trafficSignalList=tree.findall('trafficSignal')
+    for trafficSignal in trafficSignalList:
+        TODPlan=trafficSignal.findall('TODPlan')
+        scheduleList=trafficSignal.findall('schedule')
+        
+        for schedule in scheduleList:
+            if TODPlan[0].attrib['defaultPlan'] == schedule.attrib['id']:
+                tlLogic = ET.SubElement(tl_additional, 'tlLogic', attrib=schedule)
+                phase_set=schedule.findall('phase')
+                for phase in phase_set
+                    phase_xml=ET.SubElement(tlLogic,attrib=)
+        print("end")
+
+
+    dump(tl_additional)
+    writetree = ET.ElementTree(tl_additional)
+    writetree.write(os.path.join('./util/output_tl.add.xml'),
+                pretty_print=True, encoding='UTF-8', xml_declaration=True)
+    print(scheduleList)
+    
+
+    # if len(self.traffic_light) != 0 or .configs['mode'] == 'simulate':
+    #     for _, tl in enumerate(traffic_light_set):
+    #         phase_set = tl.pop('phase')
+    #         tlLogic = ET.SubElement(tl_additional, 'tlLogic', attrib=tl)
+    #         indent(tl_additional, 1)
+    #         for _, phase in enumerate(phase_set):
+    #             tlLogic.append(E('phase', attrib=phase))
+    #             indent(tl_additional, 2)
+
+    # dump(tl_additional)
+    # tree = ET.ElementTree(tl_additional)
+    # tree.write(os.path.join(path, .file_name+'_tl.add.xml'),
+    #             pretty_print=True, encoding='UTF-8', xml_declaration=True)
+
+
+
+def main(args):
+    flags=parse_args(args)
+    if flags.file!=None:
+        path=os.path.join(os.path.dirname(os.path.abspath(__file__)),flags.file+'.xml')
+    else:
+        path= os.path.join(flags.file_path,'.xml')
+
+    tl_logic(path)
+    
+
+
+if __name__ =='__main__':
+    main(sys.argv[1:])

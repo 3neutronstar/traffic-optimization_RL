@@ -5,3 +5,4 @@ training_data/model/*
 training_data/*
 .vscode/*
 Net_data/*
+util/dj.tss.xml

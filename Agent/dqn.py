@@ -115,8 +115,11 @@ class Trainer(RLAlgorithm):
             return action
 
     def target_update(self):
+        # soft update
+        for target,source in zip(self.targetQNetwork.parameters(),self.mainQNetwork.parameters()):
+            target.data.copy_(target.data*(1-self.configs['tau']),source.data*self.configs['tau'])
         # Hard Update
-        self.targetQNetwork.load_state_dict(self.mainQNetwork.state_dict())
+        # self.targetQNetwork.load_state_dict(self.mainQNetwork.state_dict())
 
     def save_replay(self, state, action, reward, next_state):
         self.experience_replay.push(

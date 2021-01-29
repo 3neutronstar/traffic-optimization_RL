@@ -200,21 +200,23 @@ class GridNetwork(Network):
 
     def specify_traffic_light(self):
         traffic_lights = []
-        nl = self.configs['num_lanes']
+        num_lanes = self.configs['num_lanes']
+        g='G'
+        r='r'
         for i in range(self.grid_num):
             for j in range(self.grid_num):
                 phase_set = [
-                    {'duration': '42',
-                     'state': 'G{}ggr{}rrG{}ggr{}rr'.format('G'*nl, 'r'*nl, 'G'*nl, 'r'*nl),
+                    {'duration': '77',
+                     'state': 'G{}ggr{}rrG{}ggr{}rr'.format('G'*num_lanes, 'r'*num_lanes, 'G'*num_lanes, 'r'*num_lanes),
                      },
                     {'duration': '3',
-                     'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*nl, 'r'*nl, 'y'*nl, 'r'*nl),
+                     'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*num_lanes, 'r'*num_lanes, 'y'*num_lanes, 'r'*num_lanes),
                      },
-                    {'duration': '42',
-                     'state': 'r{}rrG{}ggr{}rrG{}gg'.format('r'*nl, 'G'*nl, 'r'*nl, 'G'*nl),
+                    {'duration': '77',
+                     'state': 'r{}rrG{}ggr{}rrG{}gg'.format('r'*num_lanes, 'G'*num_lanes, 'r'*num_lanes, 'G'*num_lanes),
                      },
                     {'duration': '3',
-                     'state': 'r{}rry{}yyr{}rry{}yy'.format('r'*nl, 'y'*nl, 'r'*nl, 'y'*nl),
+                     'state': 'r{}rry{}yyr{}rry{}yy'.format('r'*num_lanes, 'y'*num_lanes, 'r'*num_lanes, 'y'*num_lanes),
                      }
                 ]
                 traffic_lights.append({
@@ -226,40 +228,32 @@ class GridNetwork(Network):
                 })
         rl_phase_set = [
             {'duration': '20',  # 1
-             'state': 'g{}ggr{}rrg{}ggr{}rr'.format('G'*nl, 'r'*nl, 'G'*nl, 'r'*nl),
+             'state': 'r{2}{1}gr{2}{3}rr{2}{1}gr{2}{3}r'.format( # 위좌아래좌
+                    g*num_lanes, g, r*num_lanes, r),
              },
             {'duration': '5',
-             'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*nl, 'r'*nl, 'y'*nl, 'r'*nl),
+             'state': 'y'*28,
              },
             {'duration': '20',  # 2
-             'state': 'r{}rrg{}ggr{}rrg{}gg'.format('r'*nl, 'G'*nl, 'r'*nl, 'G'*nl),
+             'state': 'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format( #위직아래직
+                    g*num_lanes, g, r*num_lanes, r),  # current
              },
             {'duration': '5',
-             'state': 'r{}rry{}yyr{}rry{}yy'.format('r'*nl, 'y'*nl, 'r'*nl, 'y'*nl),
+             'state': 'y'*28,
              },
             {'duration': '20',  # 1
-             'state': 'g{}ggr{}rrg{}ggr{}rr'.format('G'*nl, 'r'*nl, 'G'*nl, 'r'*nl),
+             'state': 'r{2}{3}rr{2}{1}gr{2}{3}rr{2}{1}g'.format( #좌좌우좌
+                    g*num_lanes, g, r*num_lanes, r),
              },
             {'duration': '5',
-             'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*nl, 'r'*nl, 'y'*nl, 'r'*nl),
+             'state': 'y'*28,
              },
             {'duration': '20',  # 1
-             'state': 'g{}ggr{}rrg{}ggr{}rr'.format('G'*nl, 'r'*nl, 'G'*nl, 'r'*nl),
+             'state': 'r{2}{3}rG{0}{3}rr{2}{3}rG{0}{3}g'.format( #좌직우직
+                    g*num_lanes, g, r*num_lanes, r),  # current
              },
             {'duration': '5',
-             'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*nl, 'r'*nl, 'y'*nl, 'r'*nl),
-             },
-            {'duration': '20',  # 2
-             'state': 'r{}rrg{}ggr{}rrg{}gg'.format('r'*nl, 'G'*nl, 'r'*nl, 'G'*nl),
-             },
-            {'duration': '5',
-             'state': 'r{}rry{}yyr{}rry{}yy'.format('r'*nl, 'y'*nl, 'r'*nl, 'y'*nl),
-             },
-            {'duration': '20',  # 1
-             'state': 'g{}ggr{}rrg{}ggr{}rr'.format('G'*nl, 'r'*nl, 'G'*nl, 'r'*nl),
-             },
-            {'duration': '5',
-             'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*nl, 'r'*nl, 'y'*nl, 'r'*nl),
+             'state': 'y'*28,
              },
         ]
         traffic_lights.append({

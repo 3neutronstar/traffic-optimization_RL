@@ -51,6 +51,15 @@ class TL3x3Env(baseEnv):
         phase = list()
         state = torch.zeros(
             (1, self.configs['state_space']), device=self.configs['device'], dtype=torch.float)  # 기준
+
+        for i, interest in enumerate(self.interest_list):
+            left_movement = traci.lane.getLastStepHaltingNumber(
+                interest['inflow']+'_{}'.format(self.left_lane_num))
+            # 직진
+            vehicle_state[i*2] = traci.edge.getLastStepHaltingNumber(
+                interest['inflow'])# -left_movement  # 가장 좌측에 멈춘 친구를 왼쪽차선 이용자로 판단
+            # 좌회전
+            vehicle_state[i*2+1] = left_movement
         vehicle_state = torch.zeros(
             (self.configs['state_space']-self.configs['num_phase'], 1), device=self.configs['device'], dtype=torch.float)  # -8은 phase크기
         # 변환
@@ -70,7 +79,7 @@ class TL3x3Env(baseEnv):
             vehicle_state[i*2] = traci.edge.getLastStepHaltingNumber(
                 interest['inflow'])# -left_movement  # 가장 좌측에 멈춘 친구를 왼쪽차선 이용자로 판단
             # 좌회전
-            vehicle_state[i*2+1] = left_movement
+            vehicle_state[i*2] = left_movement
 
         vehicle_state = torch.transpose(vehicle_state, 0, 1)
         state = torch.cat((vehicle_state, phase_state),
@@ -166,25 +175,6 @@ class TL3x3Env(baseEnv):
                 'r{2}{3}rr{2}{1}gr{2}{3}rr{2}{1}g'.format( #좌좌우좌
                     g*num_lanes, g, r*num_lanes, r),
                 'r{2}{3}rG{0}{3}rr{2}{3}rG{0}{3}g'.format( #좌직우직
-                    g*num_lanes, g, r*num_lanes, r),  # current
-            ]
-        elif self.configs['num_phase']==8:
-            phase_list = [
-                'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(
-                    g*num_lanes, g, r*num_lanes, r),
-                'r{2}{1}gr{2}{3}rr{2}{1}gr{2}{3}r'.format(
-                    g*num_lanes, g, r*num_lanes, r),
-                'r{2}{3}rr{2}{3}rG{0}{1}gr{2}{3}r'.format(
-                    g*num_lanes, g, r*num_lanes, r),
-                'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(
-                    g*num_lanes, g, r*num_lanes, r),  # current
-                'r{2}{3}rG{0}{1}gr{2}{3}rr{2}{3}r'.format(
-                    g*num_lanes, g, r*num_lanes, r),
-                'r{2}{3}rr{2}{3}rr{2}{3}rG{0}{1}g'.format(
-                    g*num_lanes, g, r*num_lanes, r),
-                'r{2}{3}rr{2}{1}gr{2}{3}rr{2}{1}r'.format(
-                    g*num_lanes, g, r*num_lanes, r), 
-                'r{2}{3}rG{0}{3}rr{2}{3}rG{0}{3}g'.format(
                     g*num_lanes, g, r*num_lanes, r),  # current
             ]
         return phase_list
