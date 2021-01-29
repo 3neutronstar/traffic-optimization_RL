@@ -1,5 +1,5 @@
 from gen_net import Network
-from gen_net import configs
+from configs import EXP_CONFIGS
 import math
 
 
@@ -274,7 +274,8 @@ class GridNetwork(Network):
 
 
 if __name__ == "__main__":
-    grid_num = 2
+    grid_num = 3
+    configs=EXP_CONFIGS
     configs['grid_num'] = grid_num
     configs['file_name'] = '{}x{}grid'.format(grid_num, grid_num)
     a = GridNetwork(configs, grid_num)

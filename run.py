@@ -7,9 +7,9 @@ import traci
 import random
 import numpy as np
 import traci.constants as tc
-from gen_net import configs
 from sumolib import checkBinary
 from utils import interest_list
+from configs import EXP_CONFIGS
 
 
 def parse_args(args):
@@ -21,7 +21,7 @@ def parse_args(args):
     # required input parameters
     parser.add_argument(
         'mode', type=str,
-        help='train or test, simulate')
+        help='train or test, simulate, "train_old" is the old version to train')
     parser.add_argument(
         '--network', type=str, default='grid',
         help='choose network in Env')
@@ -46,7 +46,9 @@ def parse_args(args):
         help='choose phase 4 or 8 (Currently frap is available on 8')
     return parser.parse_known_args(args)[0]
 
-
+    '''
+    New version of training file
+    '''
 def train(flags, time_data, configs, sumoConfig):
     # check gui option
     if flags.disp == 'yes':
@@ -61,12 +63,12 @@ def train(flags, time_data, configs, sumoConfig):
     if flags.algorithm.lower() == 'super_dqn': # action space와 size 설정
         configs['action_space'] = configs['num_phase']
         configs['action_size'] = 1
-        configs['state_space'] = 16
+        configs['state_space'] = 8+configs['num_phase']
         configs['model'] = 'base'
     elif flags.model.lower() == 'base':
         configs['action_space'] = configs['num_phase']
         configs['action_size'] = 1
-        configs['state_space'] = 16
+        configs['state_space'] = 8+configs['num_phase']
         configs['model'] = 'base'
     elif flags.model.lower() == 'frap':
         configs['action_space'] = configs['num_phase']
@@ -78,24 +80,65 @@ def train(flags, time_data, configs, sumoConfig):
     if flags.algorithm.lower() == 'dqn':
         from train import dqn_train
         dqn_train(configs, time_data, sumoCmd)
-    elif flags.algorithm.lower() == 'reinforce':
-        from train import REINFORCE_train
-        REINFORCE_train(configs, time_data, sumoCmd)
-    elif flags.algorithm.lower() == 'a2c':
-        from train import a2c_train
-        a2c_train(configs, time_data, sumoCmd)
-    elif flags.algorithm.lower() == 'ppo':
-        from train import ppo_train
-        ppo_train(configs, time_data, sumoCmd)
+
     elif flags.algorithm.lower() == 'super_dqn':
         from train import super_dqn_train
         super_dqn_train(configs, time_data, sumoCmd)
 
 
+
+    '''
+    Old version of training file
+    '''
+def train_old(flags, time_data, configs, sumoConfig):
+    # check gui option
+    if flags.disp == 'yes':
+        sumoBinary = checkBinary('sumo-gui')
+    else:
+        sumoBinary = checkBinary('sumo')
+    sumoCmd = [sumoBinary, "-c", sumoConfig, '--start']
+    # configs setting
+    configs['algorithm'] = flags.algorithm.lower()
+    print("training algorithm: ", configs['algorithm'])
+    configs['num_phase']=int(flags.phase)
+    if flags.algorithm.lower() == 'super_dqn': # action space와 size 설정
+        configs['action_space'] = configs['num_phase']
+        configs['action_size'] = 1
+        configs['state_space'] = 8+configs['num_phase']
+        configs['model'] = 'base'
+    elif flags.model.lower() == 'base':
+        configs['action_space'] = configs['num_phase']
+        configs['action_size'] = 1
+        configs['state_space'] = 8+configs['num_phase']
+        configs['model'] = 'base'
+    elif flags.model.lower() == 'frap':
+        configs['action_space'] = configs['num_phase']
+        configs['action_size'] = 1
+        configs['state_space'] = 16
+        configs['model'] = 'frap'
+
+
+    if flags.algorithm.lower() == 'dqn':
+        from train_old import dqn_train
+        dqn_train(configs, time_data, sumoCmd)
+    elif flags.algorithm.lower() == 'reinforce':
+        from train_old import REINFORCE_train
+        REINFORCE_train(configs, time_data, sumoCmd)
+    elif flags.algorithm.lower() == 'a2c':
+        from train_old import a2c_train
+        a2c_train(configs, time_data, sumoCmd)
+    elif flags.algorithm.lower() == 'ppo':
+        from train_old import ppo_train
+        ppo_train(configs, time_data, sumoCmd)
+    elif flags.algorithm.lower() == 'super_dqn':
+        from train_old import super_dqn_train
+        super_dqn_train(configs, time_data, sumoCmd)
+
+
 def test(flags, configs, sumoConfig):
-    from Env.env import TL3x3Env
+    from Env.Env import TL3x3Env
     from Agent.dqn import Trainer
-    from Env.GridEnv import GridEnv
+    from Env.MultiEnv import GridEnv
     from utils import save_params, load_params, update_tensorboard
 
     # init test setting
@@ -112,7 +155,7 @@ def test(flags, configs, sumoConfig):
     if flags.replay_name is not None:
         agent.load_weights(flags.replay_name)
         configs = load_params(configs, flags.replay_name)
-    env = TL1x1Env(tl_rl_list, configs)
+    env = TL3x3Env( configs)
     step = 0
     # state initialization
     state = env.get_state()
@@ -123,7 +166,7 @@ def test(flags, configs, sumoConfig):
     with torch.no_grad():
         while step < MAX_STEPS:
 
-            action = agent.get_action(state, reward)
+            action = agent.get_action(state)
             action_distribution += action
             env.step(action)  # action 적용함수
             for _ in range(20):  # 10초마다 행동 갱신
@@ -161,7 +204,6 @@ def simulate(flags, configs, sumoConfig):
     sumoBinary = checkBinary('sumo')
     sumoCmd = [sumoBinary, "-c", sumoConfig]
     MAX_STEPS = configs['max_steps']
-    tl_rl_list = configs['tl_rl_list']
     traci.start(sumoCmd)
     traci.simulation.subscribe([tc.VAR_ARRIVED_VEHICLES_NUMBER])
     avg_waiting_time = 0
@@ -196,6 +238,7 @@ def main(args):
     torch.manual_seed(random_seed)
     np.random.seed(random_seed)
     flags = parse_args(args)
+    configs=EXP_CONFIGS
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda and flags.gpu == True else "cpu")
     #device = torch.device('cpu')
@@ -224,6 +267,11 @@ def main(args):
         sumoConfig = os.path.join(
             configs['current_path'], 'training_data', time_data, 'net_data', configs['file_name']+'_train.sumocfg')
         train(flags, time_data, configs, sumoConfig)
+    elif configs['mode'] == 'train_old':
+        configs['mode'] = 'train'
+        sumoConfig = os.path.join(
+            configs['current_path'], 'training_data', time_data, 'net_data', configs['file_name']+'_train.sumocfg')
+        train_old(flags, time_data, configs, sumoConfig)
     elif configs['mode'] == 'test':
         configs['mode'] = 'test'
         sumoConfig = os.path.join(

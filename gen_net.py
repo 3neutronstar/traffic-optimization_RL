@@ -3,26 +3,6 @@ from xml.etree.ElementTree import dump
 from lxml import etree as ET
 import os
 E = ET.Element
-Edges = list()
-Nodes = list()
-Vehicles = list()
-configs = {
-    'num_lanes': 2,
-    'model': 'normal',
-    'file_name': '4x4grid',
-    'tl_rl_list': ['n_1_1'],
-    'laneLength': 300.0,
-    'num_cars': 1800,
-    'flow_start': 0,
-    'flow_end': 3000,
-    'sim_start': 0,
-    'max_steps': 3000,
-    'num_epochs': 1000,
-    'edge_info': Edges,
-    'node_info': Nodes,
-    'vehicle_info': Vehicles,
-    'mode': 'simulate',
-}
 
 
 def indent(elem, level=0):
@@ -47,7 +27,7 @@ class Network():
         self.sim_start = self.configs['sim_start']
         self.max_steps = self.configs['max_steps']
         self.current_path = os.path.dirname(os.path.abspath(__file__))
-        if self.configs['mode'] == 'train':
+        if self.configs['mode'] == 'train'or self.configs['mode']=='train_old':
             self.file_name = self.configs['file_name']
             os.mkdir(os.path.join(self.current_path, 'training_data',
                                   self.configs['time_data']))
@@ -227,7 +207,7 @@ class Network():
         elif mode == 'test':
             tree.write(os.path.join(self.current_Env_path, self.file_name+'_test.sumocfg'),
                        pretty_print=True, encoding='UTF-8', xml_declaration=True)
-        elif mode == 'train':
+        elif mode == 'train' or mode=='train_old':
             tree.write(os.path.join(self.current_Env_path, self.file_name+'_train.sumocfg'),
                        pretty_print=True, encoding='UTF-8', xml_declaration=True)
 
