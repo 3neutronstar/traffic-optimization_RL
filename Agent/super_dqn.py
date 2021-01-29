@@ -120,7 +120,7 @@ class Trainer(RLAlgorithm):
                 self.action += tuple(action)  # 기록용
             return action
         else:
-            action = torch.tensor([random.randint(0, 7)
+            action = torch.tensor([random.randint(0, self.configs['num_phase']-1)
                                    for i in range(self.num_agent)], device=self.configs['device']).view(-1, self.num_agent, self.action_size)
             self.action += tuple(action)  # 기록용
             return action

@@ -135,7 +135,7 @@ class GridEnv(baseEnv):
         갱신 및 점수 확정용 함수
         '''
         self.pressure=torch.zeros(1,self.num_agent,1,dtype=torch.float,device=self.configs['device']) 
-        for i,node in enumerate(self.nodes): # 각 노드
+        for i,node in enumerate(self.node_interest_pair.keys()): # 각 노드
             inflow_rate = 0
             outflow_rate = 0
             for interest in self.node_interest_pair[node]: # 각 노드의 inflow와 outflow edge들 전체
@@ -143,8 +143,8 @@ class GridEnv(baseEnv):
                     interest['inflow'])
                 outflow_rate += traci.edge.getLastStepVehicleNumber(
                     interest['outflow'])
-            tmp_pressure=outflow_rate-inflow_rate
-            self.pressure[i]+=tmp_pressure
+            tmp_pressure=inflow_rate-outflow_rate
+            self.pressure[0][i]+=tmp_pressure
 
 
     def step(self, action):
@@ -165,12 +165,12 @@ class GridEnv(baseEnv):
         Max Pressure based control
         각 node에 대해서 inflow 차량 수와 outflow 차량수 + 해당 방향이라는 전제에서
         '''
-        self.reward += self.pressure
+        self.reward -= self.pressure
         self.pressure = 0
         return self.reward
 
     def update_tensorboard(self, writer, epoch):
-        writer.add_scalar('episode/reward', self.reward,
+        writer.add_scalar('episode/reward', self.reward.sum(),
                           self.configs['max_steps']*epoch)  # 1 epoch마다
         # clear the value once in an epoch
         self.reward = 0

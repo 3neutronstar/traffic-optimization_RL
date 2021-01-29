@@ -41,6 +41,9 @@ def parse_args(args):
     parser.add_argument(
         '--gpu', type=bool, default=False,
         help='choose model base and FRAP.')
+    parser.add_argument(
+        '--phase', type=str, default=8,
+        help='choose phase 4 or 8 (Currently frap is available on 8')
     return parser.parse_known_args(args)[0]
 
 
@@ -54,21 +57,23 @@ def train(flags, time_data, configs, sumoConfig):
     # configs setting
     configs['algorithm'] = flags.algorithm.lower()
     print("training algorithm: ", configs['algorithm'])
-    if flags.algorithm.lower() == 'super_dqn':
-        configs['action_space'] = 8
+    configs['num_phase']=int(flags.phase)
+    if flags.algorithm.lower() == 'super_dqn': # action space와 size 설정
+        configs['action_space'] = configs['num_phase']
         configs['action_size'] = 1
         configs['state_space'] = 16
         configs['model'] = 'base'
     elif flags.model.lower() == 'base':
-        configs['action_space'] = 8
+        configs['action_space'] = configs['num_phase']
         configs['action_size'] = 1
-        configs['state_space'] = 5
+        configs['state_space'] = 16
         configs['model'] = 'base'
     elif flags.model.lower() == 'frap':
-        configs['action_space'] = 8
+        configs['action_space'] = configs['num_phase']
         configs['action_size'] = 1
         configs['state_space'] = 16
         configs['model'] = 'frap'
+
 
     if flags.algorithm.lower() == 'dqn':
         from train import dqn_train

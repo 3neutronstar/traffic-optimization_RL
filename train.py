@@ -39,7 +39,7 @@ interest_list = [
 def dqn_train(configs, time_data, sumoCmd):
     from Agent.dqn import Trainer
     if configs['model'] == 'base':
-        from Env.env import TL3x3Env
+        from Env.Env import TL3x3Env
     elif configs['model'] == 'frap':
         from Env.FRAP import TL3x3Env
     NUM_EPOCHS = configs['num_epochs']
@@ -56,7 +56,7 @@ def dqn_train(configs, time_data, sumoCmd):
     while epoch < NUM_EPOCHS:
         traci.start(sumoCmd)
         env = TL3x3Env(configs)
-        traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(
+        traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(
             'G'*configs['num_lanes'], 'G', 'r'*configs['num_lanes'], 'r'))
         step = 0
         done = False
@@ -134,7 +134,7 @@ def dqn_train(configs, time_data, sumoCmd):
 def REINFORCE_train(configs, time_data, sumoCmd):
     from Agent.REINFORCE import Trainer
     from Agent.REINFORCE import DEFAULT_CONFIG
-    from Env.env import TL3x3Env
+    from Env.Env import TL3x3Env
     tl_rl_list = configs['tl_rl_list']
     NUM_EPOCHS = configs['num_epochs']
     MAX_STEPS = configs['max_steps']
@@ -148,7 +148,7 @@ def REINFORCE_train(configs, time_data, sumoCmd):
     epoch = 0
     while epoch < NUM_EPOCHS:
         traci.start(sumoCmd)
-        traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(
+        traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(
             'G'*configs['num_lanes'], 'G', 'r'*configs['num_lanes'], 'r'))
         env = TL3x3Env(configs)
         # env = GridEnv( configs)
@@ -204,7 +204,7 @@ def REINFORCE_train(configs, time_data, sumoCmd):
 def a2c_train(configs, time_data, sumoCmd):
     from Agent.a2c import Trainer
     if configs['model'] == 'base':
-        from Env.env import TL3x3Env
+        from Env.Env import TL3x3Env
     elif configs['model'] == 'frap':
         from Env.FRAP import TL3x3Env
     tl_rl_list = configs['tl_rl_list']
@@ -220,7 +220,7 @@ def a2c_train(configs, time_data, sumoCmd):
     epoch = 0
     while epoch < NUM_EPOCHS:
         traci.start(sumoCmd)
-        traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(
+        traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(
             'G'*configs['num_lanes'], 'G', 'r'*configs['num_lanes'], 'r'))
         before_action = torch.tensor([1])
         env = TL3x3Env(configs)
@@ -306,7 +306,7 @@ def a2c_train(configs, time_data, sumoCmd):
 def ppo_train(configs, time_data, sumoCmd):
     from Agent.ppo import Trainer
     if configs['model'] == 'base':
-        from Env.env import TL3x3Env
+        from Env.Env import TL3x3Env
     elif configs['model'] == 'frap':
         from Env.FRAP import TL3x3Env
     tl_rl_list = configs['tl_rl_list']
@@ -323,7 +323,7 @@ def ppo_train(configs, time_data, sumoCmd):
     ppo_update_step=0
     while epoch < NUM_EPOCHS:
         traci.start(sumoCmd)
-        traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(
+        traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(
             'G'*configs['num_lanes'], 'G', 'r'*configs['num_lanes'], 'r'))
         env = TL3x3Env(configs)
         # env = GridEnv( configs)
@@ -411,7 +411,7 @@ def super_dqn_train(configs, time_data, sumoCmd):
     while epoch < NUM_EPOCHS:
         traci.start(sumoCmd)
         for tl_rl in tl_rl_list:
-            traci.trafficlight.setRedYellowGreenState(tl_rl, 'G{0}{1}gr{2}{3}rr{2}{3}rr{2}{3}r'.format(
+            traci.trafficlight.setRedYellowGreenState(tl_rl, 'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(
                 'G'*configs['num_lanes'], 'G', 'r'*configs['num_lanes'], 'r'))
         env = GridEnv(configs)
         step = 0
@@ -464,7 +464,7 @@ def super_dqn_train(configs, time_data, sumoCmd):
         # once in an epoch
         update_tensorboard(writer, epoch, env, agent, arrived_vehicles)
         print('======== {} epoch/ return: {} arrived number:{}'.format(epoch,
-                                                                       total_reward, arrived_vehicles))
+                                                                       total_reward.sum(), arrived_vehicles))
         if epoch % 50 == 0:
             agent.save_weights(
                 configs['file_name']+'_{}_{}'.format(time_data, epoch))
