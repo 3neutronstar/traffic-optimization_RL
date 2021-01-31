@@ -18,9 +18,9 @@ DEFAULT_CONFIG = {
     'epsilon': 0.9,
     'epsilon_decay_rate': 0.98,
     'fc_net': [16, 16, 16],
-    'lr': 0.00005, # no via
-    #'lr': 0.001, # via
-
+    'lr': 0.00005,  # no via
+    # 'lr': 0.001, # via
+    'target_update_period': 5,
     'lr_decay_rate': 0.98,
 }
 
@@ -73,7 +73,7 @@ class Trainer(RLAlgorithm):
         self.experience_replay = ReplayMemory(
             self.configs['experience_replay_size'])
         self.batch_size = self.configs['batch_size']
-        self.num_agent=len(self.configs['tl_rl_list'])
+        self.num_agent = len(self.configs['tl_rl_list'])
 
         if self.configs['model'].lower() == 'frap':
             from Agent.Model.FRAP import FRAP
@@ -109,15 +109,16 @@ class Trainer(RLAlgorithm):
                 self.action += tuple(action)  # 기록용
             return action
         else:
-            action = torch.tensor([random.randint(0, self.configs['num_phase']-1) # 여기서 3일 때, phase 4 7일때 phase8
+            action = torch.tensor([random.randint(0, self.configs['num_phase']-1)  # 여기서 3일 때, phase 4 7일때 phase8
                                    for i in range(self.action_size)], device=self.configs['device']).view(1, 1)
             self.action += tuple(action)  # 기록용
             return action
 
     def target_update(self):
         # soft update
-        for target,source in zip(self.targetQNetwork.parameters(),self.mainQNetwork.parameters()):
-            target.data.copy_(target.data*(1-self.configs['tau']),source.data*self.configs['tau'])
+        for target, source in zip(self.targetQNetwork.parameters(), self.mainQNetwork.parameters()):
+            target.data.copy_(
+                target.data*(1-self.configs['tau']), source.data*self.configs['tau'])
         # Hard Update
         # self.targetQNetwork.load_state_dict(self.mainQNetwork.state_dict())
 
@@ -139,7 +140,8 @@ class Trainer(RLAlgorithm):
         non_final_next_states = torch.cat([s for s in batch.next_state
                                            if s is not None], dim=0)
 
-        state_batch = torch.cat(batch.state) # dim=0인 이유는 batch 끼리 cat 하는 것이기 때문임
+        # dim=0인 이유는 batch 끼리 cat 하는 것이기 때문임
+        state_batch = torch.cat(batch.state)
         action_batch = torch.cat(batch.action)
 
         reward_batch = torch.tensor(batch.reward).to(self.configs['device'])
