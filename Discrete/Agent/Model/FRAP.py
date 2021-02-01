@@ -38,15 +38,9 @@ class FRAP(nn.Module):
         self.conv_pair = nn.Sequential(
             nn.Conv2d(32, 20, kernel_size=(1, 1)),
             nn.ReLU(),
-            nn.Conv2d(20, 20, kernel_size=(1, 1)),
-            nn.ReLU(),
         ).to(device)
         self.conv_mask_pair = nn.Sequential(
-            nn.Conv2d(1, 4, kernel_size=(1, 1)),
-            nn.ReLU(),
-            nn.Conv2d(4, 20, kernel_size=(1, 1)),
-            nn.ReLU(),
-            nn.Conv2d(20, 20, kernel_size=(1, 1)),
+            nn.Conv2d(1, 20, kernel_size=(1, 1)),
             nn.ReLU(),
         ).to(device)
         self.conv_competition = nn.Sequential(
@@ -57,8 +51,6 @@ class FRAP(nn.Module):
         ).to(device)
         self.Qnetwork=nn.Sequential(
             nn.Linear(8,16),
-            nn.ReLU(),
-            nn.Linear(16,16),
             nn.ReLU(),
             nn.Dropout(0.3),
             nn.Linear(16,output_size),
