@@ -4,7 +4,6 @@ import traci
 from Env.base import baseEnv
 from copy import deepcopy
 
-
 class TL3x3Env(baseEnv):
     def __init__(self, configs):
         self.configs = configs
@@ -79,7 +78,7 @@ class TL3x3Env(baseEnv):
             vehicle_state[i*2] = traci.edge.getLastStepHaltingNumber(
                 interest['inflow'])# -left_movement  # 가장 좌측에 멈춘 친구를 왼쪽차선 이용자로 판단
             # 좌회전
-            vehicle_state[i*2] = left_movement
+            vehicle_state[i*2+1] = left_movement
 
         vehicle_state = torch.transpose(vehicle_state, 0, 1)
         state = torch.cat((vehicle_state, phase_state),

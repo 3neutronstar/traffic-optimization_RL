@@ -69,13 +69,13 @@ def dqn_train(configs, time_data, sumoCmd):
             action_distribution += tuple(action.unsqueeze(1))
             env.step(action)  # action 적용함수
 
-            arrived_vehicles += vehiclesimulation_step(env, 20)
+            arrived_vehicles += simulation_step(env, 20)
             next_state = env.get_state()  # 다음스테이트
 
             traci.trafficlight.setRedYellowGreenState(
                 tl_rl_list[0], 'y'*28)
 
-            arrived_vehicles += vehiclesimulation_step(env, 5)
+            arrived_vehicles += simulation_step(env, 5)
 
             reward = env.get_reward()  # 25초 지연된 보상
             agent.save_replay(state, action, reward, next_state)  # dqn

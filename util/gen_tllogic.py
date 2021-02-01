@@ -17,9 +17,6 @@ def parse_args(args):
 
     # optional input parameters
     parser.add_argument(
-        '--file_path', type=str, default=None,
-        help='comparision group file name')
-    parser.add_argument(
         '--file', type=str, default=None,
         help='comparision group file name')
     return parser.parse_known_args(args)[0]
@@ -41,7 +38,7 @@ def tl_logic(file_path):
         # 찾고싶은 id를 여기서 start time을 적고 넣으시오
         for plan in TODPlan[0].findall('plan'):
             if plan.attrib['startTime'] == '25200':  # 9시
-                id = plan.attrib['schedule']
+                ids = plan.attrib['schedule']
 
         # schedule들 내에서 찾는 과정
         for schedule in scheduleList:
@@ -57,7 +54,7 @@ def tl_logic(file_path):
                         phase_dict[key] = phase.attrib[key]
                     tlLogic_default.append(E('phase', attrib=phase_dict))
 
-            if id == schedule.attrib['id']:
+            if ids == schedule.attrib['id']:
                 schedule.attrib['id'] = trafficSignal.attrib['nodeID']
                 tlLogic = ET.SubElement(
                     tl_additional, 'tlLogic', attrib=schedule)
@@ -96,11 +93,8 @@ def tl_logic(file_path):
 
 def main(args):
     flags = parse_args(args)
-    if flags.file != None:
-        path = os.path.join(os.path.dirname(
-            os.path.abspath(__file__)), flags.file+'.xml')
-    else:
-        path = os.path.join(flags.file_path, '.xml')
+    path = os.path.join(os.path.dirname(
+        os.path.abspath(__file__)), flags.file)
 
     tl_logic(path)
 

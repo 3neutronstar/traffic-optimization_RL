@@ -1,4 +1,4 @@
-# traffic-control_RL
+# traffic-control_RL (Discrete Action Space)
 Reinforcement Learning based traffic-control
 
 ### Prerequisite
@@ -15,7 +15,7 @@ Run in RL algorithm DQN (default device: cpu)
 ```shell script
     python run.py train --gpu False
 ``` 
-If you want to use other algorithm, use this code (ppo, REINFORCE, a2c) 
+If you want to use other algorithm, use this code (ppo, ~~REINFORCE, a2c~~) 
 
 ```shell script
     python run.py train --algorithm ppo --gpu False
@@ -32,13 +32,66 @@ Tensorboard
 ``` 
 Hyperparameter in json, model is in `training_data/model` directory.
 
+## New version of Learning Process
+- Experiment
+    1) Every 160s(COMMON_PERIOD)
+    2) Controls the phase length
+
+- Agent
+    1) Traffic Light System (Intersection)
+
+- State
+    1) Vehicle Movement Demand(in FRAP only) or Queue Length(2 spaces per each inEdge, total 8 spaces) <br/>
+    -> each number of vehicle is divided by max number of vehicles in an edge.(Normalize)
+    2) Phase Length(If the number of phase is 4, spaces is composed of 4) <br/>
+    -> (up,right,left,down) is divided by max period (Normalize)
+
+- Action (per each COMMON_PERIOD of intersection)
+    ~~1) tuple of +,- of each phases (13)~~
+    ~~2) length of phase~~
+    1) demand of each phase (in here 4 phase) -> multi-agent
+    2) Between two phases, have 3 seconds for phase of all yellow movement signals. 
+
+- Reward
+    1) Max Pressure Control Theory
+    2) Penalty if phase exceeds its max length
+
+
+
 ## Old version of Learning Process
-In algorithm_train.py
+In ./Discrete/train_old.py
+
+### How to use
+check the condition state (throughput)
+```shell script
+    python ./Discrete/run.py simulate
+``` 
+Run in RL algorithm DQN (default device: cpu)
+```shell script
+    python ./Discrete/run.py train --gpu False
+``` 
+If you want to use other algorithm, use this code (ppo, ~~REINFORCE, a2c~~) 
+
+```shell script
+    python ./Discrete/run.py train --algorithm ppo --gpu False
+``` 
+Check the RL performance that based on FRAP model [FRAP Paper]https://arxiv.org/abs/1905.04722
+```shell script
+    python ./Discrete/run.py train --model frap
+``` 
+Didn't check that it learns well. (Prototype)
+- check the result
+Tensorboard
+```shell script
+    tensorboard --logdir ./Discrete/training_data
+``` 
+Hyperparameter in json, model is in `training_data/model` directory.
+
 ### Learning Process
 - Agent
 Traffic Light System (Intersection)
 - State
-Vehicle Movement Demand(2spaces per each inEdge, total 8 spaces) <br/>
+Vehicle Movement Demand(2 spaces per each inEdge, total 8 spaces) <br/>
 Phase (4 or 8 spaces) choose by `--phase [4 or 8]`<br/>
 
 Total 12 or 16 state spaces <br/>
