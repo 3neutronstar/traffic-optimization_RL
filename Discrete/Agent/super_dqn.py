@@ -18,7 +18,7 @@ DEFAULT_CONFIG = {
     'epsilon': 0.9,
     'epsilon_decay_rate': 0.98,
     'fc_net': [32, 32, 16],
-    'lr': 0.00005,
+    'lr': 0.0001,
     'lr_decay_rate': 0.98,
 }
 

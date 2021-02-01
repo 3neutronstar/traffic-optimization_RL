@@ -32,7 +32,37 @@ Tensorboard
 ``` 
 Hyperparameter in json, model is in `training_data/model` directory.
 
-## New version of Learning Process
+## New version of Learning Process(Discrete)
+NxN intersecion
+### Decentralized DQN
+- Experiment
+    1) Every 160s(COMMON_PERIOD)
+    2) Controls the phase length
+
+- Agent
+    1) Traffic Light Systems (Intersection)
+
+- State
+    1) Vehicle Movement Demand(in FRAP only) or Queue Length(2 spaces per each inEdge, total 8 spaces) <br/>
+    -> each number of vehicle is divided by max number of vehicles in an edge.(Normalize)
+    2) Phase Length(If the number of phase is 4, spaces is composed of 4) <br/>
+    -> (up,right,left,down) is divided by max period (Normalize)
+    3) Searching method
+        (1) Before phase ends, receive the 
+
+- Action (per each COMMON_PERIOD of intersection)
+    1) Tuple of +,- of each phases (13)
+    2) Length of phase
+
+
+- Reward
+    1) Max Pressure Control Theory
+    2) Penalty if phase exceeds its max length
+
+
+## New version of Learning Process(Continuous)
+NxN intersecion
+### Decentralized DDPG
 - Experiment
     1) Every 160s(COMMON_PERIOD)
     2) Controls the phase length
@@ -47,15 +77,12 @@ Hyperparameter in json, model is in `training_data/model` directory.
     -> (up,right,left,down) is divided by max period (Normalize)
 
 - Action (per each COMMON_PERIOD of intersection)
-    ~~1) tuple of +,- of each phases (13)~~
-    ~~2) length of phase~~
-    1) demand of each phase (in here 4 phase) -> multi-agent
+    1) Demand of each phase (in here 4 phase) -> multi-agent
     2) Between two phases, have 3 seconds for phase of all yellow movement signals. 
 
 - Reward
     1) Max Pressure Control Theory
     2) Penalty if phase exceeds its max length
-
 
 
 ## Old version of Learning Process
