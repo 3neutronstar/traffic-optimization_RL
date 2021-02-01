@@ -11,7 +11,7 @@ from utils import update_tensorboard
 from Agent.base import merge_dict
 
 
-def simulation_step(env, num_step,step):
+def simulation_step(env, num_step):
     '''
     running_env
     num_step you want to step
@@ -21,7 +21,6 @@ def simulation_step(env, num_step,step):
     for _ in range(num_step):  # 10초마다 행동 갱신
         traci.simulationStep()
         env.collect_state()
-        step += 1
         arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
     return arrived_vehicles
 
@@ -66,7 +65,6 @@ def dqn_train(configs, time_data, sumoCmd):
         a = time.time()
         while step < MAX_STEPS:
 
-
             action = agent.get_action(state)
             action_distribution += tuple(action.unsqueeze(1))
             # action 을 정하고
@@ -75,13 +73,15 @@ def dqn_train(configs, time_data, sumoCmd):
             if before_action!=action:
                 traci.trafficlight.setRedYellowGreenState(
                     tl_rl_list[0], 'y'*28)
-            arrived_vehicles += simulation_step(env, 5,step)
+            arrived_vehicles += simulation_step(env, 5)
+            step+=5
             
             # environment에 적용
             env.step(action)  # action 적용함수
 
             #적용 후 20초 진행
-            arrived_vehicles += simulation_step(env, 20,step)
+            arrived_vehicles += simulation_step(env, 20)
+            step+=20
             next_state = env.get_state()  # 다음스테이트
 
             reward = env.get_reward()  # 20초 지연된 보상
@@ -92,14 +92,14 @@ def dqn_train(configs, time_data, sumoCmd):
             before_action=action
             # 20초 끝나고 yellow 4초
 
-        # update hyper parameter
-        agent.update_hyperparams(epoch)  # lr and epsilon upate
-        if epoch % agent.configs['target_update_period'] == 0:
-            agent.target_update()  # dqn
         b = time.time()
         traci.close()
         print("time:", b-a)
         epoch += 1
+        # update hyper parameter
+        agent.update_hyperparams(epoch)  # lr and epsilon upate
+        if epoch % agent.configs['target_update_period'] == 0:
+            agent.target_update()  # dqn
         # once in an epoch update tensorboard
         update_tensorboard(writer, epoch, env, agent, arrived_vehicles)
         print('======== {} epoch/ return: {} arrived number:{}'.format(epoch,
@@ -163,13 +163,15 @@ def super_dqn_train(configs, time_data, sumoCmd):
                 if before_action[0][idx]==action[0][idx]:
                     traci.trafficlight.setRedYellowGreenState(
                         tl_rl, 'y'*(3+configs['num_lanes'])*4)
-            arrived_vehicles += simulation_step(env, 5,step)
+            arrived_vehicles += simulation_step(env, 5)
+            step+=5
             
             # environment에 적용
             env.step(action)  # action 적용함수
 
             #적용 후 20초 진행
-            arrived_vehicles += simulation_step(env, 20,step)
+            arrived_vehicles += simulation_step(env, 20)
+            step+=20
             next_state = env.get_state()  # 다음스테이트
 
             reward = env.get_reward()  # 20초 지연된 보상
