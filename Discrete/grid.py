@@ -232,28 +232,28 @@ class GridNetwork(Network):
                     g*num_lanes, g, r*num_lanes, r),
              },
             {'duration': '5',
-             'state': 'y'*28,
+             'state': 'y'*20,
              },
             {'duration': '20',  # 2
              'state': 'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format( #위직아래직
                     g*num_lanes, g, r*num_lanes, r),  # current
              },
             {'duration': '5',
-             'state': 'y'*28,
+             'state': 'y'*20,
              },
             {'duration': '20',  # 1
              'state': 'r{2}{3}rr{2}{1}gr{2}{3}rr{2}{1}g'.format( #좌좌우좌
                     g*num_lanes, g, r*num_lanes, r),
              },
             {'duration': '5',
-             'state': 'y'*28,
+             'state': 'y'*20,
              },
             {'duration': '20',  # 1
              'state': 'r{2}{3}rG{0}{3}rr{2}{3}rG{0}{3}g'.format( #좌직우직
                     g*num_lanes, g, r*num_lanes, r),  # current
              },
             {'duration': '5',
-             'state': 'y'*28,
+             'state': 'y'*20,
              },
         ]
         traffic_lights.append({

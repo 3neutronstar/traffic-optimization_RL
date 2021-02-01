@@ -11,7 +11,7 @@ from utils import update_tensorboard
 from Agent.base import merge_dict
 
 
-def simulation_step(env, num_step):
+def simulation_step(env, num_step,step):
     '''
     running_env
     num_step you want to step
@@ -55,6 +55,7 @@ def dqn_train(configs, time_data, sumoCmd):
         env = TL3x3Env(configs)
         traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(
             'G'*configs['num_lanes'], 'G', 'r'*configs['num_lanes'], 'r'))
+        before_action=torch.ones((1,len(tl_rl_list)))
         done = False
         total_reward = 0
         reward = 0
@@ -74,13 +75,13 @@ def dqn_train(configs, time_data, sumoCmd):
             if before_action!=action:
                 traci.trafficlight.setRedYellowGreenState(
                     tl_rl_list[0], 'y'*28)
-            arrived_vehicles += simulation_step(env, 5)
+            arrived_vehicles += simulation_step(env, 5,step)
             
             # environment에 적용
             env.step(action)  # action 적용함수
 
             #적용 후 20초 진행
-            arrived_vehicles += simulation_step(env, 20)
+            arrived_vehicles += simulation_step(env, 20,step)
             next_state = env.get_state()  # 다음스테이트
 
             reward = env.get_reward()  # 20초 지연된 보상
@@ -90,7 +91,7 @@ def dqn_train(configs, time_data, sumoCmd):
             total_reward += reward
             before_action=action
             # 20초 끝나고 yellow 4초
-            
+
         # update hyper parameter
         agent.update_hyperparams(epoch)  # lr and epsilon upate
         if epoch % agent.configs['target_update_period'] == 0:
@@ -137,7 +138,7 @@ def super_dqn_train(configs, time_data, sumoCmd):
         for tl_rl in tl_rl_list:
             traci.trafficlight.setRedYellowGreenState(tl_rl, 'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(
                 'G'*configs['num_lanes'], 'G', 'r'*configs['num_lanes'], 'r'))
-        before_action= torch.ones((1,len(tl_rl_list)),dtype=torch.int)
+        before_action= torch.ones((1,len(tl_rl_list),1),dtype=torch.int)
         env = GridEnv(configs)
         step = 0
         done = False
@@ -157,16 +158,18 @@ def super_dqn_train(configs, time_data, sumoCmd):
             # action 을 정하고
 
             # action이 before_actio과 같으면 yellow없이 진행하고
-            if before_action!=action:
-                traci.trafficlight.setRedYellowGreenState(
-                    tl_rl_list[0], 'y'*28)
-            arrived_vehicles += simulation_step(env, 5)
+            for tl_rl in tl_rl_list:
+                idx=tl_rl_list.index(tl_rl)
+                if before_action[0][idx]==action[0][idx]:
+                    traci.trafficlight.setRedYellowGreenState(
+                        tl_rl, 'y'*(3+configs['num_lanes'])*4)
+            arrived_vehicles += simulation_step(env, 5,step)
             
             # environment에 적용
             env.step(action)  # action 적용함수
 
             #적용 후 20초 진행
-            arrived_vehicles += simulation_step(env, 20)
+            arrived_vehicles += simulation_step(env, 20,step)
             next_state = env.get_state()  # 다음스테이트
 
             reward = env.get_reward()  # 20초 지연된 보상
