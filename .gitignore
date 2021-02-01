@@ -3,10 +3,13 @@ Continous/tensorboard/*
 Discrete/data/*
 Continuous/data/*
 Continuous/data/*
+Experiment/data/*
 Discrete/training_data/model/*
 Continuous/training_data/model/*
+Experiment/training_data/model/*
 Discrete/training_data/*
 Continuous/training_data/*
+Experiment/training_data/*
 .vscode/*
 Continuous/Net_data/*
 Discrete/Net_data/*
