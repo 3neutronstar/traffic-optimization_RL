@@ -10,5 +10,14 @@ Continuous/training_data/*
 .vscode/*
 Continuous/Net_data/*
 Discrete/Net_data/*
-Discrete/util/dj.tss.xml
-Continuous/util/dj.tss.xml
+util/dj.tss.xml
+util/20201028.net.xml
+util/Sample.net.xml
+util/tss_0to3.xml
+util/tss_7to10.xml
+Experiment/tss_0to3.add.xml
+Experiment/tss_7to10.add.xml
+Experiment/tss_free.rou.xml
+Experiment/tss_peak.rou.xml
+Experiment/sample.net.xml
+Experiment/20201028.net.xml

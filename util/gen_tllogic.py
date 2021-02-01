@@ -23,6 +23,7 @@ def parse_args(args):
 
 
 def tl_logic(file_path):
+    ids=str()
     # file load
     tree = parse(file_path)
     # file write setup
@@ -37,14 +38,16 @@ def tl_logic(file_path):
         scheduleList = trafficSignal.findall('schedule')
         # 찾고싶은 id를 여기서 start time을 적고 넣으시오
         for plan in TODPlan[0].findall('plan'):
-            if plan.attrib['startTime'] == '25200':  # 9시
+            if plan.attrib['startTime'] == '9000':  # 9시 25200 # 2시반? 9000
                 ids = plan.attrib['schedule']
 
         # schedule들 내에서 찾는 과정
         for schedule in scheduleList:
             # node id 교체
             if TODPlan[0].attrib['defaultPlan'] == schedule.attrib['id']:  # default
+                schedule.attrib['programID']=schedule.attrib['id']
                 schedule.attrib['id'] = trafficSignal.attrib['nodeID']
+                schedule.attrib['type']='static'
                 tlLogic_default = ET.SubElement(
                     tl_additional_default, 'tlLogic', attrib=schedule)
                 phase_set = schedule.findall('phase')
@@ -55,7 +58,9 @@ def tl_logic(file_path):
                     tlLogic_default.append(E('phase', attrib=phase_dict))
 
             if ids == schedule.attrib['id']:
+                schedule.attrib['programID']=schedule.attrib['id']
                 schedule.attrib['id'] = trafficSignal.attrib['nodeID']
+                schedule.attrib['type']='static'
                 tlLogic = ET.SubElement(
                     tl_additional, 'tlLogic', attrib=schedule)
                 phase_set = schedule.findall('phase')

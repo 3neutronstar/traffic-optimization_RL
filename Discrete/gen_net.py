@@ -3,6 +3,7 @@ from xml.etree.ElementTree import dump
 from lxml import etree as ET
 import os
 E = ET.Element
+from configs import EXP_CONFIGS
 
 
 def indent(elem, level=0):
@@ -255,5 +256,5 @@ class Network():
 
 
 if __name__ == '__main__':
-    network = Network(configs)
+    network = Network(EXP_CONFIGS)
     network.sumo_gui()

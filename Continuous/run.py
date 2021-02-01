@@ -46,10 +46,11 @@ def parse_args(args):
         help='choose phase 4 or 8 (Currently frap is available on 8')
     return parser.parse_known_args(args)[0]
 
+    
+def train(flags, time_data, configs, sumoConfig):
     '''
     New version of training file
     '''
-def train(flags, time_data, configs, sumoConfig):
     # check gui option
     if flags.disp == 'yes':
         sumoBinary = checkBinary('sumo-gui')
@@ -81,7 +82,7 @@ def train(flags, time_data, configs, sumoConfig):
         from train import dqn_train
         dqn_train(configs, time_data, sumoCmd)
 
-    elif flags.algorithm.lower() == 'super_dqn':
+    elif flags.algorithm.lower() == 'super_ddpg':
         from train import super_dqn_train
         super_dqn_train(configs, time_data, sumoCmd)
 
