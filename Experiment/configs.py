@@ -1,3 +1,4 @@
+import torch
 Edges = list()
 Nodes = list()
 Vehicles = list()
@@ -9,9 +10,9 @@ EXP_CONFIGS = {
     'laneLength': 300.0,
     'num_cars': 1800,
     'flow_start': 0,
-    'flow_end': 3000,
+    'flow_end': 3200,
     'sim_start': 0,
-    'max_steps': 3000,
+    'max_steps': 3200,
     'num_epochs': 1000,
     'edge_info': Edges,
     'node_info': Nodes,
@@ -19,9 +20,12 @@ EXP_CONFIGS = {
     'mode': 'simulate',
 }
 
-TRAFFIC_CONFIG={
-    'min_phase':torch.tensor([[[20,20,20,20]]],dtype=torch.float,device=) # 1,agent,num_phase순서
-    'max_phase':torch.tensor([[[50,50,50,50]]]), # 1,agent,num_phase순서
-    'phase_period':torch.tensor([[160]]), #1, agent순서
+TRAFFIC_CONFIGS = {
+    # 1,agent,num_phase순서
+    'min_phase': torch.tensor([[[20, 20, 20, 20]]], dtype=torch.float, device=torch.device('cpu')),
+    # 1,agent,num_phase순서
+    'max_phase': torch.tensor([[[50, 50, 50, 50]]], dtype=torch.float, device=torch.device('cpu')),
+    # 1, agent순서
+    'phase_period': torch.tensor([[160]], dtype=torch.float, device=torch.device('cpu')),
 
 }

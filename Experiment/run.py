@@ -1,5 +1,7 @@
 import argparse
-import json,os, sys
+import json
+import os
+import sys
 import time
 import torch
 import torch.optim as optim
@@ -9,7 +11,8 @@ import numpy as np
 import traci.constants as tc
 from sumolib import checkBinary
 from utils import interest_list
-from configs import EXP_CONFIGS
+from configs import EXP_CONFIGS, TRAFFIC_CONFIGS
+from Agent.base import merge_dict
 
 
 def parse_args(args):
@@ -41,13 +44,11 @@ def parse_args(args):
     parser.add_argument(
         '--gpu', type=bool, default=False,
         help='choose model base and FRAP.')
-    parser.add_argument(
-        '--phase', type=str, default=8,
-        help='choose phase 4 or 8 (Currently frap is available on 8')
     return parser.parse_known_args(args)[0]
 
+
 def train(flags, time_data, configs, sumoConfig):
-    
+
     # check gui option
     if flags.disp == 'yes':
         sumoBinary = checkBinary('sumo-gui')
@@ -57,23 +58,24 @@ def train(flags, time_data, configs, sumoConfig):
     # configs setting
     configs['algorithm'] = flags.algorithm.lower()
     print("training algorithm: ", configs['algorithm'])
-    configs['num_phase']=int(flags.phase)
-    if flags.algorithm.lower() == 'super_dqn': # action space와 size 설정
+    configs['num_phase'] = 4
+    if flags.algorithm.lower() == 'super_dqn':  # action space와 size 설정
         configs['action_space'] = configs['num_phase']
         configs['action_size'] = 1
-        configs['state_space'] = 8+configs['num_phase']
+        configs['state_space'] = 8*configs['num_phase']
         configs['model'] = 'base'
     elif flags.model.lower() == 'base':
-        configs['action_space'] = configs['num_phase']
-        configs['action_size'] = 1
-        configs['state_space'] = 8+configs['num_phase']
+        configs['action_space'] = 13
+        configs['action_size'] = 2
+        configs['state_space'] = 8
         configs['model'] = 'base'
+        configs['time_size'] = int((configs['max_phase']
+                                    - configs['min_phase']).mean())  # 최대에서 최소 뺀 값이 size가 됨
     elif flags.model.lower() == 'frap':
         configs['action_space'] = configs['num_phase']
         configs['action_size'] = 1
         configs['state_space'] = 16
         configs['model'] = 'frap'
-
 
     if flags.algorithm.lower() == 'dqn':
         from train import dqn_train
@@ -82,6 +84,7 @@ def train(flags, time_data, configs, sumoConfig):
     elif flags.algorithm.lower() == 'super_dqn':
         from train import super_dqn_train
         super_dqn_train(configs, time_data, sumoCmd)
+
 
 def test(flags, configs, sumoConfig):
     from Env.Env import TL3x3Env
@@ -103,19 +106,17 @@ def test(flags, configs, sumoConfig):
     if flags.replay_name is not None:
         agent.load_weights(flags.replay_name)
         configs = load_params(configs, flags.replay_name)
-    env = TL3x3Env( configs)
+    env = TL3x3Env(configs)
     step = 0
     # state initialization
     state = env.get_state()
     # agent setting
     total_reward = 0
     arrived_vehicles = 0
-    action_distribution = tuple()
     with torch.no_grad():
         while step < MAX_STEPS:
 
             action = agent.get_action(state)
-            action_distribution += action
             env.step(action)  # action 적용함수
             for _ in range(20):  # 10초마다 행동 갱신
                 env.collect_state()
@@ -154,7 +155,8 @@ def simulate(flags, configs, sumoConfig):
     MAX_STEPS = configs['max_steps']
     traci.start(sumoCmd)
     traci.simulation.subscribe([tc.VAR_ARRIVED_VEHICLES_NUMBER])
-    traci.edge.subscribe('n_2_2_to_n_2_1',[tc.LAST_STEP_VEHICLE_HALTING_NUMBER],0,2000)
+    traci.edge.subscribe('n_2_2_to_n_2_1', [
+                         tc.LAST_STEP_VEHICLE_HALTING_NUMBER], 0, 2000)
     avg_waiting_time = 0
     avg_velocity = 0
     step = 0
@@ -167,7 +169,7 @@ def simulate(flags, configs, sumoConfig):
         step += 1
         for _, edge in enumerate(interest_list):
             avg_waiting_time += traci.edge.getWaitingTime(edge['inflow'])
-        
+
         # vehicle_list = traci.vehicle.getIDList()
         # for i, vehicle in enumerate(vehicle_list):
         #     speed = traci.vehicle.getSpeed(vehicle)
@@ -178,22 +180,22 @@ def simulate(flags, configs, sumoConfig):
             ''][0x79]  # throughput
 
     traci.close()
-    edgesss=traci.edge.getSubscriptionResults('n_2_2_to_n_2_1')
+    edgesss = traci.edge.getSubscriptionResults('n_2_2_to_n_2_1')
     print(edgesss)
     print('======== arrived number:{} avg waiting time:{},avg velocity:{}'.format(
         arrived_vehicles, avg_waiting_time/MAX_STEPS, avg_velocity))
 
 
 def main(args):
-    random_seed=20000
+    random_seed = 20000
     random.seed(random_seed)
     torch.manual_seed(random_seed)
     np.random.seed(random_seed)
     flags = parse_args(args)
-    configs=EXP_CONFIGS
+    configs = merge_dict(EXP_CONFIGS, TRAFFIC_CONFIGS)
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda and flags.gpu == True else "cpu")
-    #device = torch.device('cpu')
+    # device = torch.device('cpu')
     print("Using device: {}".format(device))
     configs['device'] = str(device)
     configs['current_path'] = os.path.dirname(os.path.abspath(__file__))
@@ -206,8 +208,8 @@ def main(args):
     if flags.network.lower() == 'grid':
         from grid import GridNetwork  # network바꿀때 이걸로 바꾸세요(수정 예정)
         configs['grid_num'] = 3
-        if flags.algorithm.lower()=='super_dqn':
-            configs['grid_num']=3
+        if flags.algorithm.lower() == 'super_dqn':
+            configs['grid_num'] = 3
         configs['file_name'] = '{}x{}grid'.format(
             configs['grid_num'], configs['grid_num'])
         network = GridNetwork(configs, grid_num=configs['grid_num'])
