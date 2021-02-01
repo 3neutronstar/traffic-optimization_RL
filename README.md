@@ -45,10 +45,10 @@ NxN intersecion
 - State
     1) Vehicle Movement Demand(in FRAP only) or Queue Length(2 spaces per each inEdge, total 8 spaces) <br/>
     -> each number of vehicle is divided by max number of vehicles in an edge.(Normalize)
-    2) Phase Length(If the number of phase is 4, spaces is composed of 4) <br/>
+    2) Phase Length(If the number of phase is 4, spaces are composed of 4) <br/>
     -> (up,right,left,down) is divided by max period (Normalize)
     3) Searching method
-        (1) Before phase ends, receive the 
+        (1) Before phase ends, receive all the number of inflow vehicles
 
 - Action (per each COMMON_PERIOD of intersection)
     1) Tuple of +,- of each phases (13)
@@ -73,7 +73,7 @@ NxN intersecion
 - State
     1) Vehicle Movement Demand(in FRAP only) or Queue Length(2 spaces per each inEdge, total 8 spaces) <br/>
     -> each number of vehicle is divided by max number of vehicles in an edge.(Normalize)
-    2) Phase Length(If the number of phase is 4, spaces is composed of 4) <br/>
+    2) Phase Length(If the number of phase is 4, spaces are composed of 4) <br/>
     -> (up,right,left,down) is divided by max period (Normalize)
 
 - Action (per each COMMON_PERIOD of intersection)
