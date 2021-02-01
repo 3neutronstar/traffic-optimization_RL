@@ -29,7 +29,7 @@ def dqn_train(configs, time_data, sumoCmd):
     writer = SummaryWriter(os.path.join(
         configs['current_path'], 'training_data', time_data))
     # save hyper parameters
-    # agent.save_params(time_data)
+    agent.save_params(time_data)
     # init training
     while epoch < NUM_EPOCHS:
         # Epoch Start
