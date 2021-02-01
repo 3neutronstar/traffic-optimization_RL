@@ -1,3 +1,5 @@
+import torch
+
 Edges = list()
 Nodes = list()
 Vehicles = list()
@@ -17,4 +19,11 @@ EXP_CONFIGS = {
     'node_info': Nodes,
     'vehicle_info': Vehicles,
     'mode': 'simulate',
+}
+
+TRAFFIC_CONFIG={
+    'min_phase':torch.tensor([[[20,20,20,20]]],dtype=torch.float,device=) # 1,agent,num_phase순서
+    'max_phase':torch.tensor([[[50,50,50,50]]]), # 1,agent,num_phase순서
+    'phase_period':torch.tensor([[160]]), #1, agent순서
+
 }

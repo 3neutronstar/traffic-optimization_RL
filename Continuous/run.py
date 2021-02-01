@@ -9,7 +9,7 @@ import numpy as np
 import traci.constants as tc
 from sumolib import checkBinary
 from utils import interest_list
-from configs import EXP_CONFIGS
+from configs import EXP_CONFIGS, TRAFFIC_CONFIG
 
 
 def parse_args(args):
@@ -190,7 +190,7 @@ def main(args):
     torch.manual_seed(random_seed)
     np.random.seed(random_seed)
     flags = parse_args(args)
-    configs=EXP_CONFIGS
+    configs=EXP_CONFIGS+TRAFFIC_CONFIG
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda and flags.gpu == True else "cpu")
     #device = torch.device('cpu')
@@ -219,11 +219,6 @@ def main(args):
         sumoConfig = os.path.join(
             configs['current_path'], 'training_data', time_data, 'net_data', configs['file_name']+'_train.sumocfg')
         train(flags, time_data, configs, sumoConfig)
-    elif configs['mode'] == 'train_old':
-        configs['mode'] = 'train'
-        sumoConfig = os.path.join(
-            configs['current_path'], 'training_data', time_data, 'net_data', configs['file_name']+'_train.sumocfg')
-        train_old(flags, time_data, configs, sumoConfig)
     elif configs['mode'] == 'test':
         configs['mode'] = 'test'
         sumoConfig = os.path.join(

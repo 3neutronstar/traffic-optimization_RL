@@ -138,6 +138,7 @@ def super_dqn_train(configs, time_data, sumoCmd):
         for tl_rl in tl_rl_list:
             traci.trafficlight.setRedYellowGreenState(tl_rl, 'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(
                 'G'*configs['num_lanes'], 'G', 'r'*configs['num_lanes'], 'r'))
+        
         before_action= torch.ones((1,len(tl_rl_list),1),dtype=torch.int)
         env = GridEnv(configs)
         step = 0
