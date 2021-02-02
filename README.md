@@ -61,7 +61,7 @@ NxN intersecion
 
 
 ## New version of Learning Process(Continuous)
-NxN intersecion
+NxN intersecion `Experiment` directory.
 ### Decentralized DDPG
 - Experiment
     1) Every 160s(COMMON_PERIOD)
@@ -86,7 +86,7 @@ NxN intersecion
 
 
 ## Old version of Learning Process
-In ./Discrete/train_old.py
+3x3 intersection with singleagent and multiagent system `Discrete/` directory.
 
 ### How to use
 check the condition state (throughput)

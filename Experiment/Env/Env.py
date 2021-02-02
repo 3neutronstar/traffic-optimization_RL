@@ -17,6 +17,7 @@ class TL3x3Env(baseEnv):
         self.left_lane_num = self.configs['num_lanes']-1
         self.num_vehicles_list = list()
         self.inflows = list()
+        self.min_phase=torch.tensor(self.configs['min_phase'],dtype=torch.float,device=self.configs['device'])
         '''
         up right down left 순서대로 저장
 
@@ -88,12 +89,13 @@ class TL3x3Env(baseEnv):
                 self.tl_rl_list[0], phase)
             for _ in range(int(phases_length[0][0][i])):
                 traci.simulationStep()
+                arrived_vehicles+=traci.simulation.getArrivedNumber()
                 step += 1
             self.collect_state()
             self.reward += self.get_reward()
         next_state = self.get_state()
         reward = self.reward
-        return next_state, reward, step
+        return next_state, reward, step,arrived_vehicles
 
         # reward calculation and save
 
@@ -127,7 +129,7 @@ class TL3x3Env(baseEnv):
         return matrix_actions[action]
 
     def _toPhaseLength(self, action):
-        phases = self.configs['min_phase'] + \
+        phases = self.min_phase + \
             self._toSplit(action[0][0])*action[0][1]
         return phases
 

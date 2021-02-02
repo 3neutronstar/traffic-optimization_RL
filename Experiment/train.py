@@ -35,7 +35,6 @@ def dqn_train(configs, time_data, sumoCmd):
         # Epoch Start
         traci.start(sumoCmd)
         step = 0
-        action_distribution = tuple()
         # Epoch Start setting
         env = TL3x3Env(configs)
         done = False
@@ -53,7 +52,8 @@ def dqn_train(configs, time_data, sumoCmd):
 
             action = agent.get_action(state)
             # environment에 적용
-            next_state, reward, step = env.step(action, step)  # action 적용함수
+            next_state, reward, step,info = env.step(action, step)  # action 적용함수
+            arrived_vehicles+=info
             # 20초 지연된 보상
             agent.save_replay(state, action, reward, next_state)  # dqn
             agent.update(done)

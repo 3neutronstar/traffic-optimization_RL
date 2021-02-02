@@ -69,8 +69,8 @@ def train(flags, time_data, configs, sumoConfig):
         configs['action_size'] = 2
         configs['state_space'] = 8
         configs['model'] = 'base'
-        configs['time_size'] = int((configs['max_phase']
-                                    - configs['min_phase']).mean()/2)  # 최대에서 최소 뺀 값이 size가 됨
+        configs['time_size'] = int((torch.tensor(configs['max_phase'])
+                                    - torch.tensor(configs['min_phase']).float()).mean()/2)  # 최대에서 최소 뺀 값이 size가 됨
     elif flags.model.lower() == 'frap':
         configs['action_space'] = configs['num_phase']
         configs['action_size'] = 1
