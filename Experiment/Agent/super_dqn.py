@@ -7,7 +7,7 @@ import random
 import os
 from collections import namedtuple
 from copy import deepcopy
-from Agent.base import RLAlgorithm, ReplayMemory, merge_dict
+from Agent.base import RLAlgorithm, ReplayMemory, merge_dict, hard_update
 from torch.utils.tensorboard import SummaryWriter
 
 DEFAULT_CONFIG = {
@@ -18,9 +18,11 @@ DEFAULT_CONFIG = {
     'epsilon': 0.9,
     'epsilon_decay_rate': 0.98,
     'fc_net': [32, 32, 16],
-    'lr': 0.00005,
+    'lr': 5e-5,
     'lr_decay_rate': 0.98,
     'target_update_period': 5,
+    'final_epsilon': 0.0005,
+    'final_lr': 1e-7,
 }
 
 Transition = namedtuple('Transition',
@@ -28,37 +30,64 @@ Transition = namedtuple('Transition',
 
 
 class QNetwork(nn.Module):
-    def __init__(self, input_size, output_size, configs):
+    def __init__(self, input_size, rate_output_size, time_output_size, configs):
         super(QNetwork, self).__init__()
         self.configs = configs
+        self.input_size = input_size
+        self.rate_output_size = rate_output_size
+        self.num_agent = len(configs['tl_rl_list'])
+
+        # build nn 증감
+        self.fc1 = nn.Linear(self.input_size, self.configs['fc'][0])
+        self.fc2 = nn.Linear(self.configs['fc'][0], self.configs['fc'][1])
+        self.fc3 = nn.Linear(self.configs['fc'][1], self.configs['fc'][2])
+        self.fc4 = nn.Linear(self.configs['fc'][2], self.rate_output_size)
+        # 증감의 크기
+        # +1은 증감에서의 argmax value
+        self.fc_y1 = nn.Linear(self.input_size+1, self.configs['fc'][0])
+        self.fc_y2 = nn.Linear(self.configs['fc'][0], self.configs['fc'][1])
+        self.fc_y3 = nn.Linear(self.configs['fc'][1], self.configs['fc'][2])
+        self.fc_y4 = nn.Linear(self.configs['fc'][2], self.time_output_size)
+
+    def forward(self, input_x):
+        # 증감
+        x = f.leaky_relu(self.fc1(input_x))
+        x = f.leaky_relu(self.fc2(x))
+        x = f.leaky_relu(self.fc3(x))
+        x = self.fc4(x)
+        # 증감의 크기
+        # argmax(x)값을 구해서 넣기
+        y = torch.cat(input_x, x.max(
+            1)[1].detach().view(-1, self.num_agent, 1), dim=1)
+        y = f.leaky_relu(self.fc_y1(y))
+        y = f.leaky_relu(self.fc_y2(y))
+        y = f.leaky_relu(self.fc_y3(y))
+        y = self.fc_y4(y)
+        return x, y  # q value
+
+
+class SuperQNetwork(nn.Module):
+    def __init__(self, input_size, output_size, configs):
+        super(SuperQNetwork, self).__init__()
+        self.configs = configs
+        self.input_size = input_size
+        self.output_size = output_size
         self.num_agent = len(self.configs['tl_rl_list'])
-        self.action_space = self.configs['action_space']
-        self.state_space = self.configs['state_space']
-        # build nn
-        self.fc1 = nn.Linear(self.state_space*self.num_agent,
-                             self.configs['fc_net'][0]*self.num_agent)
+        self.fc1 = nn.Linear(
+            self.input_size, self.configs['state_space']*2*self.num_agent)
         self.fc2 = nn.Linear(
-            self.configs['fc_net'][0]*self.num_agent, self.configs['fc_net'][1]*self.num_agent)
+            self.configs['state_space']*2*self.num_agent, self.configs['state_space']*2*self.num_agent)
         self.fc3 = nn.Linear(
-            self.configs['fc_net'][1]*self.num_agent, self.configs['fc_net'][2]*self.num_agent)
-        # self.fc3 = nn.Linear(self.configs['fc_net'][1]*self.num_agent, self.action_space)
+            self.configs['state_space']*2*self.num_agent, self.configs['state_space']*1*self.num_agent)
         self.fc4 = nn.Linear(
-            self.configs['fc_net'][2]*self.num_agent, self.action_space*self.num_agent)
-        # self.fc4 = nn.Linear(30, self.action_space)
+            self.configs['state_space']*1*self.num_agent, self.output_size)
 
     def forward(self, x):
-        x = f.leaky_relu(self.fc1(x))
-        x = f.dropout(x, 0.4)
-        x = f.leaky_relu(self.fc2(x))
-        x = f.dropout(x, 0.3)
-        # x = f.softmax(self.fc3(x))
-        x = f.leaky_relu(self.fc3(x))
-        x = f.dropout(x, 0.2)
-        x = f.leaky_relu(self.fc4(x))
-        # 1차원 batch, 2차원 agent, 3차원 Q
-        x = x.view(-1, self.num_agent, self.action_space)
-        #x = f.softmax(self.fc4(x), dim=0)
-        return x  # q value
+        x = f.relu(self.fc1(x))
+        x = f.relu(self.fc2(x))
+        x = f.relu(self.fc3(x))
+        x = self.fc4(x).view(-1, self.num_agent, self.output_size)
+        return x
 
 
 class Trainer(RLAlgorithm):
@@ -69,7 +98,9 @@ class Trainer(RLAlgorithm):
         self.configs = merge_dict(configs, DEFAULT_CONFIG)
         self.num_agent = len(self.configs['tl_rl_list'])
         self.state_space = self.configs['state_space']
-        self.action_space = self.configs['action_space']
+        # rate action space
+        self.rate_action_space = self.configs['rate_action_space']
+        self.time_action_space = configs['action_spacetime_action_space']
         self.action_size = self.configs['action_size']
         self.gamma = self.configs['gamma']
         self.epsilon = self.configs['epsilon']
@@ -80,32 +111,33 @@ class Trainer(RLAlgorithm):
         self.experience_replay = ReplayMemory(
             self.configs['experience_replay_size'])
         self.batch_size = self.configs['batch_size']
-
-        if self.configs['model'].lower() == 'frap':
-            from Agent.Model.FRAP import FRAP
-            model = FRAP(self.state_space*self.num_agent, self.action_space*self.num_agent,
-                         self.configs['device'])
-            # model.add_module('QNetwork',
-            #                  QNetwork(self.state_space, self.action_space, self.configs))
-        else:
-            model = QNetwork(self.state_space*self.num_agent, self.action_space*self.num_agent,
-                             self.configs)  # 1개 네트워크용
-        model.to(self.configs['device'])
-        self.mainQNetwork = deepcopy(model).to(self.configs['device'])
-        print("========NETWORK==========\n", self.mainQNetwork)
-        self.targetQNetwork = deepcopy(model).to(self.configs['device'])
-        self.targetQNetwork.load_state_dict(self.mainQNetwork.state_dict())
-        self.optimizer = optim.Adam(
-            self.mainQNetwork.parameters(), lr=self.lr)
-        self.action = tuple()
         self.running_loss = 0
-        if self.configs['mode'] == 'train':
-            self.mainQNetwork.train()
-        elif self.configs['mode'] == 'test':
-            self.mainQNetwork.eval()
-        self.targetQNetwork.eval()
 
-    def get_action(self, state):
+        # NN composition
+        self.mainSuperQNetwork = SuperQNetwork(
+            self.configs['state_space']*self.num_agent, self.num_agent*self.configs['state_space']/2, self.configs)
+        self.targetSuperQNetwork = SuperQNetwork(
+            self.configs['state_space']*self.num_agent, self.num_agent*self.configs['state_space']/2, self.configs)
+        self.mainQNetwork[self.num_agent] = [QNetwork(
+            self.num_agent*self.configs['state_space']/2, self.rate_action_space, self.time_action_space, self.configs)*self.num_agent]
+        self.targetQNetwork[self.num_agent] = [QNetwork(
+            self.num_agent*self.configs['state_space']/2, self.rate_action_space, self.time_action_space, self.configs)*self.num_agent]
+
+        # hard update
+        hard_update(self.targetSuperQNetwork, self.mainSuperQNetwork)
+        hard_update(self.targetQNetwork, self.mainQNetwork)
+        for _ in range(self.num_agent):
+            self.optimizer = optim.Adam(
+                self.mainSuperQNetwork.parameters()+self.mainQNetwork.parameters(), lr=self.lr)
+
+        self.action = tuple()
+        # Network
+        print("========SUPER NETWORK==========\n", self.mainSuperQNetwork)
+        print("========NETWORK==========\n")
+        for i in range(self.num_agent):
+            print(self.mainQNetwork[i])
+
+    def get_action(self, state, mask):
         # with torch.no_grad():
         #     action=torch.max(self.mainQNetwork(state),dim=2)[1].view(-1,self.num_agent,self.action_size)
         #     for i in range(self.num_agent):
@@ -115,26 +147,36 @@ class Trainer(RLAlgorithm):
         # 전체를 날리는 epsilon greedy
         if random.random() > self.epsilon:  # epsilon greedy
             with torch.no_grad():
-                action = torch.max(self.mainQNetwork(state), dim=2)[
-                    1].view(-1, self.num_agent, self.action_size)  # dim 2에서 고름
+                actions = tuple()
+                obs = self.mainSuperQNetwork(state)
+                for i, mainQNetwork in enumerate(self.mainQNetwork):
+                    action = torch.max(mainQNetwork(obs), dim=2)[
+                        1].view(-1, self.num_agent, self.action_size)
+                    actions += tuple(action)  # dim 2에서 고름
+                actions = torch.cat(actions, dim=1)
                 # agent가 늘어나면 view(agents,action_size)
-                self.action += tuple(action)  # 기록용
-            return action
+                self.action += tuple(actions)  # 기록용
+            return actions
         else:
-            action = torch.tensor([random.randint(0, self.configs['num_phase']-1)
-                                   for i in range(self.num_agent)], device=self.configs['device']).view(-1, self.num_agent, self.action_size)
-            self.action += tuple(action)  # 기록용
-            return action
+            rate_action = torch.tensor([random.randint(0, self.rate_action_space-1)  # 여기서 3일 때, phase 4 7일때 phase8
+                                        for i in range(self.num_agent)], device=self.configs['device']).view(-1, self.num_agent, self.rate_action_space)
+            time_action = torch.tensor(
+                [random.randint(0, self.configs['time_action_space']-1) for i in range(self.num_agent)]).view(1, -1)
+            actions = torch.cat((rate_action, time_action), dim=1)
+            self.action += tuple(actions)  # 기록용
+            return actions
 
     def target_update(self):
         # Hard Update
         self.targetQNetwork.load_state_dict(self.mainQNetwork.state_dict())
+        self.targetSuperQNetwork.load_state_dict(
+            self.mainSuperQNetwork.state_dict())
 
     def save_replay(self, state, action, reward, next_state):
         self.experience_replay.push(
-            state, action, reward, next_state)
+            state, action, reward, next_state)  # asynchronous하게 저장하고 불러오기
 
-    def update(self, done=False):
+    def update(self, done=False):  # 각 agent마다 시행하기 # agent network로 돌아가서 시행 그러면될듯?
         if len(self.experience_replay) < self.configs['batch_size']:
             return
 
@@ -177,11 +219,11 @@ class Trainer(RLAlgorithm):
 
     def update_hyperparams(self, epoch):
         # decay rate (epsilon greedy)
-        if self.epsilon > 0.005:
+        if self.epsilon > self.configs['final_epsilon']:
             self.epsilon *= self.epsilon_decay_rate
 
         # decay learning rate
-        if self.lr > 0.05*self.configs['lr']:
+        if self.lr > self.configs['final_lr']:
             self.lr = self.lr_decay_rate*self.lr
 
     def save_weights(self, name):

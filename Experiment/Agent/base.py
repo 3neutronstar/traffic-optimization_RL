@@ -1,4 +1,5 @@
-import os, json
+import os
+import json
 import torch
 from torch import nn
 import copy
@@ -34,7 +35,6 @@ class RLAlgorithm():
     def save_params(self, time_data):
         with open(os.path.join(self.configs['current_path'], 'training_data', '{}_{}.json'.format(self.configs['file_name'], time_data)), 'w') as fp:
             json.dump(self.configs, fp, indent=2)
-
 
     def load_params(self, file_name):
         ''' replay_name from flags.replay_name '''
@@ -76,3 +76,8 @@ def merge_dict(d1, d2):
             raise KeyError
         merged[key] = d2[key]
     return merged
+
+
+def hard_update(target, source):
+    for target_param, param in zip(target.parameters(), source.parameters()):
+        target_param.data.copy_(param.data)
