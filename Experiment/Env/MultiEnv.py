@@ -26,6 +26,8 @@ class GridEnv(baseEnv):
         self.node_interest_pair = dict()
         self.phase_list = self._phase_list()
         self.nodes=self.configs['node_info']
+
+        # 관심 노드와 interest inflow or outflow edge 정렬
         for _, node in enumerate(self.nodes):
             if node['id'][-1] not in self.side_list:
                 self.node_interest_pair['{}'.format(

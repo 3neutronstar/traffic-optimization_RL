@@ -22,10 +22,10 @@ EXP_CONFIGS = {
 
 TRAFFIC_CONFIGS = {
     # 1,agent,num_phase순서
-    'min_phase': torch.tensor([[[20, 20, 20, 20]]], dtype=torch.float, device=torch.device('cpu')),
+    'min_phase': [[[20,20,20,20]]],
     # 1,agent,num_phase순서
-    'max_phase': torch.tensor([[[50, 50, 50, 50]]], dtype=torch.float, device=torch.device('cpu')),
+    'max_phase': [[[50,50,50,50]]],
     # 1, agent순서
-    'phase_period': torch.tensor([[160]], dtype=torch.float, device=torch.device('cpu')),
+    'phase_period': [[160]],
 
 }
