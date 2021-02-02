@@ -206,13 +206,13 @@ class GridNetwork(Network):
         for i in range(self.grid_num):
             for j in range(self.grid_num):
                 phase_set = [
-                    {'duration': '77',
+                    {'duration': '42',
                      'state': 'G{}ggr{}rrG{}ggr{}rr'.format('G'*num_lanes, 'r'*num_lanes, 'G'*num_lanes, 'r'*num_lanes),
                      },
                     {'duration': '3',
                      'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*num_lanes, 'r'*num_lanes, 'y'*num_lanes, 'r'*num_lanes),
                      },
-                    {'duration': '77',
+                    {'duration': '42',
                      'state': 'r{}rrG{}ggr{}rrG{}gg'.format('r'*num_lanes, 'G'*num_lanes, 'r'*num_lanes, 'G'*num_lanes),
                      },
                     {'duration': '3',
@@ -227,28 +227,28 @@ class GridNetwork(Network):
                     'phase': phase_set,
                 })
         rl_phase_set = [
-            {'duration': '20',  # 1
+            {'duration': '35',  # 1
              'state': 'r{2}{1}gr{2}{3}rr{2}{1}gr{2}{3}r'.format( # 위좌아래좌
                     g*num_lanes, g, r*num_lanes, r),
              },
             {'duration': '5',
              'state': 'y'*20,
              },
-            {'duration': '20',  # 2
+            {'duration': '35',  # 2
              'state': 'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format( #위직아래직
                     g*num_lanes, g, r*num_lanes, r),  # current
              },
             {'duration': '5',
              'state': 'y'*20,
              },
-            {'duration': '20',  # 1
+            {'duration': '35',  # 1
              'state': 'r{2}{3}rr{2}{1}gr{2}{3}rr{2}{1}g'.format( #좌좌우좌
                     g*num_lanes, g, r*num_lanes, r),
              },
             {'duration': '5',
              'state': 'y'*20,
              },
-            {'duration': '20',  # 1
+            {'duration': '35',  # 1
              'state': 'r{2}{3}rG{0}{3}rr{2}{3}rG{0}{3}g'.format( #좌직우직
                     g*num_lanes, g, r*num_lanes, r),  # current
              },

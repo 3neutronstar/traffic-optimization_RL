@@ -92,6 +92,8 @@ class TL3x3Env(baseEnv):
                 traci.simulationStep()
                 arrived_vehicles+=traci.simulation.getArrivedNumber()
                 step += 1
+            traci.trafficlight.setRedYellowGreenState(
+                self.tl_rl_list[0],'y'*20)
             self.collect_state()
             self.reward += self.get_reward()
         next_state = self.get_state()
@@ -130,7 +132,8 @@ class TL3x3Env(baseEnv):
         return matrix_actions[action]
 
     def _toPhaseLength(self, action):
-        phases = torch.full((1,4),torch.tensor(self.configs['phase_period']).item()/self.configs['num_phase']) +\
+        yellow_time=self.configs['num_phase']*3 #3초
+        phases = torch.full((1,4),torch.tensor(self.configs['phase_period']-yellow_time).item()/self.configs['num_phase']) +\
             self._toSplit(action[0][0])*action[0][1]
         return phases
 
