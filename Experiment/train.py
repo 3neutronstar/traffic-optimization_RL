@@ -44,7 +44,7 @@ def dqn_train(configs, time_data, sumoCmd):
         # state initialization
         action = torch.tensor([[0, 0]], dtype=torch.int,
                               device=configs['device'])
-        state, _, _,_ = env.step(action, step)
+        state, _, _, _ = env.step(action, step)
 
         # Time Check
         a = time.time()
@@ -52,8 +52,9 @@ def dqn_train(configs, time_data, sumoCmd):
 
             action = agent.get_action(state)
             # environment에 적용
-            next_state, reward, step,info = env.step(action, step)  # action 적용함수
-            arrived_vehicles+=info
+            next_state, reward, step, info = env.step(
+                action, step)  # action 적용함수
+            arrived_vehicles += info
             # 20초 지연된 보상
             agent.save_replay(state, action, reward, next_state)  # dqn
             agent.update(done)
@@ -80,6 +81,11 @@ def dqn_train(configs, time_data, sumoCmd):
 
 
 def super_dqn_train(configs, time_data, sumoCmd):
+    '''
+    mask
+    If some agents' time step are over their period, then mask True.
+    Other's matrix element continue False.
+    '''
     from Agent.super_dqn import Trainer
     if configs['model'] == 'base':
         from Env.MultiEnv import GridEnv
@@ -102,57 +108,42 @@ def super_dqn_train(configs, time_data, sumoCmd):
     # init training
     epoch = 0
     while epoch < NUM_EPOCHS:
-        traci.start(sumoCmd)
-        for tl_rl in tl_rl_list:
-            traci.trafficlight.setRedYellowGreenState(tl_rl, 'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(
-                'G'*configs['num_lanes'], 'G', 'r'*configs['num_lanes'], 'r'))
-
-        before_action = torch.ones((1, len(tl_rl_list), 1), dtype=torch.int)
-        env = GridEnv(configs)
         step = 0
-        done = False
+        traci.start(sumoCmd)
+        env = GridEnv(configs)
+
+        # Mask Matrix
+        mask_matrix = torch.zeros(
+            (1, len(configs['tl_rl_list'])), dtype=torch.bool, device=configs['device'])
+
         # state initialization
-        # agent setting
+        state = env.get_state()
         total_reward = 0
         reward = 0
+
+        # agent setting
         arrived_vehicles = 0
-        state = env.get_state()
-        action_distribution = tuple()
         a = time.time()
 
         while step < MAX_STEPS:
 
-            action = agent.get_action(state)
-            action_distribution += tuple(action.unsqueeze(1))
             # action 을 정하고
-
-            # action이 before_actio과 같으면 yellow없이 진행하고
-            for tl_rl in tl_rl_list:
-                idx = tl_rl_list.index(tl_rl)
-                if before_action[0][idx] == action[0][idx]:
-                    traci.trafficlight.setRedYellowGreenState(
-                        tl_rl, 'y'*(3+configs['num_lanes'])*4)
-            arrived_vehicles += simulation_step(env, 5)
-            step += 5
+            action = agent.get_action(state, mask_matrix)
 
             # environment에 적용
-            env.step(action)  # action 적용함수
+            env.step(action, mask_matrix)  # action 적용함수
 
-            # 적용 후 20초 진행
-            arrived_vehicles += simulation_step(env, 20)
-            step += 20
-            next_state = env.get_state()  # 다음스테이트
+            next_state = env.get_state(mask_matrix)  # 다음스테이트
 
-            reward = env.get_reward()  # 20초 지연된 보상
+            reward = env.get_reward(mask_matrix)  # 20초 지연된 보상
             agent.save_replay(state, action, reward, next_state)  # dqn
-            agent.update(done)
+            agent.update()
             state = next_state
             total_reward += reward
-            before_action = action
             # 20초 끝나고 yellow 4초
 
         agent.update_hyperparams(epoch)  # lr and epsilon upate
-        if epoch % 2 == 0:
+        if epoch % agent.configs['target_update_period'] == 0:
             agent.target_update()  # dqn
         b = time.time()
         traci.close()

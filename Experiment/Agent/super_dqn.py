@@ -20,6 +20,7 @@ DEFAULT_CONFIG = {
     'fc_net': [32, 32, 16],
     'lr': 0.00005,
     'lr_decay_rate': 0.98,
+    'target_update_period': 5,
 }
 
 Transition = namedtuple('Transition',
@@ -147,24 +148,25 @@ class Trainer(RLAlgorithm):
                                            if s is not None], dim=1).view(-1, self.num_agent*self.state_space)
         state_batch = torch.cat(batch.state)
         action_batch = torch.cat(batch.action)
-        reward_batch = torch.cat(batch.reward) # batch x num_agent
+        reward_batch = torch.cat(batch.reward)  # batch x num_agent
 
         state_action_values = self.mainQNetwork(
-            state_batch).gather(2, action_batch).view(-1,self.num_agent,self.action_size) # batchxagent
+            state_batch).gather(2, action_batch).view(-1, self.num_agent, self.action_size)  # batchxagent
 
         # 1차원으로 눌러서 mapping 하고
         next_state_values = torch.zeros(
-            (self.configs['batch_size']*self.num_agent), device=self.configs['device'], dtype=torch.float) # batch*agent
+            (self.configs['batch_size']*self.num_agent), device=self.configs['device'], dtype=torch.float)  # batch*agent
         next_state_values[non_final_mask] = self.targetQNetwork(
             non_final_next_states).max(dim=2)[0].detach().to(self.configs['device']).view(-1)  # .to(self.configs['device'])  # 자신의 Q value 중에서max인 value를 불러옴
         # 다시 원래 차원으로 돌리기
-        next_state_values = next_state_values.view(-1, self.num_agent,self.action_size)
+        next_state_values = next_state_values.view(
+            -1, self.num_agent, self.action_size)
         # 기대 Q 값 계산
         expected_state_action_values = (
             next_state_values * self.configs['gamma']) + reward_batch
         # loss 계산
         loss = self.criterion(state_action_values.unsqueeze(2),
-                              expected_state_action_values.unsqueeze(2)) # 행동이 하나이므로 2차원에 대해 unsqueeze
+                              expected_state_action_values.unsqueeze(2))  # 행동이 하나이므로 2차원에 대해 unsqueeze
         self.running_loss += loss/self.configs['batch_size']
         # 모델 최적화
         self.optimizer.zero_grad()
