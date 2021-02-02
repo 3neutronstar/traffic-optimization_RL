@@ -44,7 +44,7 @@ def dqn_train(configs, time_data, sumoCmd):
         # state initialization
         action = torch.tensor([[0, 0]], dtype=torch.int,
                               device=configs['device'])
-        state, _, _ = env.step(action, step)
+        state, _, _,_ = env.step(action, step)
 
         # Time Check
         a = time.time()

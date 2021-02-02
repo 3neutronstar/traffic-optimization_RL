@@ -83,11 +83,12 @@ class TL3x3Env(baseEnv):
         agent 의 action 적용 및 reward 계산
         '''
         self.reward = 0
+        arrived_vehicles=0
         phases_length = self._toPhaseLength(action)  # action을 분해
         for i, phase in enumerate(self.phase_list):
             traci.trafficlight.setRedYellowGreenState(
                 self.tl_rl_list[0], phase)
-            for _ in range(int(phases_length[0][0][i])):
+            for _ in range(int(phases_length[0][i])):
                 traci.simulationStep()
                 arrived_vehicles+=traci.simulation.getArrivedNumber()
                 step += 1
@@ -129,7 +130,7 @@ class TL3x3Env(baseEnv):
         return matrix_actions[action]
 
     def _toPhaseLength(self, action):
-        phases = self.min_phase + \
+        phases = torch.full((1,4),torch.tensor(self.configs['phase_period']).item()/self.configs['num_phase']) +\
             self._toSplit(action[0][0])*action[0][1]
         return phases
 
