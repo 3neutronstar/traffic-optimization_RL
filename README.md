@@ -36,14 +36,14 @@ Hyperparameter in json, model is in `training_data/model` directory.
 NxN intersecion
 ### Single Agent DQN
 - Experiment
-    1) Every 160s(COMMON_PERIOD)
-    2) Controls the phase length
+    1) Every 160s(depend on COMMON_PERIOD)
+    2) Controls the each phase length that phases are in intersection system
 
 - Agent
     1) Traffic Light Systems (Intersection)
 
 - State
-    1) Vehicle Movement Demand(in FRAP only) or Queue Length(2 spaces per each inEdge, total 8 spaces) <br/>
+    1) Vehicle Movement Demand(in FRAP only) or Queue Length(2 spaces per each inEdge, total 8 spaces)for each end of phase: 4 phase==> 32spaces <br/>
     -> each number of vehicle is divided by max number of vehicles in an edge.(Normalize)
     2) Phase Length(If the number of phase is 4, spaces is composed of 4) <br/>
     -> (up,right,left,down) is divided by max period (Normalize)
@@ -60,15 +60,17 @@ NxN intersecion
     2) Penalty if phase exceeds its max length
 ### Decentralized DQN
 - Experiment
-    1) Every 160s(COMMON_PERIOD)
-    2) Controls the phase length
+    1) Every 160s(depend on COMMON_PERIOD)
+    2) Controls the each phase length that phases are in intersection system
 
-- Agent
+- Agents
     1) Traffic Light Systems (Intersection)
+    2) Have their own offset value
+    3) Update itself asynchronously (according to offset value and COMMON_PERIOD value)
 
 - State
-    1) Vehicle Movement Demand(in FRAP only) or Queue Length(2 spaces per each inEdge, total 8 spaces) <br/>
-    -> each number of vehicle is divided by max number of vehicles in an edge.(Normalize)
+    1) Queue Length(2 spaces per each inEdge, total 8 spaces) <br/>
+    -> each number of vehicle is divided by max number of vehicles in an edge.(Normalize, TODO)
     2) Phase Length(If the number of phase is 4, spaces are composed of 4) <br/>
     -> (up,right,left,down) is divided by max period (Normalize)
     3) Searching method
@@ -76,12 +78,15 @@ NxN intersecion
 
 - Action (per each COMMON_PERIOD of intersection)
     1) Tuple of +,- of each phases (13)
-    2) Length of phase
+    2) Length of phase time changes
+    -> minimum value exists and maximum value exists
 
+- Next State
+    1) For agent, next state will be given after 160s.
+    2) For environment, next state will be updated every 1s.
 
 - Reward
-    1) Max Pressure Control Theory
-    2) Penalty if phase exceeds its max length
+    1) Max Pressure Control Theory (Reward = -pressure=-(inflow-outflow))
 
 
 ## New version of Learning Process(Continuous)
