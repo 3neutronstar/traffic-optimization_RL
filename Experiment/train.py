@@ -115,7 +115,7 @@ def super_dqn_train(configs, time_data, sumoCmd):
     agent.save_params(time_data)
     # init training
     epoch = 0
-    OFFSET = torch.tensor([0 for i in range(num_agent)],  # i*10
+    OFFSET = torch.tensor([i for i in range(num_agent)],  # i*10
                           device=configs['device'], dtype=torch.float)
     MAX_PERIOD = torch.tensor([160 for i in range(
         num_agent)], device=configs['device'], dtype=torch.float)
@@ -159,7 +159,7 @@ def super_dqn_train(configs, time_data, sumoCmd):
             # 누적값으로 나타남
 
             # 전체 1초증가 # traci는 env.step에
-            step+=1
+            step += 1
             t_agent += 1
             # 최대에 도달하면 0으로 초기화 (offset과 비교)
             update_matrix = torch.eq(t_agent % MAX_PERIOD, OFFSET)
@@ -170,11 +170,9 @@ def super_dqn_train(configs, time_data, sumoCmd):
 
             action_index_matrix[action_update_matrix] += 1
             # agent의 최대 phase를 넘어가면 해당 agent의 action index 0으로 초기화
-            # print(action_index_matrix)
-            clear_matrix = torch.ge(action_index_matrix, phase_num_matrix)
+            clear_matrix = torch.ge(action_index_matrix, phase_num_matrix-1)
             action_index_matrix[clear_matrix] = 0
             # mask update 요망 matrix True로 전환
-
             mask_matrix[clear_matrix] = True
             mask_matrix[~clear_matrix] = False
 

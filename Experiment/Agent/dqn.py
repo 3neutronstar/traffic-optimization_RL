@@ -40,13 +40,11 @@ class QNetwork(nn.Module):
         self.fc1 = nn.Linear(self.state_space, self.configs['fc_net'][0])
         self.fc2 = nn.Linear(
             self.configs['fc_net'][0], self.configs['fc_net'][1])
-        #self.fc3 = nn.Linear(self.configs['fc_net'][1], self.configs['fc_net'][2])
-        #self.fc4 = nn.Linear(self.configs['fc_net'][2], self.action_space)
         self.fc3 = nn.Linear(self.configs['fc_net'][1], self.action_space)
 
         # seconde network
         self.fc_y1 = nn.Linear(
-            self.state_space+1, self.configs['fc_net'][0]) # action_space내의 max값만 들어감
+            self.state_space+1, self.configs['fc_net'][0])  # action_space내의 max값만 들어감
         self.fc_y2 = nn.Linear(
             self.configs['fc_net'][0], self.configs['fc_net'][1])
         self.fc_y3 = nn.Linear(self.configs['fc_net'][1], self.time_size)
@@ -59,7 +57,8 @@ class QNetwork(nn.Module):
         x = f.dropout(x, 0.3)
         # x = f.softmax(self.fc3(x))
         x = self.fc3(x)
-        y = torch.cat((x.max(1)[1].detach().view(-1,1), input_x), dim=1) # 최댓위치를 넣기위함
+        y = torch.cat((x.max(1)[1].detach().view(-1, 1),
+                       input_x), dim=1)  # 최댓위치를 넣기위함
         y = f.leaky_relu(self.fc_y1(y))
         y = f.dropout(y, 0.4)
         y = f.leaky_relu(self.fc_y2(y))
@@ -174,7 +173,7 @@ class Trainer(RLAlgorithm):
         rate_state_action_values = rate_state_action_values.gather(
             1, action_batch[:, 0].view(-1, 1))
         time_state_action_values = time_state_action_values.gather(
-            1, action_batch[:, 0].view(-1, 1))
+            1, action_batch[:, 1].view(-1, 1))
         # 모든 다음 상태를 위한 V(s_{t+1}) 계산
         rate_next_state_values = torch.zeros(
             self.configs['batch_size'], device=self.configs['device'], dtype=torch.float)

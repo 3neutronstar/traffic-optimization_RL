@@ -8,10 +8,11 @@ from copy import deepcopy
 class Memory():
     def __init__(self, configs):
         self.reward = torch.zeros(1, dtype=torch.int, device=configs['device'])
-        self.state = list()
-        self.next_state = list()
+        self.state = torch.zeros(
+            (1, len(configs['tl_rl_list']), 8), dtype=torch.float, device=configs['device'])
+        self.next_state = torch.zeros_like(self.state)
         self.action = torch.zeros(
-            (1, configs['action_size']), dtype=torch.int, device=configs['device'])
+            (1, 2), dtype=torch.int, device=configs['device'])
 
 
 class GridEnv(baseEnv):
@@ -28,6 +29,7 @@ class GridEnv(baseEnv):
         self.reward = 0
         self.state_space = self.configs['state_space']
         self.action_space = self.configs['action_space']
+        self.action_size = self.configs['action_size']
         self.left_lane_num = self.configs['num_lanes']-1
         self.node_interest_pair = dict()
         self.phase_dict = dict()
@@ -135,14 +137,14 @@ class GridEnv(baseEnv):
             (1, self.num_agent, self.num_agent, self.state_space), dtype=torch.float, device=self.configs['device'])
         next_state = torch.zeros_like(state)
         action = torch.zeros(
-            (1, self.num_agent, self.num_agent, self.action_space), dtype=torch.float, device=self.configs['device'])
-        reward = torch.zeros((1, self.num_agent, 1),
-                             dtype=torch.float, device=self.configs['device'])
+            (1, self.num_agent, self.num_agent, 2), dtype=torch.int, device=self.configs['device'])
+        reward = torch.zeros((1, self.num_agent),
+                             dtype=torch.int, device=self.configs['device'])
         for index in torch.nonzero(mask):
-            state[index] = self.tl_rl_memory[index].state.pop()
-            action[index] = self.tl_rl_memory[index].action
-            next_state[index] = self.tl_rl_memory[index].next_state.pop()
-            reward[index] = self.tl_rl_memory[index].reward
+            state[0, index, :] = self.tl_rl_memory[index].state
+            action[0, index, :] = self.tl_rl_memory[index].action
+            next_state[0, index] = self.tl_rl_memory[index].next_state
+            reward[0, index] = self.tl_rl_memory[index].reward
 
         return state, action, reward, next_state
 
@@ -160,8 +162,9 @@ class GridEnv(baseEnv):
         if yellow_mask.sum() != 0:  # 값이 0인 경우 == all False
             for index in torch.nonzero(action_change_mask):
                 outflow = 0
+                inflow = 0
                 interest = self.node_interest_pair[self.tl_rl_list[index]]
-                for interest in interest_list:
+                for interest in self.interest_list:
                     outflow += traci.edge.getLastStepVehicleNumber(
                         interest['outflow'])
                     inflow += traci.edge.getLastStepVehicleNumber(
@@ -181,23 +184,26 @@ class GridEnv(baseEnv):
             # 모든 rl node에 대해서
             for i, tl_rl in enumerate(self.tl_rl_list):
                 veh_state = torch.zeros(
-                    (1, 1, self.vehicle_state_space), dtype=torch.float, device=self.configs['device'])
+                    (self.vehicle_state_space, 1), dtype=torch.float, device=self.configs['device'])
                 # 모든 inflow에 대해서
-                for j,interest in enumerate(self.node_interest_pair[tl_rl]):
-                    left_movement = traci.lane.getLastStepHaltingNumber(
-                        pair['inflow']+'_{}'.format(self.left_lane_num))  # 멈춘애들 계산
-                    # 직진
-                    veh_state[j*2] = traci.edge.getLastStepHaltingNumber(
-                        pair['inflow'])-left_movement
-                    # 좌회전
-                    veh_state[j*2+1] = left_movement
+                # vehicle state
+                for interest in self.node_interest_pair:
+                    for j, pair in enumerate(self.node_interest_pair[interest]):
+                        left_movement = traci.lane.getLastStepHaltingNumber(
+                            pair['inflow']+'_{}'.format(self.left_lane_num))  # 멈춘애들 계산
+                        # 직진
+                        veh_state[j*2] = traci.edge.getLastStepHaltingNumber(
+                            pair['inflow'])-left_movement  # 가장 좌측에 멈춘 친구를 왼쪽차선 이용자로 판단
+                        # 좌회전
+                        veh_state[j*2+1] = left_movement
+                veh_state = torch.transpose(veh_state, 0, 1)
                 next_state += tuple(veh_state)
-            next_state = torch.cat(next_state, dim=1)
+            next_state = torch.cat(next_state, dim=0).view(
+                1, self.num_agent, self.vehicle_state_space)
             # 각 agent env에 state,next_state 저장
             for state_index in torch.nonzero(self.before_action_change_mask):
-                self.tl_rl_memory[state_index].next_state.insert(0, next_state)
-                self.tl_rl_memory[state_index].state.insert(
-                    0, self.tl_rl_memory[state_index].next_state.pop())
+                self.tl_rl_memory[state_index].state = self.tl_rl_memory[state_index].next_state
+                self.tl_rl_memory[state_index].next_state = next_state
 
         return next_state.view(1, -1)
 
@@ -212,8 +218,9 @@ class GridEnv(baseEnv):
         # action을 environment에 등록 후 상황 살피기,action을 저장
         for i in torch.nonzero(action_change_mask):  # 노란 신호 초기화는 어떻게 할까요
             phase = self._toPhase(
-                self.tl_rl_list[i], action[0, i, 0].view(1))  # action을 분해
-            traci.trafficlight.setRedYellowGreenState(self.tl_rl_list[i], phase)
+                self.tl_rl_list[i], index_mask[i])  # action을 분해
+            traci.trafficlight.setRedYellowGreenState(
+                self.tl_rl_list[i], phase)
             self.tl_rl_memory[i].action = action
 
         # step
@@ -262,18 +269,3 @@ class GridEnv(baseEnv):
                 g*num_lanes, g, r*num_lanes, r),  # current
         ]
         return phase_list
-
-
-def calc_action(action_matrix, actions, mask, configs):
-    '''
-    num_agent*num_phase로 구성되며
-    열에는 phase length가 누적 합하여 더해진다.
-    단, 노란불을 위하여 3초가 추가된다.
-    '''
-    common_action = torch.tensor([30, 30, 30, 30])
-    matrix_actions = torch.tensor([[0, 0, 0, 0], [1, 0, 0, -1], [1, 0, -1, 0], [1, -1, 0, 0], [0, 1, 0, -1], [0, 1, -1, 0], [0, 0, 1, -1],
-                                   [1, 0, 0, -1], [1, 0, -1, 0], [1, 0, 0, -1], [0, 1, 0, -1], [0, 1, -1, 0], [0, 0, 1, -1]], dtype=torch.int, device=self.configs['device'])
-    for index in torch.nonzero(mask):
-        action_matrix[index] = matrix_actions[actions[index]
-                                              [0]]*actions[index][1]+common_action[index]
-    return action_matrix
