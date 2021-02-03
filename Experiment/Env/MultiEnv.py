@@ -139,10 +139,10 @@ class GridEnv(baseEnv):
         reward = torch.zeros((1, self.num_agent, 1),
                              dtype=torch.float, device=self.configs['device'])
         for index in torch.nonzero(mask):
-            state[index] = self.tl_rl_memory.state
-            action[index] = self.tl_rl_memory.action
-            next_state[index] = self.tl_rl_memory.next_state
-            reward[index] = self.tl_rl_memory.reward
+            state[index] = self.tl_rl_memory[index].state.pop()
+            action[index] = self.tl_rl_memory[index].action
+            next_state[index] = self.tl_rl_memory[index].next_state.pop()
+            reward[index] = self.tl_rl_memory[index].reward
 
         return state, action, reward, next_state
 
@@ -173,6 +173,7 @@ class GridEnv(baseEnv):
         # next state 저장
         need_state_mask = torch.bitwise_and(
             self.before_action_change_mask, action_change_mask)
+        # print(need_state_mask)
         next_state = torch.zeros(
             (1, self.num_agent, self.vehicle_state_space), dtype=torch.float, device=self.configs['device'])
         if need_state_mask.sum() != 0:  # 검색의 필요가 없다면 검색x
@@ -182,7 +183,7 @@ class GridEnv(baseEnv):
                 veh_state = torch.zeros(
                     (1, 1, self.vehicle_state_space), dtype=torch.float, device=self.configs['device'])
                 # 모든 inflow에 대해서
-                for interest in self.node_interest_pair[tl_rl]:
+                for j,interest in enumerate(self.node_interest_pair[tl_rl]):
                     left_movement = traci.lane.getLastStepHaltingNumber(
                         pair['inflow']+'_{}'.format(self.left_lane_num))  # 멈춘애들 계산
                     # 직진
@@ -211,8 +212,8 @@ class GridEnv(baseEnv):
         # action을 environment에 등록 후 상황 살피기,action을 저장
         for i in torch.nonzero(action_change_mask):  # 노란 신호 초기화는 어떻게 할까요
             phase = self._toPhase(
-                tl_rl[i], action[0, i, 0].view(1))  # action을 분해
-            traci.trafficlight.setRedYellowGreenState(tl_rl[i], phase)
+                self.tl_rl_list[i], action[0, i, 0].view(1))  # action을 분해
+            traci.trafficlight.setRedYellowGreenState(self.tl_rl_list[i], phase)
             self.tl_rl_memory[i].action = action
 
         # step
@@ -221,8 +222,8 @@ class GridEnv(baseEnv):
         next_state = self.collect_state(action_change_mask, yellow_mask)
 
         # index mask,action change mask -> update
-        self.before_index_mask = index_mask
-        self.before_action_change_mask = action_change_mask
+        self.before_index_mask = deepcopy(index_mask)
+        self.before_action_change_mask = deepcopy(action_change_mask)
         return next_state
 
     def calc_action(self, action_matrix, actions, mask_matrix):
