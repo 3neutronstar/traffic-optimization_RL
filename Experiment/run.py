@@ -62,7 +62,7 @@ def train(flags, time_data, configs, sumoConfig):
     if flags.algorithm.lower() == 'super_dqn':  # action space와 size 설정
         configs['action_space'] = configs['num_phase']
         configs['action_size'] = 1
-        configs['state_space'] = 8*configs['num_phase']
+        configs['state_space'] = 8  # 4phase에서 각각 받아오는게 아니라 마지막에 한번만 받음
         configs['model'] = 'base'
     elif flags.model.lower() == 'base':
         configs['action_space'] = 13
