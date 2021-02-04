@@ -116,9 +116,9 @@ def super_dqn_train(configs, time_data, sumoCmd):
     # init training
     epoch = 0
     OFFSET = torch.tensor([i for i in range(num_agent)],  # i*10
-                          device=configs['device'], dtype=torch.float)
+                          device=configs['device'], dtype=torch.int)
     MAX_PERIOD = torch.tensor([160 for i in range(
-        num_agent)], device=configs['device'], dtype=torch.float)
+        num_agent)], device=configs['device'], dtype=torch.int)
     phase_num_matrix = torch.tensor(
         [len(phase) for i, phase in enumerate(configs['max_phase'])])
     while epoch < NUM_EPOCHS:
@@ -133,6 +133,7 @@ def super_dqn_train(configs, time_data, sumoCmd):
         # MAX Period까지만 증가하는 t
         t_agent = torch.zeros(
             (num_agent), dtype=torch.int, device=configs['device'])
+        t_agent -= OFFSET
 
         # Action Matrix : 비교해서 동일할 때 collect_state, 없는 state는 zero padding
         action_matrix = torch.zeros(

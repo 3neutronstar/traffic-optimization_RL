@@ -24,8 +24,7 @@ class GridEnv(baseEnv):
         self.num_agent = len(self.tl_rl_list)
         self.side_list = ['u', 'r', 'd', 'l']
         self.interest_list = self._generate_interest_list()
-        self.phase_size = len(
-            traci.trafficlight.getRedYellowGreenState(self.tl_list[0]))
+
         self.reward = 0
         self.state_space = self.configs['state_space']
         self.action_space = self.configs['action_space']
@@ -46,7 +45,6 @@ class GridEnv(baseEnv):
             self.num_agent, dtype=torch.long, device=self.configs['device'])
         self.before_index_mask = torch.zeros(
             self.num_agent, dtype=torch.long, device=self.configs['device'])
-
         # 관심 노드와 interest inflow or outflow edge 정렬
         for _, node in enumerate(self.nodes):
             if node['id'][-1] not in self.side_list:
@@ -64,6 +62,12 @@ class GridEnv(baseEnv):
             self.configs['max_phase'], dtype=torch.float, device=self.configs['device'])
         self.common_phase = torch.tensor(
             self.configs['common_phase'], dtype=torch.float, device=self.configs['device'])
+        self.matrix_actions = torch.tensor(
+            self.configs['matrix_actions'], dtype=torch.float, device=self.configs['device'])
+        # phase 갯수 list 생성
+        self.num_phase_list = list()
+        for phase in self.common_phase:
+            self.num_phase_list.append(len(phase))
 
     def _generate_interest_list(self):
         interest_list = list()
@@ -221,7 +225,7 @@ class GridEnv(baseEnv):
                 self.tl_rl_list[i], index_mask[i])  # action을 분해
             traci.trafficlight.setRedYellowGreenState(
                 self.tl_rl_list[i], phase)
-            self.tl_rl_memory[i].action = action
+            self.tl_rl_memory[i].action = action.int()
 
         # step
         traci.simulationStep()
@@ -235,9 +239,14 @@ class GridEnv(baseEnv):
 
     def calc_action(self, action_matrix, actions, mask_matrix):
         for index in torch.nonzero(mask_matrix):
-            action_matrix[index] = actions[0, index, 0]*actions[0, index, 1] + \
+            actions = actions.long()
+            action_matrix[index] = self.matrix_actions[actions[0, index, 0]]*actions[0, index, 1] + \
                 self.common_phase[index]  # action으로 분배하는 공식 필요
-
+        # 누적 합산
+            for j in range(self.num_phase_list[index]):
+                if j >= 1:
+                    action_matrix[index, j] += action_matrix[index, j-1]
+                action_matrix[index, j] += 3
         return action_matrix
 
     def update_tensorboard(self, writer, epoch):
