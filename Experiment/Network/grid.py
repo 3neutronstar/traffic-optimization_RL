@@ -201,8 +201,8 @@ class GridNetwork(Network):
     def specify_traffic_light(self):
         traffic_lights = []
         num_lanes = self.configs['num_lanes']
-        g='G'
-        r='r'
+        g = 'G'
+        r = 'r'
         for i in range(self.grid_num):
             for j in range(self.grid_num):
                 phase_set = [
@@ -228,29 +228,29 @@ class GridNetwork(Network):
                 })
         rl_phase_set = [
             {'duration': '35',  # 1
-             'state': 'r{2}{1}gr{2}{3}rr{2}{1}gr{2}{3}r'.format( # 위좌아래좌
-                    g*num_lanes, g, r*num_lanes, r),
+             'state': 'r{2}{1}gr{2}{3}rr{2}{1}gr{2}{3}r'.format(  # 위좌아래좌
+                 g*num_lanes, g, r*num_lanes, r),
              },
             {'duration': '5',
              'state': 'y'*20,
              },
             {'duration': '35',  # 2
-             'state': 'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format( #위직아래직
-                    g*num_lanes, g, r*num_lanes, r),  # current
+             'state': 'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(  # 위직아래직
+                 g*num_lanes, g, r*num_lanes, r),  # current
              },
             {'duration': '5',
              'state': 'y'*20,
              },
             {'duration': '35',  # 1
-             'state': 'r{2}{3}rr{2}{1}gr{2}{3}rr{2}{1}g'.format( #좌좌우좌
-                    g*num_lanes, g, r*num_lanes, r),
+             'state': 'r{2}{3}rr{2}{1}gr{2}{3}rr{2}{1}g'.format(  # 좌좌우좌
+                 g*num_lanes, g, r*num_lanes, r),
              },
             {'duration': '5',
              'state': 'y'*20,
              },
             {'duration': '35',  # 1
-             'state': 'r{2}{3}rG{0}{3}rr{2}{3}rG{0}{3}g'.format( #좌직우직
-                    g*num_lanes, g, r*num_lanes, r),  # current
+             'state': 'r{2}{3}rG{0}{3}rr{2}{3}rG{0}{3}g'.format(  # 좌직우직
+                 g*num_lanes, g, r*num_lanes, r),  # current
              },
             {'duration': '5',
              'state': 'y'*20,
@@ -269,7 +269,7 @@ class GridNetwork(Network):
 
 if __name__ == "__main__":
     grid_num = 3
-    configs=EXP_CONFIGS
+    configs = EXP_CONFIGS
     configs['grid_num'] = grid_num
     configs['file_name'] = '{}x{}grid'.format(grid_num, grid_num)
     a = GridNetwork(configs, grid_num)

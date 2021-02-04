@@ -250,7 +250,7 @@ class GridEnv(baseEnv):
         return action_matrix
 
     def update_tensorboard(self, writer, epoch):
-        writer.add_scalar('episode/reward', self.reward.sum(),
+        writer.add_scalar('episode/reward', self.reward.float().sum(),
                           self.configs['max_steps']*epoch)  # 1 epoch마다
         # clear the value once in an epoch
         self.reward = 0

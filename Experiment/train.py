@@ -173,7 +173,7 @@ def super_dqn_train(configs, time_data, sumoCmd):
             # agent의 최대 phase를 넘어가면 해당 agent의 action index 0으로 초기화
             clear_matrix = torch.ge(action_index_matrix, phase_num_matrix-1)
             action_index_matrix[clear_matrix] = 0
-            # mask update 요망 matrix True로 전환
+            # mask update, matrix True로 전환
             mask_matrix[clear_matrix] = True
             mask_matrix[~clear_matrix] = False
 

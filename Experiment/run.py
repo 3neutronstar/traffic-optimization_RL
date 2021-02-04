@@ -27,7 +27,7 @@ def parse_args(args):
         help='train or test, simulate, "train_old" is the old version to train')
     parser.add_argument(
         '--network', type=str, default='grid',
-        help='choose network in Env')
+        help='choose network in Env or load from map file')
     # optional input parameters
     parser.add_argument(
         '--disp', type=str, default='no',
@@ -37,7 +37,7 @@ def parse_args(args):
         help='activate only in test mode and write file_name to load weights.')
     parser.add_argument(
         '--algorithm', type=str, default='dqn',
-        help='choose algorithm dqn, reinforce, a2c, ppo.')
+        help='choose algorithm dqn, reinforce, a2c, ppo,super_dqn.')
     parser.add_argument(
         '--model', type=str, default='base',
         help='choose model base and FRAP.')
@@ -207,7 +207,7 @@ def main(args):
 
     # check the network
     if flags.network.lower() == 'grid':
-        from grid import GridNetwork  # network바꿀때 이걸로 바꾸세요(수정 예정)
+        from Network.grid import GridNetwork  # network바꿀때 이걸로 바꾸세요(수정 예정)
         configs['grid_num'] = 3
         if flags.algorithm.lower() == 'super_dqn':
             configs['grid_num'] = 3
@@ -215,6 +215,17 @@ def main(args):
             configs['grid_num'], configs['grid_num'])
         network = GridNetwork(configs, grid_num=configs['grid_num'])
         network.generate_cfg(True, configs['mode'])
+    else:  # map file 에서 불러오기
+        print("Load from map file")
+        configs['file_name'] = flags.network
+
+    # check the environment
+    if 'SUMO_HOME' in os.environ:
+        tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
+        sys.path.append(tools)
+    else:
+        sys.exit("please declare environment variable 'SUMO_HOME'")
+
     # check the mode
     if configs['mode'] == 'train':
         configs['mode'] = 'train'
@@ -231,13 +242,6 @@ def main(args):
         sumoConfig = os.path.join(
             configs['current_path'], 'Net_data', configs['file_name']+'_simulate.sumocfg')
         simulate(flags, configs, sumoConfig)
-
-    # check the environment
-    if 'SUMO_HOME' in os.environ:
-        tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
-        sys.path.append(tools)
-    else:
-        sys.exit("please declare environment variable 'SUMO_HOME'")
 
 
 if __name__ == '__main__':
