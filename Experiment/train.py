@@ -105,8 +105,8 @@ def super_dqn_train(configs, time_data, sumoCmd):
     MAX_STEPS = configs['max_steps']
     OFFSET = torch.tensor(configs['offset'],  # i*10
                           device=configs['device'], dtype=torch.int)
-    TL_PERIOD = torch.tensor(
-        configs['tl_period'], device=configs['device'], dtype=torch.int).view(-1)
+    TL_MAX_PERIOD = torch.tensor(
+        configs['tl_max_period'], device=configs['device'], dtype=torch.int)
     epoch = 0
     while epoch < NUM_EPOCHS:
         step = 0
@@ -155,7 +155,7 @@ def super_dqn_train(configs, time_data, sumoCmd):
                 t_agent, action_matrix[0, action_index_matrix]).view(NUM_AGENT)  # 0,인 이유는 인덱싱
 
             # 최대에 도달하면 0으로 초기화 (offset과 비교)
-            update_matrix = torch.eq(t_agent % TL_PERIOD, 0)
+            update_matrix = torch.eq(t_agent % TL_MAX_PERIOD, 0)
             t_agent[update_matrix] = 0
 
             action_index_matrix[action_update_matrix] += 1
@@ -171,13 +171,13 @@ def super_dqn_train(configs, time_data, sumoCmd):
                 t_agent, action_matrix[0, action_index_matrix]-3)  # 3초먼저 yellow로 바꿈
             for y in torch.nonzero(yellow_mask):
                 traci.trafficlight.setRedYellowGreenState(
-                    TL_RL_LIST[y], 'y'*24)
+                    TL_RL_LIST[y], 'y'*20)
             # environment에 적용
             # action 적용함수, traci.simulationStep 있음
             next_state = env.step(actions, action_index_matrix, yellow_mask)
 
             # env속에 agent별 state를 꺼내옴, max_offset+period 이상일 때 시작
-            if step >= int(torch.max(OFFSET)+torch.max(TL_PERIOD)):
+            if step >= int(torch.max(OFFSET)+torch.max(TL_MAX_PERIOD)):
                 rep_state, rep_action, rep_reward, rep_next_state = env.get_state(
                     mask_matrix)
                 agent.save_replay(rep_state, rep_action, rep_reward,
