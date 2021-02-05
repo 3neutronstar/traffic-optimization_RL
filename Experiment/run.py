@@ -30,7 +30,7 @@ def parse_args(args):
         help='choose network in Env or load from map file')
     # optional input parameters
     parser.add_argument(
-        '--disp', type=str, default='no',
+        '--disp', type=bool, default=False,
         help='show the process while in training')
     parser.add_argument(
         '--replay_name', type=str, default=None,
@@ -50,7 +50,7 @@ def parse_args(args):
 def train(flags, time_data, configs, sumoConfig):
 
     # check gui option
-    if flags.disp == 'yes':
+    if flags.disp == True:
         sumoBinary = checkBinary('sumo-gui')
     else:
         sumoBinary = checkBinary('sumo')
@@ -58,7 +58,7 @@ def train(flags, time_data, configs, sumoConfig):
     # configs setting
     configs['algorithm'] = flags.algorithm.lower()
     print("training algorithm: ", configs['algorithm'])
-    configs['num_phase'] = 4
+    
     if flags.algorithm.lower() == 'super_dqn':  # action space와 size 설정
         configs['action_space'] = configs['num_phase']
         configs['action_size'] = 2
@@ -155,7 +155,7 @@ def test(flags, configs, sumoConfig):
 
 
 def simulate(flags, configs, sumoConfig):
-    sumoBinary = checkBinary('sumo-gui')
+    sumoBinary = checkBinary('sumo')
     sumoCmd = [sumoBinary, "-c", sumoConfig]
     MAX_STEPS = configs['max_steps']
     traci.start(sumoCmd)
@@ -218,9 +218,10 @@ def main(args):
         configs['file_name'] = '{}x{}grid'.format(
             configs['grid_num'], configs['grid_num'])
         network = GridNetwork(configs, grid_num=configs['grid_num'])
+        network.generate_all_xml()
         network.generate_cfg(True, configs['mode'])
 
-        # rl_list 설정
+        # rl_list_generation
         side_list = ['u', 'r', 'd', 'l']
         tl_rl_list = list()
         for _, node in enumerate(configs['node_info']):
@@ -228,13 +229,20 @@ def main(args):
                 tl_rl_list.append(node['id'])
         configs['tl_rl_list'] = tl_rl_list
         configs['num_agent'] = len(tl_rl_list)
-        configs['max_phase_num'] = 4
+        configs['num_phase'] = [[4],[4],[4],[4],[4],[4],[4],[4],[4]]
+        configs['max_phase_num'] = torch.max(torch.tensor(configs['num_phase']).view(-1)).tolist()
         configs['offset'] = [0 for i in range(
             configs['num_agent'])]  # offset check 용
         configs['tl_max_period'] = [160 for i in range(configs['num_agent'])]
     else:  # map file 에서 불러오기
         print("Load from map file")
         configs['file_name'] = flags.network
+        from Network.map import MapNetwork
+        mapnet=MapNetwork(configs)
+        NET_CONFIGS=mapnet.get_tl_from_xml()
+        # net configs와 합치기
+        merge_dict(configs,NET_CONFIGS)
+
 
     # check the environment
     if 'SUMO_HOME' in os.environ:

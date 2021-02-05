@@ -241,6 +241,13 @@ class Network():
         elif mode == 'train' or mode == 'train_old':
             tree.write(os.path.join(self.current_Env_path, self.file_name+'_train.sumocfg'),
                        pretty_print=True, encoding='UTF-8', xml_declaration=True)
+    
+    def generate_all_xml(self):
+        self._generate_nod_xml()
+        self._generate_edg_xml()
+        self._generate_net_xml()
+        self._generate_rou_xml()
+        self._generate_add_xml()
 
     def test_net(self):
         self.generate_cfg(False)

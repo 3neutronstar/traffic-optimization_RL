@@ -26,7 +26,7 @@ class MapNetwork(Network):
         # , 'Network') # 가동시
         file_path = os.path.join(self.configs['current_path'])
         tl_tree = parse(file_path)
-        tlLogicList = tree.findall('tlLogic')
+        tlLogicList = tl_tree.findall('tlLogic')
         for tlLogic in tlLogicList:
             self.offset_list.append(tlLogic.attrib['offset'])
             self.tl_rl_list.append(tlLogic.attrib['id'])  # rl 조종할 tl_rl추가
@@ -40,13 +40,20 @@ class MapNetwork(Network):
                 phase_period += int(phase.attrib['duration'])
             self.phase_list.append(phase_state_list)
             self.common_phase.append(phase_duration_list)
+        configs={
+            'common_phase':self.common_phase,
+            'tl_rl_list':self.tl_rl_list,
+            'offset':self.offset_list,
+            'phase_list':self.phase_list,
+        }
+        return configs
 
     def print(self):
         print('all')
 
 
 if __name__ == "__main__":
-    configs['current_path'] = os.path.abspath(__file__))
+    configs['current_path'] = os.path.abspath(__file__)
     mapnet=MapNetwork(configs)
     mapnet.generate_cfg(False)
     mapnet.sumo_gui()
