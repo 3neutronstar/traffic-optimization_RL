@@ -3,7 +3,7 @@ Edges = list()
 Nodes = list()
 Vehicles = list()
 EXP_CONFIGS = {
-    'num_lanes': 2,
+    'num_lanes': 3,
     'model': 'normal',
     'file_name': '4x4grid',
     'tl_rl_list': ['n_1_1'],
