@@ -96,62 +96,11 @@ def test(flags, configs, sumoConfig):
     from Agent.dqn import Trainer
     from Env.MultiEnv import GridEnv
     from utils import save_params, load_params, update_tensorboard
-
-    # init test setting
-    sumoBinary = checkBinary('sumo-gui')
-    sumoCmd = [sumoBinary, "-c", sumoConfig]
-
-    # setting the rl list
-    tl_rl_list = configs['tl_rl_list']
-    MAX_STEPS = configs['max_steps']
-    reward = 0
-    traci.start(sumoCmd)
-    agent = Trainer(configs)
-    # setting the replay
-    if flags.replay_name is not None:
-        agent.load_weights(flags.replay_name)
-        configs = load_params(configs, flags.replay_name)
-    env = TL3x3Env(configs)
-    step = 0
-    # state initialization
-    state = env.get_state()
-    # agent setting
-    total_reward = 0
-    arrived_vehicles = 0
-    with torch.no_grad():
-        while step < MAX_STEPS:
-
-            action = agent.get_action(state)
-            env.step(action)  # action 적용함수
-            for _ in range(20):  # 10초마다 행동 갱신
-                env.collect_state()
-                traci.simulationStep()
-                step += 1
-
-            traci.trafficlight.setRedYellowGreenState(tl_rl_list[0], 'y'*28)
-            for _ in range(5):
-                traci.simulationStep()
-                env.collect_state()
-                step += 1
-
-            reward = env.get_reward()
-            next_state = env.get_state()
-            # agent.save_replay(state, action, reward, next_state)
-            state = next_state
-            total_reward += reward
-            step += 1
-            if step == MAX_STEPS:
-                done = True
-            # agent.update(done) # no update in
-            # loss += agent.get_loss()  # 총 loss
-            arrived_vehicles += traci.simulation.getArrivedNumber()  # throughput
-            traci.simulationStep()
-            # if step % 200 == 0:
-
-        agent.target_update()
-        traci.close()
-        print('======== return: {} arrived number:{}'.format(
-            total_reward, arrived_vehicles))
+    from test import dqn_test, super_dqn_test
+    if flags.algorithm.lower() == 'dqn':
+        dqn_test(flags, configs)
+    elif flags.algorithm.lower() == 'super_dqn':
+        super_dqn_test(flags, configs)
 
 
 def simulate(flags, configs, sumoConfig):
@@ -201,7 +150,7 @@ def main(args):
     device = torch.device("cuda" if use_cuda and flags.gpu == True else "cpu")
     # device = torch.device('cpu')
     print("Using device: {}".format(device))
-    configs=EXP_CONFIGS
+    configs = EXP_CONFIGS
     configs['device'] = str(device)
     configs['current_path'] = os.path.dirname(os.path.abspath(__file__))
     configs['mode'] = flags.mode.lower()
