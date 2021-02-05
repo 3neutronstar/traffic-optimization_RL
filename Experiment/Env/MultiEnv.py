@@ -57,13 +57,13 @@ class GridEnv(baseEnv):
 
         # action의 mapping을 위한 matrix
         self.min_phase = torch.tensor(
-            self.configs['min_phase'], dtype=torch.float, device=self.configs['device'])
+            self.configs['min_phase'], dtype=torch.int, device=self.configs['device'])
         self.max_phase = torch.tensor(
-            self.configs['max_phase'], dtype=torch.float, device=self.configs['device'])
+            self.configs['max_phase'], dtype=torch.int, device=self.configs['device'])
         self.common_phase = torch.tensor(
-            self.configs['common_phase'], dtype=torch.float, device=self.configs['device'])
+            self.configs['common_phase'], dtype=torch.int, device=self.configs['device'])
         self.matrix_actions = torch.tensor(
-            self.configs['matrix_actions'], dtype=torch.float, device=self.configs['device'])
+            self.configs['matrix_actions'], dtype=torch.int, device=self.configs['device'])
         # phase 갯수 list 생성
         self.num_phase_list = list()
         for phase in self.common_phase:
@@ -145,12 +145,11 @@ class GridEnv(baseEnv):
         reward = torch.zeros((1, self.num_agent),
                              dtype=torch.int, device=self.configs['device'])
         for index in torch.nonzero(mask):
-            state[0, index, :] = self.tl_rl_memory[index].state
-            action[0, index, :] = self.tl_rl_memory[index].action
-            next_state[0, index] = self.tl_rl_memory[index].next_state
-            reward[0, index] = self.tl_rl_memory[index].reward
+            state[0, index, :] = deepcopy(self.tl_rl_memory[index].state)
+            action[0, index, :] = deepcopy(self.tl_rl_memory[index].action)
+            next_state[0, index] = deepcopy(self.tl_rl_memory[index].next_state)
+            reward[0, index] = deepcopy(self.tl_rl_memory[index].reward)
             # reward clear
-            self.tl_rl_memory[index].reward=0
 
         return state, action, reward, next_state
 
@@ -244,7 +243,7 @@ class GridEnv(baseEnv):
     def calc_action(self, action_matrix, actions, mask_matrix):
         for index in torch.nonzero(mask_matrix):
             actions = actions.long()
-            action_matrix[index] = self.matrix_actions[actions[0, index, 0]]*actions[0, index, 1] + \
+            action_matrix[index] = self.matrix_actions[actions[0, index, 0]]*actions[0, index, 1].int() + \
                 self.common_phase[index]  # action으로 분배하는 공식 필요
         # 누적 합산
             for j in range(self.num_phase_list[index]):

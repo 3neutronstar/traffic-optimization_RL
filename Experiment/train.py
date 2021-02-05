@@ -140,7 +140,7 @@ def super_dqn_train(configs, time_data, sumoCmd):
 
         # Action Matrix : 비교해서 동일할 때 collect_state, 없는 state는 zero padding
         action_matrix = torch.zeros(
-            (num_agent, MAX_PHASES), device=configs['device'])  # 노란불 3초 해줘야됨
+            (num_agent, MAX_PHASES),dtype=torch.int, device=configs['device'])  # 노란불 3초 해줘야됨
         action_index_matrix = torch.zeros(
             (num_agent), dtype=torch.long, device=configs['device'])  # 현재 몇번째 phase인지
         yellow_mask = torch.zeros(
@@ -165,12 +165,13 @@ def super_dqn_train(configs, time_data, sumoCmd):
             # 전체 1초증가 # traci는 env.step에
             step += 1
             t_agent += 1
-            # 최대에 도달하면 0으로 초기화 (offset과 비교)
-            update_matrix = torch.eq(t_agent % MAX_PERIOD, 0)
-            t_agent[update_matrix] = 0
             # 넘어가야된다면 action index증가 (by tensor slicing+yellow signal)
             action_update_matrix = torch.eq(
                 t_agent, action_matrix[0,action_index_matrix]).view(num_agent)  # 0,인 이유는 인덱싱
+
+            # 최대에 도달하면 0으로 초기화 (offset과 비교)
+            update_matrix = torch.eq(t_agent % MAX_PERIOD, 0)
+            t_agent[update_matrix] = 0
 
             action_index_matrix[action_update_matrix] += 1
             # agent의 최대 phase를 넘어가면 해당 agent의 action index 0으로 초기화
@@ -179,6 +180,7 @@ def super_dqn_train(configs, time_data, sumoCmd):
             # mask update, matrix True로 전환
             mask_matrix[clear_matrix] = True
             mask_matrix[~clear_matrix] = False
+
 
             # 만약 action이 끝나기 3초전이면 yellow signal 적용, reward 갱신
             yellow_mask = torch.eq(
@@ -197,6 +199,8 @@ def super_dqn_train(configs, time_data, sumoCmd):
                 agent.save_replay(rep_state, rep_action, rep_reward,
                                   rep_next_state, mask_matrix)  # dqn
                 total_reward += rep_reward.sum()
+            # print(mask_matrix)
+
 
             agent.update(mask_matrix)
             state = next_state

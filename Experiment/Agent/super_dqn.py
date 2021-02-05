@@ -260,6 +260,7 @@ class Trainer(RLAlgorithm):
                                        time_expected_state_action_values.unsqueeze(1))
             self.running_loss += rate_loss/self.configs['batch_size']
             self.running_loss += time_loss/self.configs['batch_size']
+
             # 모델 최적화
             optimizer.zero_grad()
             # retain_graph를 하는 이유는 mainSuperQ에 대해 영향이 없게 하기 위함
