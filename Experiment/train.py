@@ -171,7 +171,7 @@ def super_dqn_train(configs, time_data, sumoCmd):
                 t_agent, action_matrix[0, action_index_matrix]-3)  # 3초먼저 yellow로 바꿈
             for y in torch.nonzero(yellow_mask):
                 traci.trafficlight.setRedYellowGreenState(
-                    TL_RL_LIST[y], 'y'*24)
+                    TL_RL_LIST[y], 'y'*20)
             # environment에 적용
             # action 적용함수, traci.simulationStep 있음
             next_state = env.step(actions, action_index_matrix, yellow_mask)
