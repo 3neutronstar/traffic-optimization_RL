@@ -57,13 +57,13 @@ class GridEnv(baseEnv):
 
         # action의 mapping을 위한 matrix
         self.min_phase = torch.tensor(
-            self.configs['min_phase'], dtype=torch.float, device=self.configs['device'])
+            self.configs['min_phase'], dtype=torch.int, device=self.configs['device'])
         self.max_phase = torch.tensor(
-            self.configs['max_phase'], dtype=torch.float, device=self.configs['device'])
+            self.configs['max_phase'], dtype=torch.int, device=self.configs['device'])
         self.common_phase = torch.tensor(
-            self.configs['common_phase'], dtype=torch.float, device=self.configs['device'])
+            self.configs['common_phase'], dtype=torch.int, device=self.configs['device'])
         self.matrix_actions = torch.tensor(
-            self.configs['matrix_actions'], dtype=torch.float, device=self.configs['device'])
+            self.configs['matrix_actions'], dtype=torch.int, device=self.configs['device'])
         # phase 갯수 list 생성
         self.num_phase_list = list()
         for phase in self.common_phase:
@@ -145,10 +145,11 @@ class GridEnv(baseEnv):
         reward = torch.zeros((1, self.num_agent),
                              dtype=torch.int, device=self.configs['device'])
         for index in torch.nonzero(mask):
-            state[0, index, :] = self.tl_rl_memory[index].state
-            action[0, index, :] = self.tl_rl_memory[index].action
-            next_state[0, index] = self.tl_rl_memory[index].next_state
-            reward[0, index] = self.tl_rl_memory[index].reward
+            state[0, index, :] = deepcopy(self.tl_rl_memory[index].state)
+            action[0, index, :] = deepcopy(self.tl_rl_memory[index].action)
+            next_state[0, index] = deepcopy(self.tl_rl_memory[index].next_state)
+            reward[0, index] = deepcopy(self.tl_rl_memory[index].reward)
+            # reward clear
 
         return state, action, reward, next_state
 
@@ -163,19 +164,22 @@ class GridEnv(baseEnv):
         각 node에 대해서 inflow 차량 수와 outflow 차량수 + 해당 방향이라는 전제에서
         '''
         # outflow확인,reward 저장
-        if yellow_mask.sum() != 0:  # 값이 0인 경우 == all False
-            for index in torch.nonzero(action_change_mask):
-                outflow = 0
-                inflow = 0
-                interest = self.node_interest_pair[self.tl_rl_list[index]]
-                for interest in self.interest_list:
-                    outflow += traci.edge.getLastStepVehicleNumber(
-                        interest['outflow'])
-                    inflow += traci.edge.getLastStepVehicleNumber(
-                        interest['inflow'])
-                # pressure=inflow-outflow
-                self.tl_rl_memory[index].reward = torch.tensor(
-                    -(inflow-outflow), dtype=torch.int, device=self.configs['device'])
+        # 값이 0인 경우 == all False
+        for index in torch.nonzero(yellow_mask):
+            outflow = 0
+            inflow = 0
+            interests = self.node_interest_pair[self.tl_rl_list[index]]
+            for interest in interests:
+                outflow += traci.edge.getLastStepVehicleNumber(
+                    interest['outflow'])
+                inflow += traci.edge.getLastStepHaltingNumber(
+                    interest['inflow'])
+            # pressure=inflow-outflow 
+            # reward cumulative sum
+            pressure=torch.tensor(
+                -(inflow-outflow), dtype=torch.int, device=self.configs['device'])
+            self.tl_rl_memory[index].reward += pressure
+            self.reward+=pressure
 
         # next state 저장
         need_state_mask = torch.bitwise_and(
@@ -186,20 +190,19 @@ class GridEnv(baseEnv):
         if need_state_mask.sum() != 0:  # 검색의 필요가 없다면 검색x
             next_state = tuple()
             # 모든 rl node에 대해서
-            for i, tl_rl in enumerate(self.tl_rl_list):
+            # vehicle state
+            for interest in self.node_interest_pair:
                 veh_state = torch.zeros(
                     (self.vehicle_state_space, 1), dtype=torch.float, device=self.configs['device'])
                 # 모든 inflow에 대해서
-                # vehicle state
-                for interest in self.node_interest_pair:
-                    for j, pair in enumerate(self.node_interest_pair[interest]):
-                        left_movement = traci.lane.getLastStepHaltingNumber(
-                            pair['inflow']+'_{}'.format(self.left_lane_num))  # 멈춘애들 계산
-                        # 직진
-                        veh_state[j*2] = traci.edge.getLastStepHaltingNumber(
-                            pair['inflow'])-left_movement  # 가장 좌측에 멈춘 친구를 왼쪽차선 이용자로 판단
-                        # 좌회전
-                        veh_state[j*2+1] = left_movement
+                for j, pair in enumerate(self.node_interest_pair[interest]):
+                    left_movement = traci.lane.getLastStepHaltingNumber(
+                        pair['inflow']+'_{}'.format(self.left_lane_num))  # 멈춘애들 계산
+                    # 직진
+                    veh_state[j*2] = traci.edge.getLastStepHaltingNumber(
+                        pair['inflow'])-left_movement  # 가장 좌측에 멈춘 친구를 왼쪽차선 이용자로 판단
+                    # 좌회전
+                    veh_state[j*2+1] = left_movement
                 veh_state = torch.transpose(veh_state, 0, 1)
                 next_state += tuple(veh_state)
             next_state = torch.cat(next_state, dim=0).view(
@@ -240,14 +243,14 @@ class GridEnv(baseEnv):
     def calc_action(self, action_matrix, actions, mask_matrix):
         for index in torch.nonzero(mask_matrix):
             actions = actions.long()
-            action_matrix[index] = self.matrix_actions[actions[0, index, 0]]*actions[0, index, 1] + \
+            action_matrix[index] = self.matrix_actions[actions[0, index, 0]]*actions[0, index, 1].int() + \
                 self.common_phase[index]  # action으로 분배하는 공식 필요
         # 누적 합산
             for j in range(self.num_phase_list[index]):
                 if j >= 1:
                     action_matrix[index, j] += action_matrix[index, j-1]
                 action_matrix[index, j] += 3
-        return action_matrix
+        return action_matrix.int()
 
     def update_tensorboard(self, writer, epoch):
         writer.add_scalar('episode/reward', self.reward,
