@@ -290,9 +290,9 @@ class Trainer(RLAlgorithm):
     def save_weights(self, name):
 
         torch.save(self.mainSuperQNetwork.state_dict(), os.path.join(
-            self.configs['current_path'], 'training_data', self.configs['time_data'], 'model', name+'.h5'))
+            self.configs['current_path'], 'training_data', self.configs['time_data'], 'model', name+'Super.h5'))
         torch.save(self.targetSuperQNetwork.state_dict(), os.path.join(
-            self.configs['current_path'], 'training_data', self.configs['time_data'], 'model', name+'_target.h5'))
+            self.configs['current_path'], 'training_data', self.configs['time_data'], 'model', name+'Super_target.h5'))
 
         for mainQ,targetQ in zip(self.mainQNetwork,self.targetQNetwork):
             torch.save(mainQ.state_dict(), os.path.join(
@@ -302,7 +302,7 @@ class Trainer(RLAlgorithm):
 
     def load_weights(self, name):
         self.mainSuperQNetwork.load_state_dict(torch.load(os.path.join(
-            self.configs['current_path'], 'training_data', self.configs['time_data'], 'model', name+'.h5')))
+            self.configs['current_path'], 'training_data', self.configs['time_data'], 'model', name+'Super.h5')))
         self.mainSuperQNetwork.eval()
         for mainQ in self.mainQNetwork:
             mainQ.load_state_dict(torch.load(os.path.join(
