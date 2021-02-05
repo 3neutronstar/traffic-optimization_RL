@@ -167,7 +167,6 @@ class GridEnv(baseEnv):
         # outflow확인,reward 저장
         # 값이 0인 경우 == all False
         for index in torch.nonzero(yellow_mask):
-            print(index,"maskidx")
             outflow = 0
             inflow = 0
             interests = self.node_interest_pair[self.tl_rl_list[index]]
@@ -181,7 +180,6 @@ class GridEnv(baseEnv):
             pressure=torch.tensor(
                 -(inflow-outflow), dtype=torch.int, device=self.configs['device'])
             self.tl_rl_memory[index].reward += pressure
-            print(pressure,"pressure")
             self.reward+=pressure
 
         # next state 저장
