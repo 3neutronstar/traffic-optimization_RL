@@ -2,7 +2,7 @@ import os,json
 import torch
 from configs import EXP_CONFIGS
 def save_params(configs, time_data):
-    with open(os.path.join(configs['current_path'], 'training_data', '{}_{}.json'.format(configs['file_name'], time_data)), 'w') as fp:
+    with open(os.path.join(configs['current_path'], 'training_data', '{}.json'.format(time_data)), 'w') as fp:
         json.dump(configs, fp, indent=2)
 
 

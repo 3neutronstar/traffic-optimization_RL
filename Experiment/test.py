@@ -1,8 +1,8 @@
 import torch
 import traci
+from utils import load_params
 
-
-def dqn_test(flags, configs):
+def dqn_test(flags, sumoCmd, configs):
     # Environment Setting
     from Agent.dqn import Trainer
     if configs['model'] == 'base':
@@ -10,19 +10,19 @@ def dqn_test(flags, configs):
     elif configs['model'] == 'frap':
         from Env.FRAP import TL3x3Env
     # init test setting
-    sumoBinary = checkBinary('sumo-gui')
-    sumoCmd = [sumoBinary, "-c", sumoConfig]
+    if flags.replay_name is not None:
+        configs['replay_epoch']=flags.replay_epoch
+        configs = load_params(configs, flags.replay_name)
+        configs['mode']='test'
+    
 
     # setting the rl list
-    tl_rl_list = configs['tl_rl_list']
     MAX_STEPS = configs['max_steps']
     reward = 0
     traci.start(sumoCmd)
     agent = Trainer(configs)
+    agent.load_weights(flags.replay_name)
     # setting the replay
-    if flags.replay_name is not None:
-        agent.load_weights(flags.replay_name)
-        configs = load_params(configs, flags.replay_name)
     env = TL3x3Env(configs)
     step = 0
     # state initialization
@@ -67,11 +67,15 @@ def dqn_test(flags, configs):
             total_reward, arrived_vehicles))
 
 
-def super_dqn_test(flags, configs):
+def super_dqn_test(flags,sumoCmd, configs):
     from Agent.super_dqn import Trainer
     if configs['model'] == 'base':
         from Env.MultiEnv import GridEnv
-
+    # init test setting
+    if flags.replay_name is not None:
+        configs['replay_epoch']=flags.replay_epoch
+        configs = load_params(configs, flags.replay_name)
+        configs['mode']='test'
     phase_num_matrix = torch.tensor(
         [len(phase) for i, phase in enumerate(configs['max_phase'])])
     # init agent and tensorboard writer

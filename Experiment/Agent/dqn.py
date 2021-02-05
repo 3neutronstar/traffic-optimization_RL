@@ -70,9 +70,12 @@ class QNetwork(nn.Module):
 class Trainer(RLAlgorithm):
     def __init__(self, configs):
         super().__init__(configs)
-        os.mkdir(os.path.join(
-            self.configs['current_path'], 'training_data', self.configs['time_data'], 'model'))
-        self.configs = merge_dict(configs, DEFAULT_CONFIG)
+        print(configs['mode'])
+        if configs['mode']=='train':
+            os.mkdir(os.path.join(
+                self.configs['current_path'], 'training_data', self.configs['time_data'], 'model'))
+            configs = merge_dict(configs, DEFAULT_CONFIG)
+        self.configs=configs
         self.state_space = self.configs['state_space']
         self.action_space = self.configs['action_space']
         self.action_size = self.configs['action_size']
