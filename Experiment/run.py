@@ -30,7 +30,7 @@ def parse_args(args):
         help='choose network in Env or load from map file')
     # optional input parameters
     parser.add_argument(
-        '--disp', type=bool, default=False,
+        '--disp', type=str, default='no',
         help='show the process while in training')
     parser.add_argument(
         '--replay_name', type=str, default=None,
@@ -50,7 +50,7 @@ def parse_args(args):
 def train(flags, time_data, configs, sumoConfig):
 
     # check gui option
-    if flags.disp == True:
+    if flags.disp == 'yes':
         sumoBinary = checkBinary('sumo-gui')
     else:
         sumoBinary = checkBinary('sumo')
@@ -58,10 +58,9 @@ def train(flags, time_data, configs, sumoConfig):
     # configs setting
     configs['algorithm'] = flags.algorithm.lower()
     print("training algorithm: ", configs['algorithm'])
-    
+    configs['num_phase'] = 4
     if flags.algorithm.lower() == 'super_dqn':  # action space와 size 설정
-        configs['num_phase']=4
-        configs['action_space'] = configs['num_phase']#TODO
+        configs['action_space'] = configs['num_phase']
         configs['action_size'] = 2
         configs['state_space'] = 8  # 4phase에서 각각 받아오는게 아니라 마지막에 한번만 받음
         configs['model'] = 'base'
@@ -70,6 +69,9 @@ def train(flags, time_data, configs, sumoConfig):
         configs['action_size'] = 2
         configs['state_space'] = 8
         configs['model'] = 'base'
+        configs['time_size'] = int((torch.tensor(configs['phase_period'])
+                                    - torch.tensor(configs['min_phase']).sum())/configs['num_phase'])  # 최대에서 최소 뺀 값이 size가 됨
+        print(configs['time_size'])
     elif flags.model.lower() == 'frap':
         configs['action_space'] = configs['num_phase']
         configs['action_size'] = 1
@@ -80,27 +82,11 @@ def train(flags, time_data, configs, sumoConfig):
         from train import dqn_train
         from configs import DQN_TRAFFIC_CONFIGS
         configs = merge_dict(configs, DQN_TRAFFIC_CONFIGS)
-        configs['num_phase']=4
-        configs['time_size'] = int((torch.tensor(configs['tl_period'])
-                                    - torch.tensor(configs['min_phase']).sum())/configs['num_phase'])  # 최대에서 최소 뺀 값이 size가 됨
         dqn_train(configs, time_data, sumoCmd)
 
     elif flags.algorithm.lower() == 'super_dqn':
         from train import super_dqn_train
         from configs import SUPER_DQN_TRAFFIC_CONFIGS
-                # rl_list_generation
-        side_list = ['u', 'r', 'd', 'l']
-        tl_rl_list = list()
-        for _, node in enumerate(configs['node_info']):
-            if node['id'][-1] not in side_list:
-                tl_rl_list.append(node['id'])
-        configs['tl_rl_list'] = tl_rl_list
-        configs['num_agent'] = len(tl_rl_list)
-        configs['num_phase'] = [[4],[4],[4],[4],[4],[4],[4],[4],[4]]
-        configs['max_phase_num'] = torch.max(torch.tensor(configs['num_phase']).view(-1)).tolist()
-        configs['offset'] = [0 for i in range(
-            configs['num_agent'])]  # offset check 용
-        configs['tl_max_period'] = [160 for i in range(configs['num_agent'])]
         configs = merge_dict(configs, SUPER_DQN_TRAFFIC_CONFIGS)
         super_dqn_train(configs, time_data, sumoCmd)
 
@@ -169,7 +155,7 @@ def test(flags, configs, sumoConfig):
 
 
 def simulate(flags, configs, sumoConfig):
-    sumoBinary = checkBinary('sumo')
+    sumoBinary = checkBinary('sumo-gui')
     sumoCmd = [sumoBinary, "-c", sumoConfig]
     MAX_STEPS = configs['max_steps']
     traci.start(sumoCmd)
@@ -232,19 +218,23 @@ def main(args):
         configs['file_name'] = '{}x{}grid'.format(
             configs['grid_num'], configs['grid_num'])
         network = GridNetwork(configs, grid_num=configs['grid_num'])
-        network.generate_all_xml()
         network.generate_cfg(True, configs['mode'])
 
-
+        # rl_list 설정
+        side_list = ['u', 'r', 'd', 'l']
+        tl_rl_list = list()
+        for _, node in enumerate(configs['node_info']):
+            if node['id'][-1] not in side_list:
+                tl_rl_list.append(node['id'])
+        configs['tl_rl_list'] = tl_rl_list
+        configs['num_agent'] = len(tl_rl_list)
+        configs['max_phase_num'] = 4
+        configs['offset'] = [0 for i in range(
+            configs['num_agent'])]  # offset check 용
+        configs['tl_max_period'] = [160 for i in range(configs['num_agent'])]
     else:  # map file 에서 불러오기
         print("Load from map file")
         configs['file_name'] = flags.network
-        from Network.map import MapNetwork
-        mapnet=MapNetwork(configs)
-        NET_CONFIGS=mapnet.get_tl_from_xml()
-        # net configs와 합치기
-        merge_dict(configs,NET_CONFIGS)
-
 
     # check the environment
     if 'SUMO_HOME' in os.environ:

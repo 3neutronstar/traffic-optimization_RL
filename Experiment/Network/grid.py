@@ -153,11 +153,9 @@ class GridNetwork(Network):
 
                             # 위 아래
                             if checkEdge['to'][-1] == direction_list[1] or checkEdge['to'][-1] == direction_list[2]:
-                                # self.configs['probability'] = '0.133'
-                                self.configs['num_cars'] = '900'
+                                self.configs['probability'] = '0.133'
                             else:
-                                # self.configs['probability'] = '0.388'
-                                self.configs['num_cars'] = '1800'
+                                self.configs['probability'] = '0.388'
                             via_string = str()
                             node_x_y = edge['id'][2]  # 끝에서 사용하는 기준 x나 y
                             if 'r' in edge['id']:
@@ -183,8 +181,7 @@ class GridNetwork(Network):
                                 'id': edge['from'],
                                 'begin': str(self.configs['flow_start']),
                                 'end': str(self.configs['flow_end']),
-                                # 'probability': self.configs['probability'],
-                                'number': self.configs['num_cars'],
+                                'probability': self.configs['probability'],
                                 'reroute': 'false',
                                 'via': edge['id']+" "+via_string+" "+checkEdge['id'],
                                 'departPos': "base",
@@ -208,54 +205,19 @@ class GridNetwork(Network):
         r = 'r'
         for i in range(self.grid_num):
             for j in range(self.grid_num):
-                # # Single DQN 용
-                # phase_set = [
-                #     {'duration': '42',
-                #      'state': 'G{}ggr{}rrG{}ggr{}rr'.format('G'*num_lanes, 'r'*num_lanes, 'G'*num_lanes, 'r'*num_lanes),
-                #      },
-                #     {'duration': '3',
-                #      'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*num_lanes, 'r'*num_lanes, 'y'*num_lanes, 'r'*num_lanes),
-                #      },
-                #     {'duration': '42',
-                #      'state': 'r{}rrG{}ggr{}rrG{}gg'.format('r'*num_lanes, 'G'*num_lanes, 'r'*num_lanes, 'G'*num_lanes),
-                #      },
-                #     {'duration': '3',
-                #      'state': 'r{}rry{}yyr{}rry{}yy'.format('r'*num_lanes, 'y'*num_lanes, 'r'*num_lanes, 'y'*num_lanes),
-                #      }
-                # ]
-                # traffic_lights.append({
-                #     'id': 'n_{}_{}'.format(i, j),
-                #     'type': 'static',
-                #     'programID': 'n_{}_{}'.format(i, j),
-                #     'offset': '0',
-                #     'phase': phase_set,
-                # })
-                # Decentralized DQN 용
                 phase_set = [
-                    {'duration': '37',
-                     'state': 'g{}GGr{}rrg{}GGr{}rr'.format('r'*num_lanes, 'r'*num_lanes, 'r'*num_lanes, 'r'*num_lanes),
-                     },#위아래 좌
+                    {'duration': '42',
+                     'state': 'G{}ggr{}rrG{}ggr{}rr'.format('G'*num_lanes, 'r'*num_lanes, 'G'*num_lanes, 'r'*num_lanes),
+                     },
                     {'duration': '3',
                      'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*num_lanes, 'r'*num_lanes, 'y'*num_lanes, 'r'*num_lanes),
                      },
-                    {'duration': '37',
-                     'state': 'G{}rrr{}rrG{}rrr{}rr'.format('G'*num_lanes, 'r'*num_lanes, 'G'*num_lanes, 'r'*num_lanes),
-                     },#위아래직
-                    {'duration': '3',
-                     'state': 'y{}yyr{}rry{}yyr{}rr'.format('y'*num_lanes, 'r'*num_lanes, 'y'*num_lanes, 'r'*num_lanes),
+                    {'duration': '42',
+                     'state': 'r{}rrG{}ggr{}rrG{}gg'.format('r'*num_lanes, 'G'*num_lanes, 'r'*num_lanes, 'G'*num_lanes),
                      },
-                    {'duration': '37',
-                     'state': 'r{}rrg{}GGr{}rrg{}GG'.format('r'*num_lanes, 'r'*num_lanes, 'r'*num_lanes, 'r'*num_lanes),
-                     },#좌우 좌
                     {'duration': '3',
                      'state': 'r{}rry{}yyr{}rry{}yy'.format('r'*num_lanes, 'y'*num_lanes, 'r'*num_lanes, 'y'*num_lanes),
-                     },
-                    {'duration': '37',
-                     'state': 'r{}rrG{}rrr{}rrG{}rr'.format('r'*num_lanes, 'G'*num_lanes, 'r'*num_lanes, 'G'*num_lanes),
-                     },#좌우 직
-                    {'duration': '3',
-                     'state': 'r{}rry{}yyr{}rry{}yy'.format('r'*num_lanes, 'y'*num_lanes, 'r'*num_lanes, 'y'*num_lanes),
-                     },
+                     }
                 ]
                 traffic_lights.append({
                     'id': 'n_{}_{}'.format(i, j),
@@ -264,45 +226,52 @@ class GridNetwork(Network):
                     'offset': '0',
                     'phase': phase_set,
                 })
-        # rl_phase_set = [
-        #     {'duration': '35',  # 1
-        #      'state': 'r{2}{1}gr{2}{3}rr{2}{1}gr{2}{3}r'.format(  # 위좌아래좌
-        #          g*num_lanes, g, r*num_lanes, r),
-        #      },
-        #     {'duration': '5',
-        #      'state': 'y'*20,
-        #      },
-        #     {'duration': '35',  # 2
-        #      'state': 'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(  # 위직아래직
-        #          g*num_lanes, g, r*num_lanes, r),  # current
-        #      },
-        #     {'duration': '5',
-        #      'state': 'y'*20,
-        #      },
-        #     {'duration': '35',  # 1
-        #      'state': 'r{2}{3}rr{2}{1}gr{2}{3}rr{2}{1}g'.format(  # 좌좌우좌
-        #          g*num_lanes, g, r*num_lanes, r),
-        #      },
-        #     {'duration': '5',
-        #      'state': 'y'*20,
-        #      },
-        #     {'duration': '35',  # 1
-        #      'state': 'r{2}{3}rG{0}{3}rr{2}{3}rG{0}{3}g'.format(  # 좌직우직
-        #          g*num_lanes, g, r*num_lanes, r),  # current
-        #      },
-        #     {'duration': '5',
-        #      'state': 'y'*20,
-        #      },
-        # ]
-        # traffic_lights.append({
-        #     'id': 'n_1_1',
-        #     'type': 'static',
-        #     'programID': 'n_1_1',
-        #     'offset': '0',
-        #     'phase': rl_phase_set,
-        # })
+        rl_phase_set = [
+            {'duration': '35',  # 1
+             'state': 'r{2}{1}gr{2}{3}rr{2}{1}gr{2}{3}r'.format(  # 위좌아래좌
+                 g*num_lanes, g, r*num_lanes, r),
+             },
+            {'duration': '5',
+             'state': 'y'*20,
+             },
+            {'duration': '35',  # 2
+             'state': 'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(  # 위직아래직
+                 g*num_lanes, g, r*num_lanes, r),  # current
+             },
+            {'duration': '5',
+             'state': 'y'*20,
+             },
+            {'duration': '35',  # 1
+             'state': 'r{2}{3}rr{2}{1}gr{2}{3}rr{2}{1}g'.format(  # 좌좌우좌
+                 g*num_lanes, g, r*num_lanes, r),
+             },
+            {'duration': '5',
+             'state': 'y'*20,
+             },
+            {'duration': '35',  # 1
+             'state': 'r{2}{3}rG{0}{3}rr{2}{3}rG{0}{3}g'.format(  # 좌직우직
+                 g*num_lanes, g, r*num_lanes, r),  # current
+             },
+            {'duration': '5',
+             'state': 'y'*20,
+             },
+        ]
+        traffic_lights.append({
+            'id': 'n_1_1',
+            'type': 'static',
+            'programID': 'n_1_1',
+            'offset': '0',
+            'phase': rl_phase_set,
+        })
 
         return traffic_lights
+
+    def generate_cfg(self, route_exist, mode='simulate'):
+        self._generate_nod_xml()
+        self._generate_edg_xml()
+        self._generate_net_xml()
+        self._generate_add_xml()
+        super().generate_cfg(route_exist, mode)
 
 
 if __name__ == "__main__":

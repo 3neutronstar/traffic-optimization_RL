@@ -94,7 +94,6 @@ class Trainer(RLAlgorithm):
             # model.add_module('QNetwork',
             #                  QNetwork(self.state_space, self.action_space, self.configs))
         else:
-            print(self.configs['num_phase'])
             model = QNetwork(self.state_space*self.configs['num_phase']*self.num_agent, self.action_space*self.num_agent,
                              self.configs)  # 1개 네트워크용
         model.to(self.configs['device'])

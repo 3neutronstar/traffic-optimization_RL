@@ -3,7 +3,7 @@ Edges = list()
 Nodes = list()
 Vehicles = list()
 EXP_CONFIGS = {
-    'num_lanes': 3,
+    'num_lanes': 2,
     'model': 'normal',
     'file_name': '4x4grid',
     'tl_rl_list': ['n_1_1'],
@@ -22,11 +22,11 @@ EXP_CONFIGS = {
 # DQN
 DQN_TRAFFIC_CONFIGS = {
     # 1,agent,num_phase순서
-    'min_phase': [[[20, 20, 20, 20]]], #각 phase 최소 길이
+    'min_phase': [[[20, 20, 20, 20]]],
     # 1,agent,num_phase순서
-    'max_phase': [[[50, 50, 50, 50]]], # 각 phase최대 길이
+    'max_phase': [[[50, 50, 50, 50]]],
     # 1, agent순서
-    'tl_period': [[160]], # 각 tl이 가지는 period
+    'phase_period': [[160]],
 
 }
 # Decentralized_DQN
@@ -37,7 +37,7 @@ SUPER_DQN_TRAFFIC_CONFIGS = {
     # 1,agent,num_phase순서
     'max_phase': [[49, 49, 49, 49], [49, 49, 49, 49], [49, 49, 49, 49], [49, 49, 49, 49], [49, 49, 49, 49], [49, 49, 49, 49], [49, 49, 49, 49], [49, 49, 49, 49], [49, 49, 49, 49]],
     # 1, agent순서
-    'tl_period': [[160],[160],[160],[160],[160],[160],[160],[160],[160]],
+    'phase_period': [[160]],
     'matrix_actions': [[0, 0, 0, 0], [1, 0, 0, -1], [1, 0, -1, 0], [1, -1, 0, 0], [0, 1, 0, -1], [0, 1, -1, 0], [0, 0, 1, -1],
                        [1, 0, 0, -1], [1, 0, -1, 0], [1, 0, 0, -1], [0, 1, 0, -1], [0, 1, -1, 0], [0, 0, 1, -1]]
 
