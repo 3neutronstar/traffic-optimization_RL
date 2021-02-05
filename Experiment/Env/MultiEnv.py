@@ -149,6 +149,8 @@ class GridEnv(baseEnv):
             action[0, index, :] = self.tl_rl_memory[index].action
             next_state[0, index] = self.tl_rl_memory[index].next_state
             reward[0, index] = self.tl_rl_memory[index].reward
+            # reward clear
+            self.tl_rl_memory[index].reward=0
 
         return state, action, reward, next_state
 
@@ -171,10 +173,11 @@ class GridEnv(baseEnv):
                 for interest in self.interest_list:
                     outflow += traci.edge.getLastStepVehicleNumber(
                         interest['outflow'])
-                    inflow += traci.edge.getLastStepVehicleNumber(
+                    inflow += traci.edge.getLastStepHaltingNumber(
                         interest['inflow'])
-                # pressure=inflow-outflow
-                self.tl_rl_memory[index].reward = torch.tensor(
+                # pressure=inflow-outflow 
+                # reward cumulative sum
+                self.tl_rl_memory[index].reward += torch.tensor(
                     -(inflow-outflow), dtype=torch.int, device=self.configs['device'])
 
         # next state 저장
@@ -186,20 +189,19 @@ class GridEnv(baseEnv):
         if need_state_mask.sum() != 0:  # 검색의 필요가 없다면 검색x
             next_state = tuple()
             # 모든 rl node에 대해서
-            for i, tl_rl in enumerate(self.tl_rl_list):
+            # vehicle state
+            for interest in self.node_interest_pair:
                 veh_state = torch.zeros(
                     (self.vehicle_state_space, 1), dtype=torch.float, device=self.configs['device'])
                 # 모든 inflow에 대해서
-                # vehicle state
-                for interest in self.node_interest_pair:
-                    for j, pair in enumerate(self.node_interest_pair[interest]):
-                        left_movement = traci.lane.getLastStepHaltingNumber(
-                            pair['inflow']+'_{}'.format(self.left_lane_num))  # 멈춘애들 계산
-                        # 직진
-                        veh_state[j*2] = traci.edge.getLastStepHaltingNumber(
-                            pair['inflow'])-left_movement  # 가장 좌측에 멈춘 친구를 왼쪽차선 이용자로 판단
-                        # 좌회전
-                        veh_state[j*2+1] = left_movement
+                for j, pair in enumerate(self.node_interest_pair[interest]):
+                    left_movement = traci.lane.getLastStepHaltingNumber(
+                        pair['inflow']+'_{}'.format(self.left_lane_num))  # 멈춘애들 계산
+                    # 직진
+                    veh_state[j*2] = traci.edge.getLastStepHaltingNumber(
+                        pair['inflow'])-left_movement  # 가장 좌측에 멈춘 친구를 왼쪽차선 이용자로 판단
+                    # 좌회전
+                    veh_state[j*2+1] = left_movement
                 veh_state = torch.transpose(veh_state, 0, 1)
                 next_state += tuple(veh_state)
             next_state = torch.cat(next_state, dim=0).view(
