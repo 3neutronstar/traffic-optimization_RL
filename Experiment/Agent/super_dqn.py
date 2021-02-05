@@ -86,6 +86,7 @@ class SuperQNetwork(nn.Module):
         self.input_size = int(input_size)
         self.output_size = int(output_size)
         self.num_agent = len(self.configs['tl_rl_list'])
+        print(self.input_size, self.configs['state_space'], self.num_agent)
         self.fc1 = nn.Linear(
             self.input_size, self.configs['state_space']*2*self.num_agent)
         self.fc2 = nn.Linear(
@@ -112,6 +113,13 @@ class Trainer(RLAlgorithm):
         self.configs = merge_dict(configs, DEFAULT_CONFIG)
         self.num_agent = len(self.configs['tl_rl_list'])
         self.state_space = self.configs['state_space']
+
+        # action space
+        self.configs['rate_action_space'] = 13
+        # time action space지정 (무조건 save param 이후 list화 시키고 나면 이전으로 옮길 것)
+        # TODO 여기 홀수일 때, 어떻게 할 건지 지정해야함
+        self.configs['time_action_space'] = (torch.min(torch.tensor(configs['max_phase'])-torch.tensor(
+            configs['common_phase']), torch.tensor(configs['common_phase'])-torch.tensor(configs['min_phase']))/2).mean(dim=1).int().tolist()
         # rate action space
         self.rate_action_space = self.configs['rate_action_space']
         # time action space

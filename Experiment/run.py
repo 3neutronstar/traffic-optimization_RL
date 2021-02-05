@@ -151,7 +151,7 @@ def test(flags, configs, sumoConfig):
 
 
 def simulate(flags, configs, sumoConfig):
-    sumoBinary = checkBinary('sumo')
+    sumoBinary = checkBinary('sumo-gui')
     sumoCmd = [sumoBinary, "-c", sumoConfig]
     MAX_STEPS = configs['max_steps']
     traci.start(sumoCmd)
@@ -215,6 +215,19 @@ def main(args):
             configs['grid_num'], configs['grid_num'])
         network = GridNetwork(configs, grid_num=configs['grid_num'])
         network.generate_cfg(True, configs['mode'])
+
+        # rl_list 설정
+        side_list = ['u', 'r', 'd', 'l']
+        tl_rl_list = list()
+        for _, node in enumerate(configs['node_info']):
+            if node['id'][-1] not in side_list:
+                tl_rl_list.append(node['id'])
+        configs['tl_rl_list'] = tl_rl_list
+        configs['num_agent'] = len(tl_rl_list)
+        configs['max_phase_num'] = 4
+        configs['offset'] = [i for i in range(
+            configs['num_agent'])]  # offset check 용
+        configs['tl_max_period'] = [160 for i in range(configs['num_agent'])]
     else:  # map file 에서 불러오기
         print("Load from map file")
         configs['file_name'] = flags.network
