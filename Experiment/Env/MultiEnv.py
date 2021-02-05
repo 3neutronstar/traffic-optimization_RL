@@ -150,6 +150,7 @@ class GridEnv(baseEnv):
             next_state[0, index] = self.tl_rl_memory[index].next_state
             reward[0, index] = self.tl_rl_memory[index].reward
             # reward clear
+            self.reward+=self.tl_rl_memory[index].reward
             self.tl_rl_memory[index].reward=0
 
         return state, action, reward, next_state
@@ -252,7 +253,7 @@ class GridEnv(baseEnv):
         return action_matrix
 
     def update_tensorboard(self, writer, epoch):
-        writer.add_scalar('episode/reward', self.reward.float().sum(),
+        writer.add_scalar('episode/reward', self.reward,
                           self.configs['max_steps']*epoch)  # 1 epoch마다
         # clear the value once in an epoch
         self.reward = 0
