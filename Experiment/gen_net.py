@@ -1,9 +1,9 @@
+from configs import EXP_CONFIGS
 import xml.etree.cElementTree as ET
 from xml.etree.ElementTree import dump
 from lxml import etree as ET
 import os
 E = ET.Element
-from configs import EXP_CONFIGS
 
 
 def indent(elem, level=0):
@@ -28,7 +28,7 @@ class Network():
         self.sim_start = self.configs['sim_start']
         self.max_steps = self.configs['max_steps']
         self.current_path = os.path.dirname(os.path.abspath(__file__))
-        if self.configs['mode'] == 'train'or self.configs['mode']=='train_old':
+        if self.configs['mode'] == 'train' or self.configs['mode'] == 'train_old':
             self.file_name = self.configs['file_name']
             os.mkdir(os.path.join(self.current_path, 'training_data',
                                   self.configs['time_data']))
@@ -171,11 +171,41 @@ class Network():
         tree.write(os.path.join(self.current_Env_path, self.file_name+'.con.xml'), pretty_print=True,
                    encoding='UTF-8', xml_declaration=True)
 
+    def _generate_add_xml(self):
+        traffic_light_set = self.specify_traffic_light()
+        self.traffic_light = traffic_light_set
+        data_additional = ET.Element('additional')
+        # edgeData와 landData파일의 생성위치는 data
+        data_additional.append(E('edgeData', attrib={'id': 'edgeData_00', 'file': '{}_edge.xml'.format(self.current_path+'/data/'+self.file_name), 'begin': '0', 'end': str(
+            self.configs['max_steps']), 'freq': '1000'}))
+        indent(data_additional, 1)
+        data_additional.append(E('laneData', attrib={'id': 'laneData_00', 'file': '{}_lane.xml'.format(self.current_path+'/data/'+self.file_name), 'begin': '0', 'end': str(
+            self.configs['max_steps']), 'freq': '1000'}))
+        indent(data_additional, 1)
+        dump(data_additional)
+        tree = ET.ElementTree(data_additional)
+        tree.write(os.path.join(self.current_Env_path, self.file_name+'_data.add.xml'),
+                   pretty_print=True, encoding='UTF-8', xml_declaration=True)
+
+        tl_additional = ET.Element('additional')
+        if len(self.traffic_light) != 0 or self.configs['mode'] == 'simulate':
+            for _, tl in enumerate(traffic_light_set):
+                phase_set = tl.pop('phase')
+                tlLogic = ET.SubElement(tl_additional, 'tlLogic', attrib=tl)
+                indent(tl_additional, 1)
+                for _, phase in enumerate(phase_set):
+                    tlLogic.append(E('phase', attrib=phase))
+                    indent(tl_additional, 2)
+
+        dump(tl_additional)
+        tree = ET.ElementTree(tl_additional)
+        tree.write(os.path.join(self.current_Env_path, self.file_name+'_tl.add.xml'),
+                   pretty_print=True, encoding='UTF-8', xml_declaration=True)
+
     def generate_cfg(self, route_exist, mode='simulate'):
-        self._generate_nod_xml()
-        self._generate_edg_xml()
-        self._generate_add_xml()
-        self._generate_net_xml()
+        '''
+        if all the generation over, inherit this function by `super`.
+        '''
         sumocfg = ET.Element('configuration')
         inputXML = ET.SubElement(sumocfg, 'input')
         inputXML.append(
@@ -208,40 +238,9 @@ class Network():
         elif mode == 'test':
             tree.write(os.path.join(self.current_Env_path, self.file_name+'_test.sumocfg'),
                        pretty_print=True, encoding='UTF-8', xml_declaration=True)
-        elif mode == 'train' or mode=='train_old':
+        elif mode == 'train' or mode == 'train_old':
             tree.write(os.path.join(self.current_Env_path, self.file_name+'_train.sumocfg'),
                        pretty_print=True, encoding='UTF-8', xml_declaration=True)
-
-    def _generate_add_xml(self):
-        traffic_light_set = self.specify_traffic_light()
-        self.traffic_light = traffic_light_set
-        data_additional = ET.Element('additional')
-        # edgeData와 landData파일의 생성위치는 data
-        data_additional.append(E('edgeData', attrib={'id': 'edgeData_00', 'file': '{}_edge.xml'.format(self.current_path+'/data/'+self.file_name), 'begin': '0', 'end': str(
-            self.configs['max_steps']), 'freq': '1000'}))
-        indent(data_additional, 1)
-        data_additional.append(E('laneData', attrib={'id': 'laneData_00', 'file': '{}_lane.xml'.format(self.current_path+'/data/'+self.file_name), 'begin': '0', 'end': str(
-            self.configs['max_steps']), 'freq': '1000'}))
-        indent(data_additional, 1)
-        dump(data_additional)
-        tree = ET.ElementTree(data_additional)
-        tree.write(os.path.join(self.current_Env_path, self.file_name+'_data.add.xml'),
-                   pretty_print=True, encoding='UTF-8', xml_declaration=True)
-
-        tl_additional = ET.Element('additional')
-        if len(self.traffic_light) != 0 or self.configs['mode'] == 'simulate':
-            for _, tl in enumerate(traffic_light_set):
-                phase_set = tl.pop('phase')
-                tlLogic = ET.SubElement(tl_additional, 'tlLogic', attrib=tl)
-                indent(tl_additional, 1)
-                for _, phase in enumerate(phase_set):
-                    tlLogic.append(E('phase', attrib=phase))
-                    indent(tl_additional, 2)
-
-        dump(tl_additional)
-        tree = ET.ElementTree(tl_additional)
-        tree.write(os.path.join(self.current_Env_path, self.file_name+'_tl.add.xml'),
-                   pretty_print=True, encoding='UTF-8', xml_declaration=True)
 
     def test_net(self):
         self.generate_cfg(False)

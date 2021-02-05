@@ -157,3 +157,15 @@ Only in FRAP model -> 16 state spaces
 - Action
 Phase (4 or 8 spaces) each 20s <br/>
 After action, all yellow light turn on for 5s
+
+## Utils
+gen_tllogic.py
+```shell script
+python /path/to/repo/util/gen_tllogic.py --file [xml]
+```
+graphcheck.py
+```shell script
+python /path/to/repo/util/gen_tllogic.py file_a file_b --type [edge or lane] --data speed
+```
+    - check the tensorboard
+    `tensorboard --logdir tensorboard`

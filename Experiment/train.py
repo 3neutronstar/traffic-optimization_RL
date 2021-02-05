@@ -90,23 +90,8 @@ def super_dqn_train(configs, time_data, sumoCmd):
     if configs['model'] == 'base':
         from Env.MultiEnv import GridEnv
 
-    # rl_list 설정
-    side_list = ['u', 'r', 'd', 'l']
-    tl_rl_list = list()
-    for _, node in enumerate(configs['node_info']):
-        if node['id'][-1] not in side_list:
-            tl_rl_list.append(node['id'])
-    configs['tl_rl_list'] = tl_rl_list
-    num_agent = len(configs['tl_rl_list'])
-    MAX_PHASES = 4  # 나중에 이거를 바꿔서 torch.max(전체 phase에서)
-    NUM_EPOCHS = configs['num_epochs']
-    MAX_STEPS = configs['max_steps']
-    configs['rate_action_space'] = 13
-    # time action space지정 (무조건 save param 이후 list화 시키고 나면 이전으로 옮길 것)
-    # TODO 여기 홀수일 때, 어떻게 할 건지 지정해야함
-    configs['time_action_space'] = (torch.min(torch.tensor(configs['max_phase'])-torch.tensor(
-        configs['common_phase']), torch.tensor(configs['common_phase'])-torch.tensor(configs['min_phase']))/2).mean(dim=1).int().tolist()
-
+    phase_num_matrix = torch.tensor(
+        [len(phase) for i, phase in enumerate(configs['max_phase'])])
     # init agent and tensorboard writer
     agent = Trainer(configs)
     writer = SummaryWriter(os.path.join(
@@ -114,37 +99,39 @@ def super_dqn_train(configs, time_data, sumoCmd):
     # save hyper parameters
     agent.save_params(time_data)
     # init training
-    epoch = 0
-    OFFSET = torch.tensor([i for i in range(num_agent)],  # i*10
+    NUM_AGENT = configs['num_agent']
+    TL_RL_LIST = configs['tl_rl_list']
+    MAX_PHASES = configs['max_phase_num']
+    NUM_EPOCHS = configs['num_epochs']
+    MAX_STEPS = configs['max_steps']
+    OFFSET = torch.tensor(configs['offset'],  # i*10
                           device=configs['device'], dtype=torch.int)
-    MAX_PERIOD = torch.tensor([160 for i in range(
-        num_agent)], device=configs['device'], dtype=torch.int)
-    phase_num_matrix = torch.tensor(
-        [len(phase) for i, phase in enumerate(configs['max_phase'])])
-
-        
+    TL_MAX_PERIOD = torch.tensor(
+        configs['tl_max_period'], device=configs['device'], dtype=torch.int)
+    epoch = 0
     while epoch < NUM_EPOCHS:
         step = 0
         traci.start(sumoCmd)
         env = GridEnv(configs)
         # Total Initialization
-        actions=torch.zeros((num_agent,configs['action_size']),dtype=torch.int,device=configs['device'])
+        actions = torch.zeros(
+            (NUM_AGENT, configs['action_size']), dtype=torch.int, device=configs['device'])
         # Mask Matrix
         mask_matrix = torch.ones(
-            (num_agent), dtype=torch.bool, device=configs['device'])
+            (NUM_AGENT), dtype=torch.bool, device=configs['device'])
 
         # MAX Period까지만 증가하는 t
         t_agent = torch.zeros(
-            (num_agent), dtype=torch.int, device=configs['device'])
+            (NUM_AGENT), dtype=torch.int, device=configs['device'])
         t_agent -= OFFSET
 
-        # Action Matrix : 비교해서 동일할 때 collect_state, 없는 state는 zero padding
+        # Acticonfigs['offset']on Matrix : 비교해서 동일할 때 collect_state, 없는 state는 zero padding
         action_matrix = torch.zeros(
-            (num_agent, MAX_PHASES),dtype=torch.int, device=configs['device'])  # 노란불 3초 해줘야됨
+            (NUM_AGENT, MAX_PHASES), dtype=torch.int, device=configs['device'])  # 노란불 3초 해줘야됨
         action_index_matrix = torch.zeros(
-            (num_agent), dtype=torch.long, device=configs['device'])  # 현재 몇번째 phase인지
+            (NUM_AGENT), dtype=torch.long, device=configs['device'])  # 현재 몇번째 phase인지
         yellow_mask = torch.zeros(
-            (num_agent), dtype=torch.bool, device=configs['device'])  # 현재 몇번째 phase인지
+            (NUM_AGENT), dtype=torch.bool, device=configs['device'])  # 현재 몇번째 phase인지
 
         # state initialization
         state = env.collect_state(mask_matrix, yellow_mask)
@@ -153,7 +140,6 @@ def super_dqn_train(configs, time_data, sumoCmd):
         # agent setting
         arrived_vehicles = 0
         a = time.time()
-
         while step < MAX_STEPS:
 
             # action 을 정하고
@@ -167,10 +153,10 @@ def super_dqn_train(configs, time_data, sumoCmd):
             t_agent += 1
             # 넘어가야된다면 action index증가 (by tensor slicing+yellow signal)
             action_update_matrix = torch.eq(
-                t_agent, action_matrix[0,action_index_matrix]).view(num_agent)  # 0,인 이유는 인덱싱
+                t_agent, action_matrix[0, action_index_matrix]).view(NUM_AGENT)  # 0,인 이유는 인덱싱
 
             # 최대에 도달하면 0으로 초기화 (offset과 비교)
-            update_matrix = torch.eq(t_agent % MAX_PERIOD, 0)
+            update_matrix = torch.eq(t_agent % TL_MAX_PERIOD, 0)
             t_agent[update_matrix] = 0
 
             action_index_matrix[action_update_matrix] += 1
@@ -181,26 +167,24 @@ def super_dqn_train(configs, time_data, sumoCmd):
             mask_matrix[clear_matrix] = True
             mask_matrix[~clear_matrix] = False
 
-
             # 만약 action이 끝나기 3초전이면 yellow signal 적용, reward 갱신
             yellow_mask = torch.eq(
-                t_agent, action_matrix[0, action_index_matrix]-3) # 3초먼저 yellow로 바꿈
+                t_agent, action_matrix[0, action_index_matrix]-3)  # 3초먼저 yellow로 바꿈
             for y in torch.nonzero(yellow_mask):
                 traci.trafficlight.setRedYellowGreenState(
-                    tl_rl_list[y], 'y'*20)
+                    TL_RL_LIST[y], 'y'*20)
             # environment에 적용
             # action 적용함수, traci.simulationStep 있음
             next_state = env.step(actions, action_index_matrix, yellow_mask)
 
             # env속에 agent별 state를 꺼내옴, max_offset+period 이상일 때 시작
-            if step >= int(torch.max(OFFSET)+torch.max(MAX_PERIOD)):
+            if step >= int(torch.max(OFFSET)+torch.max(TL_MAX_PERIOD)):
                 rep_state, rep_action, rep_reward, rep_next_state = env.get_state(
                     mask_matrix)
                 agent.save_replay(rep_state, rep_action, rep_reward,
                                   rep_next_state, mask_matrix)  # dqn
                 total_reward += rep_reward.sum()
             # print(mask_matrix)
-
 
             agent.update(mask_matrix)
             state = next_state

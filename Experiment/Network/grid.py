@@ -266,6 +266,13 @@ class GridNetwork(Network):
 
         return traffic_lights
 
+    def generate_cfg(self, route_exist, mode='simulate'):
+        self._generate_nod_xml()
+        self._generate_edg_xml()
+        self._generate_net_xml()
+        self._generate_add_xml()
+        super().generate_cfg(route_exist, mode)
+
 
 if __name__ == "__main__":
     grid_num = 3
