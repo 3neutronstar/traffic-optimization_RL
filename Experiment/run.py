@@ -11,7 +11,7 @@ import numpy as np
 import traci.constants as tc
 from sumolib import checkBinary
 from utils import interest_list
-from configs import EXP_CONFIGS, TRAFFIC_CONFIGS
+from configs import EXP_CONFIGS
 from Agent.base import merge_dict
 
 
@@ -80,10 +80,14 @@ def train(flags, time_data, configs, sumoConfig):
 
     if flags.algorithm.lower() == 'dqn':
         from train import dqn_train
+        from configs import DQN_TRAFFIC_CONFIGS
+        configs = merge_dict(configs, DQN_TRAFFIC_CONFIGS)
         dqn_train(configs, time_data, sumoCmd)
 
     elif flags.algorithm.lower() == 'super_dqn':
         from train import super_dqn_train
+        from configs import SUPER_DQN_TRAFFIC_CONFIGS
+        configs = merge_dict(configs, SUPER_DQN_TRAFFIC_CONFIGS)
         super_dqn_train(configs, time_data, sumoCmd)
 
 
@@ -156,8 +160,8 @@ def simulate(flags, configs, sumoConfig):
     MAX_STEPS = configs['max_steps']
     traci.start(sumoCmd)
     traci.simulation.subscribe([tc.VAR_ARRIVED_VEHICLES_NUMBER])
-    traci.edge.subscribe('n_2_2_to_n_2_1', [
-                         tc.LAST_STEP_VEHICLE_HALTING_NUMBER], 0, 2000)
+    # traci.edge.subscribe('n_2_2_to_n_2_1', [
+    #                      tc.LAST_STEP_VEHICLE_HALTING_NUMBER], 0, 2000)
     avg_waiting_time = 0
     avg_velocity = 0
     step = 0
@@ -181,8 +185,8 @@ def simulate(flags, configs, sumoConfig):
             ''][0x79]  # throughput
 
     traci.close()
-    edgesss = traci.edge.getSubscriptionResults('n_2_2_to_n_2_1')
-    print(edgesss)
+    # edgesss = traci.edge.getSubscriptionResults('n_2_2_to_n_2_1')
+    # print(edgesss)
     print('======== arrived number:{} avg waiting time:{},avg velocity:{}'.format(
         arrived_vehicles, avg_waiting_time/MAX_STEPS, avg_velocity))
 
@@ -193,11 +197,11 @@ def main(args):
     torch.manual_seed(random_seed)
     np.random.seed(random_seed)
     flags = parse_args(args)
-    configs = merge_dict(EXP_CONFIGS, TRAFFIC_CONFIGS)
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda and flags.gpu == True else "cpu")
     # device = torch.device('cpu')
     print("Using device: {}".format(device))
+    configs=EXP_CONFIGS
     configs['device'] = str(device)
     configs['current_path'] = os.path.dirname(os.path.abspath(__file__))
     configs['mode'] = flags.mode.lower()
@@ -225,7 +229,7 @@ def main(args):
         configs['tl_rl_list'] = tl_rl_list
         configs['num_agent'] = len(tl_rl_list)
         configs['max_phase_num'] = 4
-        configs['offset'] = [i for i in range(
+        configs['offset'] = [0 for i in range(
             configs['num_agent'])]  # offset check 용
         configs['tl_max_period'] = [160 for i in range(configs['num_agent'])]
     else:  # map file 에서 불러오기

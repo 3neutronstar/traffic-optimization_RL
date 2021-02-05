@@ -21,7 +21,6 @@ def dqn_train(configs, time_data, sumoCmd):
     # EXP_CONFIG Setting
     NUM_EPOCHS = configs['num_epochs']
     MAX_STEPS = configs['max_steps']
-    tl_rl_list = configs['tl_rl_list']
     epoch = 0
     # init agent and tensorboard writer
     # agent setting

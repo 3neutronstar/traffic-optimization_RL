@@ -19,18 +19,18 @@ EXP_CONFIGS = {
     'vehicle_info': Vehicles,
     'mode': 'simulate',
 }
-# # DQN
-# TRAFFIC_CONFIGS = {
-#     # 1,agent,num_phase순서
-#     'min_phase': [[[20, 20, 20, 20]]],
-#     # 1,agent,num_phase순서
-#     'max_phase': [[[50, 50, 50, 50]]],
-#     # 1, agent순서
-#     'phase_period': [[160]],
+# DQN
+DQN_TRAFFIC_CONFIGS = {
+    # 1,agent,num_phase순서
+    'min_phase': [[[20, 20, 20, 20]]],
+    # 1,agent,num_phase순서
+    'max_phase': [[[50, 50, 50, 50]]],
+    # 1, agent순서
+    'phase_period': [[160]],
 
-# }
+}
 # Decentralized_DQN
-TRAFFIC_CONFIGS = {
+SUPER_DQN_TRAFFIC_CONFIGS = {
     # 1,agent,num_phase순서
     'min_phase': [[20, 20, 20, 20], [20, 20, 20, 20], [20, 20, 20, 20], [20, 20, 20, 20], [20, 20, 20, 20], [20, 20, 20, 20], [20, 20, 20, 20], [20, 20, 20, 20], [20, 20, 20, 20]],
     'common_phase': [[37, 37, 37, 37], [37, 37, 37, 37], [37, 37, 37, 37], [37, 37, 37, 37], [37, 37, 37, 37], [37, 37, 37, 37], [37, 37, 37, 37], [37, 37, 37, 37], [37, 37, 37, 37]],
