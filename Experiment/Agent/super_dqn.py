@@ -280,15 +280,26 @@ class Trainer(RLAlgorithm):
             self.lr = self.lr_decay_rate*self.lr
 
     def save_weights(self, name):
-        torch.save(self.mainQNetwork.state_dict(), os.path.join(
+
+        torch.save(self.mainSuperQNetwork.state_dict(), os.path.join(
             self.configs['current_path'], 'training_data', self.configs['time_data'], 'model', name+'.h5'))
-        torch.save(self.targetQNetwork.state_dict(), os.path.join(
+        torch.save(self.targetSuperQNetwork.state_dict(), os.path.join(
             self.configs['current_path'], 'training_data', self.configs['time_data'], 'model', name+'_target.h5'))
 
+        for mainQ,targetQ in zip(self.mainQNetwork,self.targetQNetwork):
+            torch.save(mainQ.state_dict(), os.path.join(
+                self.configs['current_path'], 'training_data', self.configs['time_data'], 'model', name+'.h5'))
+            torch.save(targetQ.state_dict(), os.path.join(
+                self.configs['current_path'], 'training_data', self.configs['time_data'], 'model', name+'_target.h5'))
+
     def load_weights(self, name):
-        self.mainQNetwork.load_state_dict(torch.load(os.path.join(
+        self.mainSuperQNetwork.load_state_dict(torch.load(os.path.join(
             self.configs['current_path'], 'training_data', self.configs['time_data'], 'model', name+'.h5')))
-        self.mainQNetwork.eval()
+        self.mainSuperQNetwork.eval()
+        for mainQ in self.mainQNetwork:
+            mainQ.load_state_dict(torch.load(os.path.join(
+                self.configs['current_path'], 'training_data', self.configs['time_data'], 'model', name+'.h5')))
+            mainQ.eval()
 
     def update_tensorboard(self, writer, epoch):
         writer.add_scalar('episode/loss', self.running_loss/self.configs['max_steps'],
