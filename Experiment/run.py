@@ -60,7 +60,8 @@ def train(flags, time_data, configs, sumoConfig):
     print("training algorithm: ", configs['algorithm'])
     
     if flags.algorithm.lower() == 'super_dqn':  # action space와 size 설정
-        configs['action_space'] = configs['num_phase']
+        configs['num_phase']=4
+        configs['action_space'] = configs['num_phase']#TODO
         configs['action_size'] = 2
         configs['state_space'] = 8  # 4phase에서 각각 받아오는게 아니라 마지막에 한번만 받음
         configs['model'] = 'base'
