@@ -121,13 +121,16 @@ def super_dqn_train(configs, time_data, sumoCmd):
         num_agent)], device=configs['device'], dtype=torch.int)
     phase_num_matrix = torch.tensor(
         [len(phase) for i, phase in enumerate(configs['max_phase'])])
+
+        
     while epoch < NUM_EPOCHS:
         step = 0
         traci.start(sumoCmd)
         env = GridEnv(configs)
-
+        # Total Initialization
+        actions=torch.zeros((num_agent,configs['action_size']),dtype=torch.int,device=configs['device'])
         # Mask Matrix
-        mask_matrix = torch.zeros(
+        mask_matrix = torch.ones(
             (num_agent), dtype=torch.bool, device=configs['device'])
 
         # MAX Period까지만 증가하는 t
@@ -163,24 +166,23 @@ def super_dqn_train(configs, time_data, sumoCmd):
             step += 1
             t_agent += 1
             # 최대에 도달하면 0으로 초기화 (offset과 비교)
-            update_matrix = torch.eq(t_agent % MAX_PERIOD, OFFSET)
+            update_matrix = torch.eq(t_agent % MAX_PERIOD, 0)
             t_agent[update_matrix] = 0
             # 넘어가야된다면 action index증가 (by tensor slicing+yellow signal)
             action_update_matrix = torch.eq(
-                t_agent, action_matrix[0, action_index_matrix]).view(num_agent)  # 0,인 이유는 인덱싱
+                t_agent, action_matrix[0,action_index_matrix]).view(num_agent)  # 0,인 이유는 인덱싱
 
             action_index_matrix[action_update_matrix] += 1
             # agent의 최대 phase를 넘어가면 해당 agent의 action index 0으로 초기화
-            clear_matrix = torch.ge(action_index_matrix, phase_num_matrix-1)
+            clear_matrix = torch.ge(action_index_matrix, phase_num_matrix)
             action_index_matrix[clear_matrix] = 0
             # mask update, matrix True로 전환
             mask_matrix[clear_matrix] = True
             mask_matrix[~clear_matrix] = False
 
             # 만약 action이 끝나기 3초전이면 yellow signal 적용, reward 갱신
-
             yellow_mask = torch.eq(
-                t_agent-3, action_matrix[0, action_index_matrix])
+                t_agent, action_matrix[0, action_index_matrix]-3) # 3초먼저 yellow로 바꿈
             for y in torch.nonzero(yellow_mask):
                 traci.trafficlight.setRedYellowGreenState(
                     tl_rl_list[y], 'y'*20)

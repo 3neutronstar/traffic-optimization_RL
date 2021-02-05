@@ -150,7 +150,6 @@ class GridEnv(baseEnv):
             next_state[0, index] = self.tl_rl_memory[index].next_state
             reward[0, index] = self.tl_rl_memory[index].reward
             # reward clear
-            self.reward+=self.tl_rl_memory[index].reward
             self.tl_rl_memory[index].reward=0
 
         return state, action, reward, next_state
@@ -166,20 +165,24 @@ class GridEnv(baseEnv):
         각 node에 대해서 inflow 차량 수와 outflow 차량수 + 해당 방향이라는 전제에서
         '''
         # outflow확인,reward 저장
-        if yellow_mask.sum() != 0:  # 값이 0인 경우 == all False
-            for index in torch.nonzero(action_change_mask):
-                outflow = 0
-                inflow = 0
-                interest = self.node_interest_pair[self.tl_rl_list[index]]
-                for interest in self.interest_list:
-                    outflow += traci.edge.getLastStepVehicleNumber(
-                        interest['outflow'])
-                    inflow += traci.edge.getLastStepHaltingNumber(
-                        interest['inflow'])
-                # pressure=inflow-outflow 
-                # reward cumulative sum
-                self.tl_rl_memory[index].reward += torch.tensor(
-                    -(inflow-outflow), dtype=torch.int, device=self.configs['device'])
+        # 값이 0인 경우 == all False
+        for index in torch.nonzero(yellow_mask):
+            print(index,"maskidx")
+            outflow = 0
+            inflow = 0
+            interests = self.node_interest_pair[self.tl_rl_list[index]]
+            for interest in interests:
+                outflow += traci.edge.getLastStepVehicleNumber(
+                    interest['outflow'])
+                inflow += traci.edge.getLastStepHaltingNumber(
+                    interest['inflow'])
+            # pressure=inflow-outflow 
+            # reward cumulative sum
+            pressure=torch.tensor(
+                -(inflow-outflow), dtype=torch.int, device=self.configs['device'])
+            self.tl_rl_memory[index].reward += pressure
+            print(pressure,"pressure")
+            self.reward+=pressure
 
         # next state 저장
         need_state_mask = torch.bitwise_and(
@@ -250,7 +253,7 @@ class GridEnv(baseEnv):
                 if j >= 1:
                     action_matrix[index, j] += action_matrix[index, j-1]
                 action_matrix[index, j] += 3
-        return action_matrix
+        return action_matrix.int()
 
     def update_tensorboard(self, writer, epoch):
         writer.add_scalar('episode/reward', self.reward,
