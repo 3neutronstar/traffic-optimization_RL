@@ -6,7 +6,9 @@ import math
 class GridNetwork(Network):
     def __init__(self, configs, grid_num):
         self.grid_num = grid_num
-        super().__init__(configs)
+        self.configs = configs
+        self.tl_rl_list = self.configs['tl_rl_list']
+        super().__init__(self.configs)
 
     def specify_node(self):
         nodes = list()
@@ -208,33 +210,33 @@ class GridNetwork(Network):
                 # 4행시
                 phase_set = [
                     {'duration': '37',  # 1
-                    'state': 'r{2}{1}gr{2}{3}rr{2}{1}gr{2}{3}r'.format(  # 위좌아래좌
-                        g*num_lanes, g, r*num_lanes, r),
-                    },
+                     'state': 'r{2}{1}gr{2}{3}rr{2}{1}gr{2}{3}r'.format(  # 위좌아래좌
+                         g*num_lanes, g, r*num_lanes, r),
+                     },
                     {'duration': '3',
-                    'state': 'y'*(12+4*num_lanes),
-                    },
+                     'state': 'y'*(12+4*num_lanes),
+                     },
                     {'duration': '37',  # 2
-                    'state': 'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(  # 위직아래직
-                        g*num_lanes, g, r*num_lanes, r),  # current
-                    },
+                     'state': 'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(  # 위직아래직
+                         g*num_lanes, g, r*num_lanes, r),  # current
+                     },
                     {'duration': '3',
-                    'state': 'y'*(12+4*num_lanes),
-                    },
+                     'state': 'y'*(12+4*num_lanes),
+                     },
                     {'duration': '37',  # 1
-                    'state': 'r{2}{3}rr{2}{1}gr{2}{3}rr{2}{1}g'.format(  # 좌좌우좌
-                        g*num_lanes, g, r*num_lanes, r),
-                    },
+                     'state': 'r{2}{3}rr{2}{1}gr{2}{3}rr{2}{1}g'.format(  # 좌좌우좌
+                         g*num_lanes, g, r*num_lanes, r),
+                     },
                     {'duration': '3',
-                    'state': 'y'*(12+4*num_lanes),
-                    },
+                     'state': 'y'*(12+4*num_lanes),
+                     },
                     {'duration': '37',  # 1
-                    'state': 'r{2}{3}rG{0}{3}rr{2}{3}rG{0}{3}g'.format(  # 좌직우직
-                        g*num_lanes, g, r*num_lanes, r),  # current
-                    },
+                     'state': 'r{2}{3}rG{0}{3}rr{2}{3}rG{0}{3}g'.format(  # 좌직우직
+                         g*num_lanes, g, r*num_lanes, r),  # current
+                     },
                     {'duration': '3',
-                    'state': 'y'*(12+4*num_lanes),
-                    },
+                     'state': 'y'*(12+4*num_lanes),
+                     },
                 ]
                 # 2행시
                 # phase_set = [
@@ -303,6 +305,105 @@ class GridNetwork(Network):
         self._generate_add_xml()
         self._generate_net_xml()
         super().generate_cfg(route_exist, mode)
+
+    def get_configs(self):
+        side_list = ['u', 'r', 'd', 'l']
+        NET_CONFIGS = dict()
+        interest_list = list()
+        phase_dict = dict()
+        node_list = self.configs['node_info']
+        # grid에서는 자동 생성기 따라서 사용해도 무방함 #map완성되면 통일 가능
+        x_y_end = self.configs['grid_num']-1
+        for _, node in enumerate(node_list):
+            if node['id'][-1] not in side_list:
+                x = int(node['id'][-3])
+                y = int(node['id'][-1])
+                left_x = x-1
+                left_y = y
+                right_x = x+1
+                right_y = y
+                down_x = x
+                down_y = y+1  # 아래로가면 y는 숫자가 늘어남
+                up_x = x
+                up_y = y-1  # 위로가면 y는 숫자가 줄어듦
+
+                if x == 0:
+                    left_y = 'l'
+                    left_x = y
+                if y == 0:
+                    up_y = 'u'
+                if x == x_y_end:
+                    right_y = 'r'
+                    right_x = y
+                if y == x_y_end:
+                    down_y = 'd'
+                # up
+                interest_list.append(
+                    {
+                        'id': 'u_{}'.format(node['id'][2:]),
+                        'inflow': 'n_{}_{}_to_n_{}_{}'.format(up_x, up_y, x, y),
+                        'outflow': 'n_{}_{}_to_n_{}_{}'.format(x, y, up_x, up_y),
+                    }
+                )
+                # right
+                interest_list.append(
+                    {
+                        'id': 'r_{}'.format(node['id'][2:]),
+                        'inflow': 'n_{}_{}_to_n_{}_{}'.format(right_x, right_y, x, y),
+                        'outflow': 'n_{}_{}_to_n_{}_{}'.format(x, y, right_x, right_y),
+                    }
+                )
+                # down
+                interest_list.append(
+                    {
+                        'id': 'd_{}'.format(node['id'][2:]),
+                        'inflow': 'n_{}_{}_to_n_{}_{}'.format(down_x, down_y, x, y),
+                        'outflow': 'n_{}_{}_to_n_{}_{}'.format(x, y, down_x, down_y),
+                    }
+                )
+                # left
+                interest_list.append(
+                    {
+                        'id': 'l_{}'.format(node['id'][2:]),
+                        'inflow': 'n_{}_{}_to_n_{}_{}'.format(left_x, left_y, x, y),
+                        'outflow': 'n_{}_{}_to_n_{}_{}'.format(x, y, left_x, left_y),
+                    }
+                )
+        # phase 생성
+        for tl_rl in self.tl_rl_list:
+            phase_dict[tl_rl] = self._phase_list()
+        # agent별 reward,state,next_state,action저장용
+        # 관심 노드와 interest inflow or outflow edge 정렬
+        node_interest_pair = dict()
+        for _, node in enumerate(node_list):
+            if node['id'][-1] not in side_list:
+                node_interest_pair['{}'.format(
+                    node['id'])] = list()
+                for _, interest in enumerate(interest_list):
+                    if node['id'][-3:] == interest['id'][-3:]:  # 좌표만 받기
+                        node_interest_pair['{}'.format(
+                            node['id'])].append(interest)
+
+        NET_CONFIGS['interest_list'] = interest_list
+        NET_CONFIGS['node_interest_pair'] = node_interest_pair
+        NET_CONFIGS['phase_dict'] = phase_dict
+        return NET_CONFIGS
+
+    def _phase_list(self):
+        num_lanes = self.configs['num_lanes']
+        g = 'G'
+        r = 'r'
+        phase_list = [
+            'r{2}{1}gr{2}{3}rr{2}{1}gr{2}{3}r'.format(  # 위좌아래좌
+                g*num_lanes, g, r*num_lanes, r),
+            'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(  # 위직아래직
+                g*num_lanes, g, r*num_lanes, r),  # current
+            'r{2}{3}rr{2}{1}gr{2}{3}rr{2}{1}g'.format(  # 좌좌우좌
+                g*num_lanes, g, r*num_lanes, r),
+            'r{2}{3}rG{0}{3}rr{2}{3}rG{0}{3}g'.format(  # 좌직우직
+                g*num_lanes, g, r*num_lanes, r),  # current
+        ]
+        return phase_list
 
 
 if __name__ == "__main__":
