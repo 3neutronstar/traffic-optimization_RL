@@ -133,8 +133,10 @@ class Network():
         file_name_str = os.path.join(self.current_Env_path, self.file_name)
         print(file_name_str)
         if len(self.traffic_light) != 0:
+            print("hello")
             os.system('netconvert -n {0}.nod.xml -e {0}.edg.xml -i {0}_tl.add.xml -o {0}.net.xml'.format(
                 file_name_str))
+            print("hellllllo")
         elif len(self.connections) == 0:
             os.system('netconvert -n {}.nod.xml -e {}.edg.xml -o {}.net.xml'.format(
                 file_name_str, file_name_str, file_name_str))
@@ -253,6 +255,12 @@ class Network():
         os.system('sumo-gui -c {}.sumocfg'.format(
             os.path.join(self.current_Env_path, self.file_name+'_simulate')))
 
+    def generate_all_xml(self):
+        self._generate_nod_xml()
+        self._generate_edg_xml()
+        self._generate_add_xml()
+        self._generate_net_xml()
+        self._generate_rou_xml()
 
 if __name__ == '__main__':
     network = Network(EXP_CONFIGS)
