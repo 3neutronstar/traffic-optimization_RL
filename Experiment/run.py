@@ -12,7 +12,7 @@ import traci.constants as tc
 from sumolib import checkBinary
 from utils import interest_list
 from configs import EXP_CONFIGS
-from Agent.base import merge_dict
+from Agent.base import merge_dict,merge_dict_non_conflict
 
 
 def parse_args(args):
@@ -82,7 +82,7 @@ def train(flags, time_data, configs, sumoConfig):
     if flags.algorithm.lower() == 'dqn':
         from train import dqn_train
         from configs import DQN_TRAFFIC_CONFIGS
-        configs = merge_dict(configs, DQN_TRAFFIC_CONFIGS)
+        configs = merge_dict_non_conflict(configs, DQN_TRAFFIC_CONFIGS)
         configs['time_size'] = int((torch.tensor(configs['phase_period'])
                                     - torch.tensor(configs['min_phase']).sum())/configs['num_phase'])  # 최대에서 최소 뺀 값이 size가 됨
         dqn_train(configs, time_data, sumoCmd)
@@ -90,7 +90,7 @@ def train(flags, time_data, configs, sumoConfig):
     elif flags.algorithm.lower() == 'super_dqn':
         from train import super_dqn_train
         from configs import SUPER_DQN_TRAFFIC_CONFIGS
-        configs = merge_dict(configs, SUPER_DQN_TRAFFIC_CONFIGS)
+        configs = merge_dict_non_conflict(configs, SUPER_DQN_TRAFFIC_CONFIGS)
         super_dqn_train(configs, time_data, sumoCmd)
 
 
