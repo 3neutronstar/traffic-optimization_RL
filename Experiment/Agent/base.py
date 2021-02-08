@@ -33,7 +33,7 @@ class RLAlgorithm():
         raise NotImplementedError
 
     def save_params(self, time_data):
-        with open(os.path.join(self.configs['current_path'], 'training_data', '{}_{}.json'.format(self.configs['file_name'], time_data)), 'w') as fp:
+        with open(os.path.join(self.configs['current_path'], 'training_data', '{}.json'.format(time_data)), 'w') as fp:
             json.dump(self.configs, fp, indent=2)
 
     def load_params(self, file_name):

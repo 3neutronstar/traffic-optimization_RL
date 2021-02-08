@@ -263,7 +263,6 @@ class GridNetwork(Network):
             'offset': '0',
             'phase': rl_phase_set,
         })
-
         return traffic_lights
 
     def generate_cfg(self, route_exist, mode='simulate'):

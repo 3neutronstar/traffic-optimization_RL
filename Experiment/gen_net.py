@@ -36,7 +36,7 @@ class Network():
                                   self.configs['time_data'], 'net_data'))
             self.current_Env_path = os.path.join(
                 self.current_path, 'training_data', self.configs['time_data'], 'net_data')
-        else:
+        else: # test,simulate
             self.file_name = self.configs['file_name']
             self.current_Env_path = os.path.join(
                 self.current_path, 'Net_data')
@@ -209,18 +209,18 @@ class Network():
         sumocfg = ET.Element('configuration')
         inputXML = ET.SubElement(sumocfg, 'input')
         inputXML.append(
-            E('net-file', attrib={'value': self.file_name+'.net.xml'}))
+            E('net-file', attrib={'value': os.path.join(self.current_Env_path,self.file_name+'.net.xml')}))
         indent(sumocfg)
         if route_exist == True:
             self._generate_rou_xml()
             if os.path.exists(os.path.join(self.current_Env_path, self.file_name+'.rou.xml')):
                 inputXML.append(
-                    E('route-files', attrib={'value': self.file_name+'.rou.xml'}))
+                    E('route-files', attrib={'value':os.path.join(self.current_Env_path, self.file_name+'.rou.xml')}))
                 indent(sumocfg)
 
         if os.path.exists(os.path.join(self.current_Env_path, self.file_name+'_data.add.xml')):
             inputXML.append(
-                E('additional-files', attrib={'value': self.file_name+'_data.add.xml'}))
+                E('additional-files', attrib={'value': os.path.join(self.current_Env_path,self.file_name+'_data.add.xml')}))
             indent(sumocfg)
 
         time = ET.SubElement(sumocfg, 'time')

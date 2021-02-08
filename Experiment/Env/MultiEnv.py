@@ -33,27 +33,37 @@ class GridEnv(baseEnv):
         self.node_interest_pair = dict()
         self.phase_dict = dict()
         self.vehicle_state_space = 8
-        # 임시용 phase 생성기, 나중엔 여기로 불러올 예정
-        for tl_rl in self.tl_rl_list:
-            self.phase_dict[tl_rl] = self._phase_list()
-        self.nodes = self.configs['node_info']
-        # agent별 reward,state,next_state,action저장용
-        self.tl_rl_memory = list()
-        for _ in range(self.num_agent):
-            self.tl_rl_memory.append(Memory(self.configs))
+
+        # Agent 갯수 생성기
+        if self.configs['network']=='grid':
+            # 임시용 phase 생성기, 나중엔 여기로 불러올 예정
+            for tl_rl in self.tl_rl_list:
+                self.phase_dict[tl_rl] = self._phase_list()
+            self.nodes = self.configs['node_info']
+            # agent별 reward,state,next_state,action저장용
+            # 관심 노드와 interest inflow or outflow edge 정렬
+            for _, node in enumerate(self.nodes):
+                if node['id'][-1] not in self.side_list:
+                    self.node_interest_pair['{}'.format(
+                        node['id'])] = list()
+                    for _, interest in enumerate(self.interest_list):
+                        if node['id'][-3:] == interest['id'][-3:]:  # 좌표만 받기
+                            self.node_interest_pair['{}'.format(
+                                node['id'])].append(interest)
+        
+        else: # network==map
+            self.nodes=self.configs['node_info']
+            #self.phase_dict #TODO
+            #self.node_interest_pair #TODO
+            
         self.before_action_change_mask = torch.zeros(
             self.num_agent, dtype=torch.long, device=self.configs['device'])
         self.before_index_mask = torch.zeros(
             self.num_agent, dtype=torch.long, device=self.configs['device'])
-        # 관심 노드와 interest inflow or outflow edge 정렬
-        for _, node in enumerate(self.nodes):
-            if node['id'][-1] not in self.side_list:
-                self.node_interest_pair['{}'.format(
-                    node['id'])] = list()
-                for _, interest in enumerate(self.interest_list):
-                    if node['id'][-3:] == interest['id'][-3:]:  # 좌표만 받기
-                        self.node_interest_pair['{}'.format(
-                            node['id'])].append(interest)
+        self.tl_rl_memory = list()
+        for _ in range(self.num_agent):
+            self.tl_rl_memory.append(Memory(self.configs))
+
 
         # action의 mapping을 위한 matrix
         self.min_phase = torch.tensor(
@@ -72,63 +82,66 @@ class GridEnv(baseEnv):
     def _generate_interest_list(self):
         interest_list = list()
         node_list = self.configs['node_info']
-        x_y_end = self.configs['grid_num']-1
-        for _, node in enumerate(node_list):
-            if node['id'][-1] not in self.side_list:
-                x = int(node['id'][-3])
-                y = int(node['id'][-1])
-                left_x = x-1
-                left_y = y
-                right_x = x+1
-                right_y = y
-                down_x = x
-                down_y = y+1  # 아래로가면 y는 숫자가 늘어남
-                up_x = x
-                up_y = y-1  # 위로가면 y는 숫자가 줄어듦
+        if self.configs['network']=='grid': # grid에서는 자동 생성기 따라서 사용해도 무방함 #map완성되면 통일 가능
+            x_y_end = self.configs['grid_num']-1
+            for _, node in enumerate(node_list):
+                if node['id'][-1] not in self.side_list:
+                    x = int(node['id'][-3])
+                    y = int(node['id'][-1])
+                    left_x = x-1
+                    left_y = y
+                    right_x = x+1
+                    right_y = y
+                    down_x = x
+                    down_y = y+1  # 아래로가면 y는 숫자가 늘어남
+                    up_x = x
+                    up_y = y-1  # 위로가면 y는 숫자가 줄어듦
 
-                if x == 0:
-                    left_y = 'l'
-                    left_x = y
-                if y == 0:
-                    up_y = 'u'
-                if x == x_y_end:
-                    right_y = 'r'
-                    right_x = y
-                if y == x_y_end:
-                    down_y = 'd'
-                # up
-                interest_list.append(
-                    {
-                        'id': 'u_{}'.format(node['id'][2:]),
-                        'inflow': 'n_{}_{}_to_n_{}_{}'.format(up_x, up_y, x, y),
-                        'outflow': 'n_{}_{}_to_n_{}_{}'.format(x, y, up_x, up_y),
-                    }
-                )
-                # right
-                interest_list.append(
-                    {
-                        'id': 'r_{}'.format(node['id'][2:]),
-                        'inflow': 'n_{}_{}_to_n_{}_{}'.format(right_x, right_y, x, y),
-                        'outflow': 'n_{}_{}_to_n_{}_{}'.format(x, y, right_x, right_y),
-                    }
-                )
-                # down
-                interest_list.append(
-                    {
-                        'id': 'd_{}'.format(node['id'][2:]),
-                        'inflow': 'n_{}_{}_to_n_{}_{}'.format(down_x, down_y, x, y),
-                        'outflow': 'n_{}_{}_to_n_{}_{}'.format(x, y, down_x, down_y),
-                    }
-                )
-                # left
-                interest_list.append(
-                    {
-                        'id': 'l_{}'.format(node['id'][2:]),
-                        'inflow': 'n_{}_{}_to_n_{}_{}'.format(left_x, left_y, x, y),
-                        'outflow': 'n_{}_{}_to_n_{}_{}'.format(x, y, left_x, left_y),
-                    }
-                )
-
+                    if x == 0:
+                        left_y = 'l'
+                        left_x = y
+                    if y == 0:
+                        up_y = 'u'
+                    if x == x_y_end:
+                        right_y = 'r'
+                        right_x = y
+                    if y == x_y_end:
+                        down_y = 'd'
+                    # up
+                    interest_list.append(
+                        {
+                            'id': 'u_{}'.format(node['id'][2:]),
+                            'inflow': 'n_{}_{}_to_n_{}_{}'.format(up_x, up_y, x, y),
+                            'outflow': 'n_{}_{}_to_n_{}_{}'.format(x, y, up_x, up_y),
+                        }
+                    )
+                    # right
+                    interest_list.append(
+                        {
+                            'id': 'r_{}'.format(node['id'][2:]),
+                            'inflow': 'n_{}_{}_to_n_{}_{}'.format(right_x, right_y, x, y),
+                            'outflow': 'n_{}_{}_to_n_{}_{}'.format(x, y, right_x, right_y),
+                        }
+                    )
+                    # down
+                    interest_list.append(
+                        {
+                            'id': 'd_{}'.format(node['id'][2:]),
+                            'inflow': 'n_{}_{}_to_n_{}_{}'.format(down_x, down_y, x, y),
+                            'outflow': 'n_{}_{}_to_n_{}_{}'.format(x, y, down_x, down_y),
+                        }
+                    )
+                    # left
+                    interest_list.append(
+                        {
+                            'id': 'l_{}'.format(node['id'][2:]),
+                            'inflow': 'n_{}_{}_to_n_{}_{}'.format(left_x, left_y, x, y),
+                            'outflow': 'n_{}_{}_to_n_{}_{}'.format(x, y, left_x, left_y),
+                        }
+                    )
+        elif self.configs['network']=='map': #xml based
+            print("hi")                 
+            
         return interest_list
 
     def get_state(self, mask):

@@ -19,7 +19,6 @@ def dqn_test(flags, sumoCmd, configs):
     # setting the rl list
     MAX_STEPS = configs['max_steps']
     reward = 0
-    traci.start(sumoCmd)
     agent = Trainer(configs)
     agent.load_weights(flags.replay_name)
     # setting the replay

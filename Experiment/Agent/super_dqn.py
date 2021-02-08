@@ -118,6 +118,7 @@ class Trainer(RLAlgorithm):
         self.configs['rate_action_space'] = 13
         # time action space지정 (무조건 save param 이후 list화 시키고 나면 이전으로 옮길 것)
         # TODO 여기 홀수일 때, 어떻게 할 건지 지정해야함
+        print(configs['common_phase'])
         self.configs['time_action_space'] = (torch.min(torch.tensor(configs['max_phase'])-torch.tensor(
             configs['common_phase']), torch.tensor(configs['common_phase'])-torch.tensor(configs['min_phase']))/2).mean(dim=1).int().tolist()
         # rate action space

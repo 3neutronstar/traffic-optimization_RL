@@ -85,7 +85,6 @@ def train(flags, time_data, configs, sumoConfig):
         configs = merge_dict(configs, DQN_TRAFFIC_CONFIGS)
         configs['time_size'] = int((torch.tensor(configs['phase_period'])
                                     - torch.tensor(configs['min_phase']).sum())/configs['num_phase'])  # 최대에서 최소 뺀 값이 size가 됨
-        print(configs['time_size'])
         dqn_train(configs, time_data, sumoCmd)
 
     elif flags.algorithm.lower() == 'super_dqn':
@@ -172,13 +171,19 @@ def main(args):
     configs['mode'] = flags.mode.lower()
     time_data = time.strftime('%m-%d_%H-%M-%S', time.localtime(time.time()))
     configs['time_data'] = str(time_data)
+    configs['file_name']=configs['time_data']
 
     # check the network
-    if flags.network.lower() == 'grid':
+    configs['network']=flags.network.lower()
+    if configs['network'] == 'grid':
         from Network.grid import GridNetwork  # network바꿀때 이걸로 바꾸세요(수정 예정)
         configs['grid_num'] = 3
-        configs['file_name'] = '{}x{}grid'.format(
+        if configs['mode']=='simulate':
+            configs['file_name'] = '{}x{}grid'.format(
             configs['grid_num'], configs['grid_num'])
+        elif configs['mode']=='test': #test
+            configs['file_name']=flags.network.lower()
+        #Generating Network
         network = GridNetwork(configs, grid_num=configs['grid_num'])
         network.generate_cfg(True, configs['mode'])
 
@@ -190,13 +195,22 @@ def main(args):
                 if node['id'][-1] not in side_list:
                     tl_rl_list.append(node['id'])
             configs['tl_rl_list'] = tl_rl_list
-            configs['num_agent'] = len(tl_rl_list)
-            configs['max_phase_num'] = 4
-            configs['offset'] = [0 for i in range(configs['num_agent'])]  # offset check 용
-            configs['tl_max_period'] = [160 for i in range(configs['num_agent'])]
+    
+    #Generating Network
     else:  # map file 에서 불러오기
         print("Load from map file")
-        configs['file_name'] = flags.network
+        from Network.map import MapNetwork
+        configs['grid_num'] = 3
+        configs['num_lanes']=2
+        configs['load_file_name']=configs['network']
+        mapnet=MapNetwork(configs)
+        MAP_CONFIGS=mapnet.get_tl_from_xml()
+        for key in MAP_CONFIGS.keys():
+            configs[key]=MAP_CONFIGS[key]
+
+        mapnet.gen_net_from_xml()
+        mapnet.gen_rou_from_xml()
+
 
     # check the environment
     if 'SUMO_HOME' in os.environ:
@@ -208,6 +222,10 @@ def main(args):
     # check the mode
     if configs['mode'] == 'train':
         # init train setting
+        configs['num_agent'] = len(configs['tl_rl_list'])
+        configs['max_phase_num'] = 4
+        configs['offset'] = [0 for i in range(configs['num_agent'])]  # offset 임의 설정
+        configs['tl_max_period'] = [160 for i in range(configs['num_agent'])] # max period 임의 설정
         configs['mode'] = 'train'
         sumoConfig = os.path.join(
             configs['current_path'], 'training_data', time_data, 'net_data', configs['file_name']+'_train.sumocfg')
