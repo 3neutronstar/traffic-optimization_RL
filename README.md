@@ -9,28 +9,34 @@ Reinforcement Learning based traffic-control
 ### How to use
 check the condition state (throughput)
 ```shell script
-    python run.py simulate
+    python ./Experiment/run.py simulate
 ``` 
 Run in RL algorithm DQN (default device: cpu)
 ```shell script
-    python run.py train --gpu False
+    python ./Experiment/run.py train --gpu False
 ``` 
-If you want to use other algorithm, use this code (ppo, ~~REINFORCE, a2c~~) 
+If you want to use other algorithm, use this code (ppo,super_dqn, ~~REINFORCE, a2c~~) 
 
 ```shell script
-    python run.py train --algorithm ppo --gpu False
+    python ./Experiment/run.py train --algorithm ppo
 ``` 
 Check the RL performance that based on FRAP model [FRAP Paper]https://arxiv.org/abs/1905.04722
 ```shell script
-    python run.py train --model frap
+    python ./Experiment/run.py train --model frap
 ``` 
 Didn't check that it learns well. (Prototype)
 - check the result
 Tensorboard
 ```shell script
-    tensorboard --logdir training_data
+    tensorboard --logdir ./Experiment/training_data
 ``` 
-Hyperparameter in json, model is in `training_data/model` directory.
+Hyperparameter in json, model is in `./Experiment/training_data/[time you run]/model` directory.
+
+- replay the model
+```shell script
+    python ./Experiment/run.py test --replay_name /replay_data in training_data dir/ --replay_epoch NUM
+```
+
 
 ## New version of Learning Process(Discrete)
 NxN intersecion
@@ -58,6 +64,7 @@ NxN intersecion
 - Reward
     1) Max Pressure Control Theory
     2) Penalty if phase exceeds its max length
+
 ### Decentralized DQN
 - Experiment
     1) Every 160s(depend on COMMON_PERIOD)

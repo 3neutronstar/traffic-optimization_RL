@@ -89,7 +89,7 @@ class Trainer(RLAlgorithm):
             self.configs['experience_replay_size'])
         self.batch_size = self.configs['batch_size']
         self.num_agent = len(self.configs['tl_rl_list'])
-
+        print(self.num_agent)
         if self.configs['model'].lower() == 'frap':
             from Agent.Model.FRAP import FRAP
             model = FRAP(self.state_space*self.num_agent*self.configs['num_phase'], self.action_space*self.num_agent,

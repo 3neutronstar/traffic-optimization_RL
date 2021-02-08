@@ -72,9 +72,6 @@ def train(flags, time_data, configs, sumoConfig):
         configs['action_size'] = 2
         configs['state_space'] = 8
         configs['model'] = 'base'
-        configs['time_size'] = int((torch.tensor(configs['phase_period'])
-                                    - torch.tensor(configs['min_phase']).sum())/configs['num_phase'])  # 최대에서 최소 뺀 값이 size가 됨
-        print(configs['time_size'])
     elif flags.model.lower() == 'frap':
         configs['action_space'] = configs['num_phase']
         configs['action_size'] = 1
@@ -85,6 +82,9 @@ def train(flags, time_data, configs, sumoConfig):
         from train import dqn_train
         from configs import DQN_TRAFFIC_CONFIGS
         configs = merge_dict(configs, DQN_TRAFFIC_CONFIGS)
+        configs['time_size'] = int((torch.tensor(configs['phase_period'])
+                                    - torch.tensor(configs['min_phase']).sum())/configs['num_phase'])  # 최대에서 최소 뺀 값이 size가 됨
+        print(configs['time_size'])
         dqn_train(configs, time_data, sumoCmd)
 
     elif flags.algorithm.lower() == 'super_dqn':
@@ -169,31 +169,33 @@ def main(args):
     configs['device'] = str(device)
     configs['current_path'] = os.path.dirname(os.path.abspath(__file__))
     configs['mode'] = flags.mode.lower()
+    time_data = time.strftime('%m-%d_%H-%M-%S', time.localtime(time.time()))
+    configs['time_data'] = str(time_data)
 
 
     # check the network
     if flags.network.lower() == 'grid':
         from Network.grid import GridNetwork  # network바꿀때 이걸로 바꾸세요(수정 예정)
         configs['grid_num'] = 3
-        if flags.algorithm.lower() == 'super_dqn':
-            configs['grid_num'] = 3
         configs['file_name'] = '{}x{}grid'.format(
             configs['grid_num'], configs['grid_num'])
         network = GridNetwork(configs, grid_num=configs['grid_num'])
         network.generate_cfg(True, configs['mode'])
 
-        # rl_list 설정
-        side_list = ['u', 'r', 'd', 'l']
-        tl_rl_list = list()
-        for _, node in enumerate(configs['node_info']):
-            if node['id'][-1] not in side_list:
-                tl_rl_list.append(node['id'])
-        configs['tl_rl_list'] = tl_rl_list
-        configs['num_agent'] = len(tl_rl_list)
-        configs['max_phase_num'] = 4
-        configs['offset'] = [0 for i in range(
-            configs['num_agent'])]  # offset check 용
-        configs['tl_max_period'] = [160 for i in range(configs['num_agent'])]
+        if flags.algorithm.lower() == 'super_dqn':
+            # rl_list 설정
+            side_list = ['u', 'r', 'd', 'l']
+            tl_rl_list = list()
+            for _, node in enumerate(configs['node_info']):
+                if node['id'][-1] not in side_list:
+                    tl_rl_list.append(node['id'])
+            configs['tl_rl_list'] = tl_rl_list
+            configs['num_agent'] = len(tl_rl_list)
+            configs['max_phase_num'] = 4
+            configs['offset'] = [0 for i in range(
+                configs['num_agent'])]  # offset check 용
+            configs['tl_max_period'] = [160 for i in range(configs['num_agent'])]
+
     else:  # map file 에서 불러오기
         print("Load from map file")
         configs['file_name'] = flags.network
@@ -208,8 +210,6 @@ def main(args):
     # check the mode
     if configs['mode'] == 'train':
         # init train setting
-        time_data = time.strftime('%m-%d_%H-%M-%S', time.localtime(time.time()))
-        configs['time_data'] = str(time_data)
         configs['mode'] = 'train'
         sumoConfig = os.path.join(
             configs['current_path'], 'training_data', time_data, 'net_data', configs['file_name']+'_train.sumocfg')
