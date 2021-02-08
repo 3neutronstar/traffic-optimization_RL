@@ -1,9 +1,11 @@
 import torch
 import traci
+import time
 from utils import load_params
 
 def dqn_test(flags, sumoCmd, configs):
     # Environment Setting
+    configs['model']='base'
     from Agent.dqn import Trainer
     if configs['model'] == 'base':
         from Env.Env import TL3x3Env
@@ -11,29 +13,26 @@ def dqn_test(flags, sumoCmd, configs):
         from Env.FRAP import TL3x3Env
     # init test setting
     if flags.replay_name is not None:
-        configs['replay_epoch']=flags.replay_epoch
-        configs = load_params(configs, flags.replay_name)
+        configs = load_params(configs, flags.replay_name) # 여기앞에 configs 설정해도 의미 없음
+        configs['replay_epoch']=str(flags.replay_epoch)
         configs['mode']='test'
-    
 
     # setting the rl list
     MAX_STEPS = configs['max_steps']
     reward = 0
-    agent = Trainer(configs)
-    agent.load_weights(flags.replay_name)
     # setting the replay
-    env = TL3x3Env(configs)
-    step = 0
+
     # state initialization
-    state = env.get_state()
     # agent setting
     total_reward = 0
     arrived_vehicles = 0
+    agent = Trainer(configs)
+    agent.load_weights(flags.replay_name)
     with torch.no_grad():
         traci.start(sumoCmd)
-        step = 0
         # Epoch Start setting
-        env = TL3x3Env(configs)
+        step = 0
+        env =  TL3x3Env(configs)
         done = False
         total_reward = 0
         reward = 0
@@ -61,7 +60,6 @@ def dqn_test(flags, sumoCmd, configs):
         b = time.time()
         traci.close()
         print("time:", b-a)
-        epoch += 1
         print('======== return: {} arrived number:{}'.format(
             total_reward, arrived_vehicles))
 

@@ -64,4 +64,5 @@ class MapNetwork(Network):
 
 
     def print(self):
-        print("print")
+        return 123
+

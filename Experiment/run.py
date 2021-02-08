@@ -12,7 +12,7 @@ import traci.constants as tc
 from sumolib import checkBinary
 from utils import interest_list
 from configs import EXP_CONFIGS
-from Agent.base import merge_dict, merge_dict_non_conflict
+from Agent.base import merge_dict,merge_dict_non_conflict
 
 
 def parse_args(args):
@@ -95,9 +95,7 @@ def train(flags, time_data, configs, sumoConfig):
 
 
 def test(flags, configs, sumoConfig):
-    from Env.Env import TL3x3Env
     from Agent.dqn import Trainer
-    from Env.MultiEnv import GridEnv
     from utils import save_params, load_params, update_tensorboard
     from test import dqn_test, super_dqn_test
     if flags.disp == True:
@@ -171,22 +169,22 @@ def main(args):
     configs['mode'] = flags.mode.lower()
     time_data = time.strftime('%m-%d_%H-%M-%S', time.localtime(time.time()))
     configs['time_data'] = str(time_data)
-    configs['file_name'] = configs['time_data']
-    # algorithm
-    # check the network
-    configs['network'] = flags.network.lower()
-    if configs['network'] == 'grid':
+    configs['file_name']=configs['time_data']
 
+    # check the network
+    configs['network']=flags.network.lower()
+    if configs['network'] == 'grid':
         from Network.grid import GridNetwork  # network바꿀때 이걸로 바꾸세요(수정 예정)
         configs['grid_num'] = 3
-        if configs['mode'] == 'simulate':
+        if configs['mode']=='simulate':
             configs['file_name'] = '{}x{}grid'.format(
-                configs['grid_num'], configs['grid_num'])
-        elif configs['mode'] == 'test':  # test
-            configs['file_name'] = flags.network.lower()
-        # Generating Network
+            configs['grid_num'], configs['grid_num'])
+        elif configs['mode']=='test': #test
+            configs['file_name']=flags.replay_name.lower()
+        #Generating Network
         network = GridNetwork(configs, grid_num=configs['grid_num'])
         network.generate_cfg(True, configs['mode'])
+
         if flags.algorithm.lower() == 'super_dqn':
             # rl_list 설정
             side_list = ['u', 'r', 'd', 'l']
@@ -194,27 +192,25 @@ def main(args):
             for _, node in enumerate(configs['node_info']):
                 if node['id'][-1] not in side_list:
                     tl_rl_list.append(node['id'])
-        else:
-            tl_rl_list = ['n_1_1']
-        # Agent List
-        configs['tl_rl_list'] = tl_rl_list
-        NET_CONFIGS = network.get_configs()
-        configs = merge_dict(configs, NET_CONFIGS)
-
-    # Generating Network
+            configs['tl_rl_list'] = tl_rl_list
+    
+    #Generating Network
     else:  # map file 에서 불러오기
         print("Load from map file")
         from Network.map import MapNetwork
+        # TODO Grid num은 삭제요망
         configs['grid_num'] = 3
-        configs['num_lanes'] = 2
-        configs['load_file_name'] = configs['network']
-        mapnet = MapNetwork(configs)
-        MAP_CONFIGS = mapnet.get_tl_from_xml()
-        for key in MAP_CONFIGS.keys():  # dict합치기
-            configs[key] = MAP_CONFIGS[key]
+        configs['num_lanes']=2
+        configs['load_file_name']=configs['network']
+        mapnet=MapNetwork(configs)
+        MAP_CONFIGS=mapnet.get_tl_from_xml()
+        for key in MAP_CONFIGS.keys():
+            configs[key]=MAP_CONFIGS[key]
 
         mapnet.gen_net_from_xml()
         mapnet.gen_rou_from_xml()
+        mapnet.generate_cfg(True,'train')
+
 
     # check the environment
     if 'SUMO_HOME' in os.environ:
@@ -228,19 +224,18 @@ def main(args):
         # init train setting
         configs['num_agent'] = len(configs['tl_rl_list'])
         configs['max_phase_num'] = 4
-        configs['offset'] = [0 for i in range(
-            configs['num_agent'])]  # offset 임의 설정
-        configs['tl_max_period'] = [160 for i in range(
-            configs['num_agent'])]  # max period 임의 설정
+        configs['offset'] = [0 for i in range(configs['num_agent'])]  # offset 임의 설정
+        configs['tl_max_period'] = [160 for i in range(configs['num_agent'])] # max period 임의 설정
         configs['mode'] = 'train'
         sumoConfig = os.path.join(
             configs['current_path'], 'training_data', time_data, 'net_data', configs['file_name']+'_train.sumocfg')
         train(flags, time_data, configs, sumoConfig)
     elif configs['mode'] == 'test':
         configs['time_data'] = flags.replay_name
+        configs['replay_name']=configs['time_data']
         configs['mode'] = 'test'
         sumoConfig = os.path.join(
-            configs['current_path'], 'training_data', configs['file_name'], 'net_data', configs['file_name']+'_test.sumocfg')
+            configs['current_path'], 'training_data', time_data,'net_data',configs['file_name']+'_test.sumocfg')
         test(flags, configs, sumoConfig)
     else:  # simulate
         configs['mode'] = 'simulate'

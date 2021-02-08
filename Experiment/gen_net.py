@@ -36,7 +36,16 @@ class Network():
                                   self.configs['time_data'], 'net_data'))
             self.current_Env_path = os.path.join(
                 self.current_path, 'training_data', self.configs['time_data'], 'net_data')
-        else: # test,simulate
+        elif self.configs['mode']=='test':
+            self.file_name = self.configs['file_name']
+            os.mkdir(os.path.join(self.current_path, 'training_data',
+                                  self.configs['time_data']))
+            os.mkdir(os.path.join(self.current_path, 'training_data',
+                                  self.configs['time_data'], 'net_data'))
+            self.current_Env_path = os.path.join(
+                self.current_path, 'training_data', self.configs['time_data'], 'net_data')
+
+        else: # simulate
             self.file_name = self.configs['file_name']
             self.current_Env_path = os.path.join(
                 self.current_path, 'Net_data')
@@ -131,12 +140,9 @@ class Network():
     def _generate_net_xml(self):
         # file_name_str=os.path.join(self.current_Env_path,self.file_name)
         file_name_str = os.path.join(self.current_Env_path, self.file_name)
-        print(file_name_str)
         if len(self.traffic_light) != 0:
-            print("hello")
             os.system('netconvert -n {0}.nod.xml -e {0}.edg.xml -i {0}_tl.add.xml -o {0}.net.xml'.format(
                 file_name_str))
-            print("hellllllo")
         elif len(self.connections) == 0:
             os.system('netconvert -n {}.nod.xml -e {}.edg.xml -o {}.net.xml'.format(
                 file_name_str, file_name_str, file_name_str))

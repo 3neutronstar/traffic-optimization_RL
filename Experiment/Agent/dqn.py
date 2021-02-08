@@ -224,8 +224,9 @@ class Trainer(RLAlgorithm):
             self.configs['current_path'], 'training_data', self.configs['time_data'], 'model', name+'_target.h5'))
 
     def load_weights(self, name):
+        print(self.configs['replay_epoch'])
         self.mainQNetwork.load_state_dict(torch.load(os.path.join(
-            self.configs['current_path'], 'training_data', self.configs['time_data'], 'model', name+'.h5')))
+            self.configs['current_path'], 'training_data', self.configs['time_data'], 'model', name+'_'+self.configs['replay_epoch']+'.h5')))
         self.mainQNetwork.eval()
 
     def update_tensorboard(self, writer, epoch):
