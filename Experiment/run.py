@@ -53,7 +53,7 @@ def parse_args(args):
 def train(flags, time_data, configs, sumoConfig):
 
     # check gui option
-    if flags.disp == 'yes':
+    if flags.disp == True:
         sumoBinary = checkBinary('sumo-gui')
     else:
         sumoBinary = checkBinary('sumo')
@@ -62,6 +62,7 @@ def train(flags, time_data, configs, sumoConfig):
     configs['algorithm'] = flags.algorithm.lower()
     print("training algorithm: ", configs['algorithm'])
     configs['num_phase'] = 4
+
     if flags.algorithm.lower() == 'super_dqn':  # action space와 size 설정
         configs['action_space'] = configs['num_phase']
         configs['action_size'] = 2
@@ -100,7 +101,7 @@ def test(flags, configs, sumoConfig):
     from Env.MultiEnv import GridEnv
     from utils import save_params, load_params, update_tensorboard
     from test import dqn_test, super_dqn_test
-    if flags.disp == 'yes':
+    if flags.disp == True:
         sumoBinary = checkBinary('sumo-gui')
     else:
         sumoBinary = checkBinary('sumo')
@@ -108,20 +109,20 @@ def test(flags, configs, sumoConfig):
     sumoCmd = [sumoBinary, "-c", sumoConfig]
 
     if flags.algorithm.lower() == 'dqn':
-        dqn_test(flags, sumoCmd,configs)
+        dqn_test(flags, sumoCmd, configs)
     elif flags.algorithm.lower() == 'super_dqn':
-        super_dqn_test(flags,sumoCmd, configs)
+        super_dqn_test(flags, sumoCmd, configs)
 
 
 def simulate(flags, configs, sumoConfig):
-    if flags.disp == 'yes':
+    if flags.disp == True:
         sumoBinary = checkBinary('sumo-gui')
     else:
         sumoBinary = checkBinary('sumo')
     sumoCmd = [sumoBinary, "-c", sumoConfig]
     MAX_STEPS = configs['max_steps']
     traci.start(sumoCmd)
-    a=time.time()
+    a = time.time()
     traci.simulation.subscribe([tc.VAR_ARRIVED_VEHICLES_NUMBER])
     # traci.edge.subscribe('n_2_2_to_n_2_1', [
     #                      tc.LAST_STEP_VEHICLE_HALTING_NUMBER], 0, 2000)
@@ -146,13 +147,13 @@ def simulate(flags, configs, sumoConfig):
 
         arrived_vehicles += traci.simulation.getAllSubscriptionResults()[
             ''][0x79]  # throughput
-    b=time.time()
+    b = time.time()
     traci.close()
     # edgesss = traci.edge.getSubscriptionResults('n_2_2_to_n_2_1')
     # print(edgesss)
     print('======== arrived number:{} avg waiting time:{},avg velocity:{}'.format(
         arrived_vehicles, avg_waiting_time/MAX_STEPS, avg_velocity))
-    print("sim_time=",b-a)
+    print("sim_time=", b-a)
 
 
 def main(args):
@@ -171,7 +172,6 @@ def main(args):
     configs['mode'] = flags.mode.lower()
     time_data = time.strftime('%m-%d_%H-%M-%S', time.localtime(time.time()))
     configs['time_data'] = str(time_data)
-
 
     # check the network
     if flags.network.lower() == 'grid':
@@ -192,10 +192,8 @@ def main(args):
             configs['tl_rl_list'] = tl_rl_list
             configs['num_agent'] = len(tl_rl_list)
             configs['max_phase_num'] = 4
-            configs['offset'] = [0 for i in range(
-                configs['num_agent'])]  # offset check 용
+            configs['offset'] = [0 for i in range(configs['num_agent'])]  # offset check 용
             configs['tl_max_period'] = [160 for i in range(configs['num_agent'])]
-
     else:  # map file 에서 불러오기
         print("Load from map file")
         configs['file_name'] = flags.network
@@ -215,10 +213,10 @@ def main(args):
             configs['current_path'], 'training_data', time_data, 'net_data', configs['file_name']+'_train.sumocfg')
         train(flags, time_data, configs, sumoConfig)
     elif configs['mode'] == 'test':
-        configs['time_data']= flags.replay_name
+        configs['time_data'] = flags.replay_name
         configs['mode'] = 'test'
         sumoConfig = os.path.join(
-            configs['current_path'], 'Net_data', configs['file_name']+'_test.sumocfg')
+            configs['current_path'], 'training_data', configs['file_name'],'net_data',configs['file_name']+'_test.sumocfg')
         test(flags, configs, sumoConfig)
     else:  # simulate
         configs['mode'] = 'simulate'

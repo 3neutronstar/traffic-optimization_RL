@@ -70,7 +70,7 @@ class QNetwork(nn.Module):
 class Trainer(RLAlgorithm):
     def __init__(self, configs):
         super().__init__(configs)
-        print(configs['mode'])
+        print("Current_Mode:",configs['mode'])
         if configs['mode']=='train':
             os.mkdir(os.path.join(
                 self.configs['current_path'], 'training_data', self.configs['time_data'], 'model'))
@@ -89,7 +89,6 @@ class Trainer(RLAlgorithm):
             self.configs['experience_replay_size'])
         self.batch_size = self.configs['batch_size']
         self.num_agent = len(self.configs['tl_rl_list'])
-        print(self.num_agent)
         if self.configs['model'].lower() == 'frap':
             from Agent.Model.FRAP import FRAP
             model = FRAP(self.state_space*self.num_agent*self.configs['num_phase'], self.action_space*self.num_agent,

@@ -88,11 +88,11 @@ class SuperQNetwork(nn.Module):
         self.num_agent = len(self.configs['tl_rl_list'])
         print(self.input_size, self.configs['state_space'], self.num_agent)
         self.fc1 = nn.Linear(
-            self.input_size, self.configs['state_space']*2*self.num_agent)
+            self.input_size, int(self.configs['state_space']*1.5*self.num_agent))
         self.fc2 = nn.Linear(
-            self.configs['state_space']*2*self.num_agent, self.configs['state_space']*2*self.num_agent)
+            int(self.configs['state_space']*1.5*self.num_agent), int(self.configs['state_space']*1.5*self.num_agent))
         self.fc3 = nn.Linear(
-            self.configs['state_space']*2*self.num_agent, self.configs['state_space']*1*self.num_agent)
+            int(self.configs['state_space']*1.5*self.num_agent),int( self.configs['state_space']*1*self.num_agent))
         self.fc4 = nn.Linear(
             self.configs['state_space']*1*self.num_agent, self.output_size)
 
