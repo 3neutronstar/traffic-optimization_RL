@@ -53,7 +53,7 @@ def parse_args(args):
 def train(flags, time_data, configs, sumoConfig):
 
     # check gui option
-    if flags.disp == 'yes':
+    if flags.disp == True:
         sumoBinary = checkBinary('sumo-gui')
     else:
         sumoBinary = checkBinary('sumo')
@@ -100,7 +100,7 @@ def test(flags, configs, sumoConfig):
     from Env.MultiEnv import GridEnv
     from utils import save_params, load_params, update_tensorboard
     from test import dqn_test, super_dqn_test
-    if flags.disp == 'yes':
+    if flags.disp == True:
         sumoBinary = checkBinary('sumo-gui')
     else:
         sumoBinary = checkBinary('sumo')
@@ -108,20 +108,20 @@ def test(flags, configs, sumoConfig):
     sumoCmd = [sumoBinary, "-c", sumoConfig]
 
     if flags.algorithm.lower() == 'dqn':
-        dqn_test(flags, sumoCmd,configs)
+        dqn_test(flags, sumoCmd, configs)
     elif flags.algorithm.lower() == 'super_dqn':
-        super_dqn_test(flags,sumoCmd, configs)
+        super_dqn_test(flags, sumoCmd, configs)
 
 
 def simulate(flags, configs, sumoConfig):
-    if flags.disp == 'yes':
+    if flags.disp == True:
         sumoBinary = checkBinary('sumo-gui')
     else:
         sumoBinary = checkBinary('sumo')
     sumoCmd = [sumoBinary, "-c", sumoConfig]
     MAX_STEPS = configs['max_steps']
     traci.start(sumoCmd)
-    a=time.time()
+    a = time.time()
     traci.simulation.subscribe([tc.VAR_ARRIVED_VEHICLES_NUMBER])
     # traci.edge.subscribe('n_2_2_to_n_2_1', [
     #                      tc.LAST_STEP_VEHICLE_HALTING_NUMBER], 0, 2000)
@@ -146,13 +146,13 @@ def simulate(flags, configs, sumoConfig):
 
         arrived_vehicles += traci.simulation.getAllSubscriptionResults()[
             ''][0x79]  # throughput
-    b=time.time()
+    b = time.time()
     traci.close()
     # edgesss = traci.edge.getSubscriptionResults('n_2_2_to_n_2_1')
     # print(edgesss)
     print('======== arrived number:{} avg waiting time:{},avg velocity:{}'.format(
         arrived_vehicles, avg_waiting_time/MAX_STEPS, avg_velocity))
-    print("sim_time=",b-a)
+    print("sim_time=", b-a)
 
 
 def main(args):
@@ -169,7 +169,6 @@ def main(args):
     configs['device'] = str(device)
     configs['current_path'] = os.path.dirname(os.path.abspath(__file__))
     configs['mode'] = flags.mode.lower()
-
 
     # check the network
     if flags.network.lower() == 'grid':
@@ -208,14 +207,15 @@ def main(args):
     # check the mode
     if configs['mode'] == 'train':
         # init train setting
-        time_data = time.strftime('%m-%d_%H-%M-%S', time.localtime(time.time()))
+        time_data = time.strftime(
+            '%m-%d_%H-%M-%S', time.localtime(time.time()))
         configs['time_data'] = str(time_data)
         configs['mode'] = 'train'
         sumoConfig = os.path.join(
             configs['current_path'], 'training_data', time_data, 'net_data', configs['file_name']+'_train.sumocfg')
         train(flags, time_data, configs, sumoConfig)
     elif configs['mode'] == 'test':
-        configs['time_data']= flags.replay_name
+        configs['time_data'] = flags.replay_name
         configs['mode'] = 'test'
         sumoConfig = os.path.join(
             configs['current_path'], 'Net_data', configs['file_name']+'_test.sumocfg')

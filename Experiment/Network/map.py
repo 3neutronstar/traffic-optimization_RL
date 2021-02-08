@@ -41,6 +41,17 @@ class MapNetwork(Network):
             self.phase_list.append(phase_state_list)
             self.common_phase.append(phase_duration_list)
 
+        configs = {
+            'tl_rl_list': self.tl_rl_list,
+            'offset': self.offset_list,
+            'phase_list': self.phase_list,
+            'common_phase': self.common_phase,
+        }
+
+        return configs
+
+    def get_net_from_xml(self):
+
     def print(self):
         print('all')
 
