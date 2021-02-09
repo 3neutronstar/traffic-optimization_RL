@@ -7,7 +7,10 @@ class GridNetwork(Network):
     def __init__(self, configs, grid_num):
         self.grid_num = grid_num
         self.configs = configs
-        self.tl_rl_list = self.configs['tl_rl_list']
+        if configs['algorithm']=='dqn':
+            self.tl_rl_list=self.configs['tl_rl_list']
+        else: # super dqn
+            self.tl_rl_list = list()
         super().__init__(self.configs)
 
     def specify_node(self):
@@ -39,6 +42,8 @@ class GridNetwork(Network):
                 node_info['x'] = str('%.1f' % grid_x)
                 node_info['y'] = str('%.1f' % grid_y)
                 nodes.append(node_info)
+                if self.configs['algorithm']=='super_dqn':
+                    self.tl_rl_list.append(node_info)
 
         # outNode
         #   * *
@@ -370,8 +375,12 @@ class GridNetwork(Network):
                     }
                 )
         # phase 생성
-        for tl_rl in self.tl_rl_list:
-            phase_dict[tl_rl] = self._phase_list()
+        if self.configs['algorithm']=='super_dqn':
+            for tl_rl in self.tl_rl_list:
+                phase_dict[tl_rl['id']] = self._phase_list()
+        else:
+            for tl_rl in self.tl_rl_list:
+                phase_dict[tl_rl] = self._phase_list()
         # agent별 reward,state,next_state,action저장용
         # 관심 노드와 interest inflow or outflow edge 정렬
         node_interest_pair = dict()

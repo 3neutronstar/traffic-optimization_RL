@@ -170,6 +170,7 @@ def main(args):
     time_data = time.strftime('%m-%d_%H-%M-%S', time.localtime(time.time()))
     configs['time_data'] = str(time_data)
     configs['file_name']=configs['time_data']
+    configs['algorithm']=flags.algorithm
 
     # check the network
     configs['network']=flags.network.lower()
@@ -184,6 +185,9 @@ def main(args):
         #Generating Network
         network = GridNetwork(configs, grid_num=configs['grid_num'])
         network.generate_cfg(True, configs['mode'])
+        NET_CONFIGS=network.get_configs()
+        configs=merge_dict_non_conflict(configs,NET_CONFIGS)
+
 
         if flags.algorithm.lower() == 'super_dqn':
             # rl_list 설정
