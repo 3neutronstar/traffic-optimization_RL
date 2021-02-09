@@ -109,7 +109,7 @@ class GridEnv(baseEnv):
             self.reward += pressure
 
         # next state 저장
-        need_state_mask = torch.bitwise_and(
+        need_state_mask = torch.bitwise_or(
             self.before_action_change_mask, action_change_mask)
         # print(need_state_mask)
         next_state = torch.zeros(
