@@ -80,6 +80,7 @@ def merge_dict(d1, d2):
         merged[key] = d2[key]
     return merged
 
+
 def merge_dict_non_conflict(d1, d2):
     '''
     d2를 d1위에 덮기 (non 충돌 ver)
@@ -89,6 +90,11 @@ def merge_dict_non_conflict(d1, d2):
         merged[key] = d2[key]
     return merged
 
+
 def hard_update(target, source):
     for target_param, param in zip(target.parameters(), source.parameters()):
         target_param.data.copy_(param.data)
+
+def soft_update(target,source,configs):
+    for target_param,param in zip(target.parameters(),source.parameters()):
+        target_param.data.copy_(target_param.data*(1.0-configs['tau'])+param.data*configs['tau'])

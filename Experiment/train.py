@@ -1,5 +1,6 @@
 import json
 import os
+from random import random
 import sys
 import time
 import traci
@@ -11,86 +12,16 @@ from utils import update_tensorboard
 from Agent.base import merge_dict
 
 
-def dqn_train(configs, time_data, sumoCmd):
-    # Environment Setting
-    from Agent.dqn import Trainer
-    if configs['model'] == 'base':
-        from Env.Env import TL3x3Env
-    elif configs['model'] == 'frap':
-        from Env.FRAP import TL3x3Env
-    # EXP_CONFIG Setting
-    NUM_EPOCHS = configs['num_epochs']
-    MAX_STEPS = configs['max_steps']
-    epoch = 0
-    # init agent and tensorboard writer
-    # agent setting
-    agent = Trainer(configs)
-    writer = SummaryWriter(os.path.join(
-        configs['current_path'], 'training_data', time_data))
-    # save hyper parameters
-    agent.save_params(time_data)
-    # init training
-    while epoch < NUM_EPOCHS:
-        # Epoch Start
-        traci.start(sumoCmd)
-        step = 0
-        # Epoch Start setting
-        env = TL3x3Env(configs)
-        done = False
-        total_reward = 0
-        reward = 0
-        arrived_vehicles = 0
-        # state initialization
-        action = torch.tensor([[0, 0]], dtype=torch.int,
-                              device=configs['device'])
-        state, _, _, _ = env.step(action, step)
-
-        # Time Check
-        a = time.time()
-        while step < MAX_STEPS:
-
-            action = agent.get_action(state)
-            # environment에 적용
-            next_state, reward, step, info = env.step(
-                action, step)  # action 적용함수
-            arrived_vehicles += info
-            # 20초 지연된 보상
-            agent.save_replay(state, action, reward, next_state)  # dqn
-            agent.update(done)
-            state = next_state
-            total_reward += reward
-
-        b = time.time()
-        traci.close()
-        print("time:", b-a)
-        epoch += 1
-        # update hyper parameter
-        agent.update_hyperparams(epoch)  # lr and epsilon upate
-        if epoch % agent.configs['target_update_period'] == 0:
-            agent.target_update()  # dqn
-        # once in an epoch update tensorboard
-        update_tensorboard(writer, epoch, env, agent, arrived_vehicles)
-        print('======== {} epoch/ return: {} arrived number:{}'.format(epoch,
-                                                                       total_reward, arrived_vehicles))
-        if epoch % 50 == 0:
-            agent.save_weights(
-                configs['file_name']+'_{}_{}'.format(time_data, epoch))
-
-    writer.close()
-
-
-def super_dqn_train(configs, time_data, sumoCmd):
+def city_dqn_train(configs, time_data, sumoCmd):
     '''
-    mask
-    If some agents' time step are over their period, then mask True.
-    Other's matrix element continue False.
+    여기서 configs 값 조정 금지
     '''
     from Agent.super_dqn import Trainer
-    if configs['model'] == 'base':
-        from Env.MultiEnv import GridEnv
+    if configs['model'] == 'city':
+        from Env.CityEnv import CityEnv
 
-    phase_num_matrix = torch.tensor(
-        [len(phase) for i, phase in enumerate(configs['max_phase'])])
+    phase_num_matrix = torch.tensor(  # 각 tl이 갖는 최대 phase갯수
+        [len(configs['traffic_node_info'][index]['phase_duration']) for _, index in enumerate(configs['traffic_node_info'])])
     # init agent and tensorboard writer
     agent = Trainer(configs)
     writer = SummaryWriter(os.path.join(
@@ -99,98 +30,125 @@ def super_dqn_train(configs, time_data, sumoCmd):
     agent.save_params(time_data)
     # init training
     NUM_AGENT = configs['num_agent']
+    DEVICE=configs['device']
     TL_RL_LIST = configs['tl_rl_list']
     MAX_PHASES = configs['max_phase_num']
-    NUM_EPOCHS = configs['num_epochs']
     MAX_STEPS = configs['max_steps']
     OFFSET = torch.tensor(configs['offset'],  # i*10
-                          device=configs['device'], dtype=torch.int)
-    TL_MAX_PERIOD = torch.tensor(
-        configs['tl_max_period'], device=configs['device'], dtype=torch.int)
+                          device=DEVICE, dtype=torch.int)
+    TL_PERIOD = torch.tensor(
+        configs['tl_period'], device=DEVICE, dtype=torch.int)
     epoch = 0
-    while epoch < NUM_EPOCHS:
+    print("action space(rate: {}, time: {}".format(
+        configs['rate_action_space'], configs['time_action_space']))
+    sumoCmd+=['--seed','1']
+    while epoch < configs['num_epochs']:
         step = 0
-        traci.start(sumoCmd)
-        env = GridEnv(configs)
+        if configs['randomness'] == True:
+            tmp_sumoCmd = sumoCmd+['--scale', str(1.5+random())]  # 1.5~2.5
+        else:
+            if configs['network'] == 'dunsan' or configs['network'] == '3x3grid':
+                tmp_sumoCmd = sumoCmd+['--scale', str(configs['scale'])]
+            else:
+                tmp_sumoCmd = sumoCmd
+        traci.start(tmp_sumoCmd)
+        env = CityEnv(configs)
         # Total Initialization
         actions = torch.zeros(
-            (NUM_AGENT, configs['action_size']), dtype=torch.int, device=configs['device'])
-        # Mask Matrix
-        mask_matrix = torch.ones(
-            (NUM_AGENT), dtype=torch.bool, device=configs['device'])
+            (NUM_AGENT, configs['action_size']), dtype=torch.int, device=DEVICE)
+        # Mask Matrix : TL_Period가 끝나면 True
+        mask_matrix = torch.zeros(
+            (NUM_AGENT), dtype=torch.bool, device=DEVICE)
 
         # MAX Period까지만 증가하는 t
         t_agent = torch.zeros(
-            (NUM_AGENT), dtype=torch.int, device=configs['device'])
+            (NUM_AGENT), dtype=torch.int, device=DEVICE)
         t_agent -= OFFSET
 
-        # Acticonfigs['offset']on Matrix : 비교해서 동일할 때 collect_state, 없는 state는 zero padding
+        # Action configs['offset']on Matrix : 비교해서 동일할 때 collect_state, 없는 state는 zero padding
         action_matrix = torch.zeros(
-            (NUM_AGENT, MAX_PHASES), dtype=torch.int, device=configs['device'])  # 노란불 3초 해줘야됨
+            (NUM_AGENT, MAX_PHASES), dtype=torch.int, device=DEVICE)  # 노란불 3초 해줘야됨
         action_index_matrix = torch.zeros(
-            (NUM_AGENT), dtype=torch.long, device=configs['device'])  # 현재 몇번째 phase인지
-        yellow_mask = torch.zeros(
-            (NUM_AGENT), dtype=torch.bool, device=configs['device'])  # 현재 몇번째 phase인지
+            (NUM_AGENT), dtype=torch.long, device=DEVICE)  # 현재 몇번째 phase인지
+        action_update_mask = torch.eq(   # action이 지금 update해야되는지 확인
+            t_agent, action_matrix[0, action_index_matrix]).view(NUM_AGENT)  # 0,인 이유는 인덱싱
+
+        # 최대에 도달하면 0으로 초기화 (offset과 비교)
+        clear_matrix = torch.eq(t_agent % TL_PERIOD, 0)
+        t_agent[clear_matrix] = 0
+        # action 넘어가야된다면 action index증가 (by tensor slicing)
+        action_index_matrix[action_update_mask] += 1
+        action_index_matrix[clear_matrix] = 0
+
+        # mask update, matrix True로 전환
+        mask_matrix[clear_matrix] = True
+        mask_matrix[~clear_matrix] = False
 
         # state initialization
-        state = env.collect_state(mask_matrix, yellow_mask)
+        state = env.collect_state(
+            action_update_mask, action_index_matrix, mask_matrix)
         total_reward = 0
 
         # agent setting
         arrived_vehicles = 0
         a = time.time()
         while step < MAX_STEPS:
-
             # action 을 정하고
+            # if mask_matrix.sum()>0:
+            #     print(state.sum())
             actions = agent.get_action(state, mask_matrix)
-            action_matrix = env.calc_action(action_matrix,
-                                            actions, mask_matrix)  # action형태로 변환 # 다음으로 넘어가야할 시점에 대한 matrix
+            # if mask_matrix.sum()>0:
+            #     print(actions.sum())
+            # action형태로 변환 # 다음으로 넘어가야할 시점에 대한 matrix
+            action_matrix = env.calc_action(
+                action_matrix, actions, mask_matrix)
             # 누적값으로 나타남
+
+            # environment에 적용
+            # action 적용함수, traci.simulationStep 있음
+            env.step(
+                actions, mask_matrix, action_index_matrix, action_update_mask)
 
             # 전체 1초증가 # traci는 env.step에
             step += 1
             t_agent += 1
-            # 넘어가야된다면 action index증가 (by tensor slicing+yellow signal)
-            action_update_matrix = torch.eq(
-                t_agent, action_matrix[0, action_index_matrix]).view(NUM_AGENT)  # 0,인 이유는 인덱싱
-
             # 최대에 도달하면 0으로 초기화 (offset과 비교)
-            update_matrix = torch.eq(t_agent % TL_MAX_PERIOD, 0)
-            t_agent[update_matrix] = 0
+            clear_matrix = torch.eq(t_agent % TL_PERIOD, 0)
+            t_agent[clear_matrix] = 0
 
-            action_index_matrix[action_update_matrix] += 1
+            # action 넘어가야된다면 action index증가 (by tensor slicing)
+            action_update_mask = torch.eq(  # update는 단순히 진짜 현시만 받아서 결정해야됨
+                t_agent, action_matrix[0, action_index_matrix]).view(NUM_AGENT)  # 0,인 이유는 인덱싱
+            action_index_matrix[action_update_mask] += 1
             # agent의 최대 phase를 넘어가면 해당 agent의 action index 0으로 초기화
-            clear_matrix = torch.ge(action_index_matrix, phase_num_matrix)
             action_index_matrix[clear_matrix] = 0
+
             # mask update, matrix True로 전환
             mask_matrix[clear_matrix] = True
             mask_matrix[~clear_matrix] = False
 
-            # 만약 action이 끝나기 3초전이면 yellow signal 적용, reward 갱신
-            yellow_mask = torch.eq(
-                t_agent, action_matrix[0, action_index_matrix]-3)  # 3초먼저 yellow로 바꿈
-            for y in torch.nonzero(yellow_mask):
-                traci.trafficlight.setRedYellowGreenState(
-                    TL_RL_LIST[y], 'y'*(12+4*configs['num_lanes']))
-            # environment에 적용
-            # action 적용함수, traci.simulationStep 있음
-            next_state = env.step(actions, action_index_matrix, yellow_mask)
-
+            next_state=env.collect_state(action_update_mask,action_index_matrix,mask_matrix)
+            # if mask_matrix.sum()>0:
+            #     print("Cycle")
+            #     print(next_state.sum())
             # env속에 agent별 state를 꺼내옴, max_offset+period 이상일 때 시작
-            if step >= int(torch.max(OFFSET)+torch.max(TL_MAX_PERIOD)):
+            if step >= int(torch.max(OFFSET)+torch.max(TL_PERIOD)) and mask_matrix.sum() > 0:
                 rep_state, rep_action, rep_reward, rep_next_state = env.get_state(
                     mask_matrix)
                 agent.save_replay(rep_state, rep_action, rep_reward,
                                   rep_next_state, mask_matrix)  # dqn
                 total_reward += rep_reward.sum()
-            # print(mask_matrix)
-
+            # update
             agent.update(mask_matrix)
+
             state = next_state
             # info
             arrived_vehicles += traci.simulation.getArrivedNumber()
+            # # soft update
+            # agent.target_update()
 
         agent.update_hyperparams(epoch)  # lr and epsilon upate
+        # hard update
         if epoch % agent.configs['target_update_period'] == 0:
             agent.target_update()  # dqn
         b = time.time()
@@ -199,10 +157,10 @@ def super_dqn_train(configs, time_data, sumoCmd):
         epoch += 1
         # once in an epoch
         update_tensorboard(writer, epoch, env, agent, arrived_vehicles)
-        print('======== {} epoch/ return: {} arrived number:{}'.format(epoch,
+        print('======== {} epoch/ return: {:.5f} arrived number:{}'.format(epoch,
                                                                        total_reward.sum(), arrived_vehicles))
         if epoch % 50 == 0:
             agent.save_weights(
-                configs['file_name']+'_{}_{}'.format(time_data, epoch))
+                configs['file_name']+'_{}'.format(epoch))
 
     writer.close()

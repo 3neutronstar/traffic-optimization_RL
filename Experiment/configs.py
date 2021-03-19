@@ -5,8 +5,7 @@ Vehicles = list()
 EXP_CONFIGS = {
     'num_lanes': 3,
     'model': 'normal',
-    'file_name': '4x4grid',
-    'tl_rl_list': ['n_1_1'],
+    'file_name': '3x3grid',
     'laneLength': 300.0,
     'num_cars': 1800,
     'flow_start': 0,
@@ -19,16 +18,8 @@ EXP_CONFIGS = {
     'vehicle_info': Vehicles,
     'mode': 'simulate',
 }
-# DQN
-DQN_TRAFFIC_CONFIGS = {
-    # 1,agent,num_phase순서
-    'min_phase': [[[20, 20, 20, 20]]],
-    # 1,agent,num_phase순서
-    'max_phase': [[[50, 50, 50, 50]]],
-    # 1, agent순서
-    'phase_period': [[160]],
+# city DQN
 
-}
 # Decentralized_DQN
 SUPER_DQN_TRAFFIC_CONFIGS = {
     # 1,agent,num_phase순서
@@ -38,7 +29,7 @@ SUPER_DQN_TRAFFIC_CONFIGS = {
     # 1,agent,num_phase순서
     'max_phase': [[49, 49, 49, 49], [49, 49, 49, 49], [49, 49, 49, 49], [49, 49, 49, 49], [49, 49, 49, 49], [49, 49, 49, 49], [49, 49, 49, 49], [49, 49, 49, 49], [49, 49, 49, 49]],
     # 1, agent순서
-    'phase_period': [[160],[160],[160],[160],[160],[160],[160],[160],[160]],
+    'phase_period': [[160], [160], [160], [160], [160], [160], [160], [160], [160]],
     'matrix_actions': [[0, 0, 0, 0], [1, 0, 0, -1], [1, 0, -1, 0], [1, -1, 0, 0], [0, 1, 0, -1], [0, 1, -1, 0], [0, 0, 1, -1],
                        [1, 0, 0, -1], [1, 0, -1, 0], [1, 0, 0, -1], [0, 1, 0, -1], [0, 1, -1, 0], [0, 0, 1, -1]]
 

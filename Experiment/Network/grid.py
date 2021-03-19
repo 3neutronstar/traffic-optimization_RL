@@ -1,16 +1,14 @@
 from gen_net import Network
 from configs import EXP_CONFIGS
 import math
+import torch
 
 
 class GridNetwork(Network):
     def __init__(self, configs, grid_num):
         self.grid_num = grid_num
         self.configs = configs
-        if configs['algorithm']=='dqn':
-            self.tl_rl_list=self.configs['tl_rl_list']
-        else: # super dqn
-            self.tl_rl_list = list()
+        self.tl_rl_list = list()
         super().__init__(self.configs)
 
     def specify_node(self):
@@ -42,8 +40,7 @@ class GridNetwork(Network):
                 node_info['x'] = str('%.1f' % grid_x)
                 node_info['y'] = str('%.1f' % grid_y)
                 nodes.append(node_info)
-                if self.configs['algorithm']=='super_dqn':
-                    self.tl_rl_list.append(node_info)
+                self.tl_rl_list.append(node_info)
 
         # outNode
         #   * *
@@ -161,7 +158,9 @@ class GridNetwork(Network):
                             # 위 아래
                             if checkEdge['to'][-1] == direction_list[1] or checkEdge['to'][-1] == direction_list[2]:
                                 self.configs['probability'] = '0.133'
+                                self.configs['vehsPerHour'] = '900'
                             else:
+                                self.configs['vehsPerHour'] = '1600'
                                 self.configs['probability'] = '0.388'
                             via_string = str()
                             node_x_y = edge['id'][2]  # 끝에서 사용하는 기준 x나 y
@@ -189,8 +188,9 @@ class GridNetwork(Network):
                                 'begin': str(self.configs['flow_start']),
                                 'end': str(self.configs['flow_end']),
                                 'probability': self.configs['probability'],
+                                # 'vehsPerHour': self.configs['vehsPerHour'],
                                 'reroute': 'false',
-                                'via': edge['id']+" "+via_string+" "+checkEdge['id'],
+                                # 'via': edge['id']+" "+via_string+" "+checkEdge['id'],
                                 'departPos': "base",
                                 'departLane': 'best',
                             })
@@ -221,6 +221,9 @@ class GridNetwork(Network):
                     {'duration': '3',
                      'state': 'y'*(12+4*num_lanes),
                      },
+                    # {'duration': '3',
+                    #  'state': 'r'*(12+4*num_lanes),
+                    #  },
                     {'duration': '37',  # 2
                      'state': 'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(  # 위직아래직
                          g*num_lanes, g, r*num_lanes, r),  # current
@@ -228,6 +231,9 @@ class GridNetwork(Network):
                     {'duration': '3',
                      'state': 'y'*(12+4*num_lanes),
                      },
+                    # {'duration': '3',
+                    #  'state': 'r'*(12+4*num_lanes),
+                    #  },
                     {'duration': '37',  # 1
                      'state': 'r{2}{3}rr{2}{1}gr{2}{3}rr{2}{1}g'.format(  # 좌좌우좌
                          g*num_lanes, g, r*num_lanes, r),
@@ -235,6 +241,9 @@ class GridNetwork(Network):
                     {'duration': '3',
                      'state': 'y'*(12+4*num_lanes),
                      },
+                    # {'duration': '3',
+                    #  'state': 'r'*(12+4*num_lanes),
+                    #  },
                     {'duration': '37',  # 1
                      'state': 'r{2}{3}rG{0}{3}rr{2}{3}rG{0}{3}g'.format(  # 좌직우직
                          g*num_lanes, g, r*num_lanes, r),  # current
@@ -242,6 +251,9 @@ class GridNetwork(Network):
                     {'duration': '3',
                      'state': 'y'*(12+4*num_lanes),
                      },
+                    # {'duration': '3',
+                    #  'state': 'r'*(12+4*num_lanes),
+                    #  },
                 ]
                 # 2행시
                 # phase_set = [
@@ -315,7 +327,8 @@ class GridNetwork(Network):
         side_list = ['u', 'r', 'd', 'l']
         NET_CONFIGS = dict()
         interest_list = list()
-        phase_dict = dict()
+        interests = list()
+        interest_set = list()
         node_list = self.configs['node_info']
         # grid에서는 자동 생성기 따라서 사용해도 무방함 #map완성되면 통일 가능
         x_y_end = self.configs['grid_num']-1
@@ -343,7 +356,7 @@ class GridNetwork(Network):
                 if y == x_y_end:
                     down_y = 'd'
                 # up
-                interest_list.append(
+                interests.append(
                     {
                         'id': 'u_{}'.format(node['id'][2:]),
                         'inflow': 'n_{}_{}_to_n_{}_{}'.format(up_x, up_y, x, y),
@@ -351,7 +364,7 @@ class GridNetwork(Network):
                     }
                 )
                 # right
-                interest_list.append(
+                interests.append(
                     {
                         'id': 'r_{}'.format(node['id'][2:]),
                         'inflow': 'n_{}_{}_to_n_{}_{}'.format(right_x, right_y, x, y),
@@ -359,7 +372,7 @@ class GridNetwork(Network):
                     }
                 )
                 # down
-                interest_list.append(
+                interests.append(
                     {
                         'id': 'd_{}'.format(node['id'][2:]),
                         'inflow': 'n_{}_{}_to_n_{}_{}'.format(down_x, down_y, x, y),
@@ -367,52 +380,140 @@ class GridNetwork(Network):
                     }
                 )
                 # left
-                interest_list.append(
+                interests.append(
                     {
                         'id': 'l_{}'.format(node['id'][2:]),
                         'inflow': 'n_{}_{}_to_n_{}_{}'.format(left_x, left_y, x, y),
                         'outflow': 'n_{}_{}_to_n_{}_{}'.format(x, y, left_x, left_y),
                     }
                 )
+                interest_list.append(interests)
+                interest_set += list(interests)
+        no_dup_interest_list=list()
+        no_dup_interest_set=list()
+        for interest_set_item in interest_set:
+            if interest_set_item not in no_dup_interest_set:
+                no_dup_interest_set.append(interest_set_item)
+        no_dup_interest_list=list()
+        for interest_list_item in interest_list:
+            if interest_list_item not in no_dup_interest_list:
+                no_dup_interest_list.append(interest_list_item)
+
         # phase 생성
-        if self.configs['algorithm']=='super_dqn':
-            for tl_rl in self.tl_rl_list:
-                phase_dict[tl_rl['id']] = self._phase_list()
-        else:
-            for tl_rl in self.tl_rl_list:
-                phase_dict[tl_rl] = self._phase_list()
+        '''
+            key 에는 node id
+            value에는 dictionary해서 그 속에 모든 내용 다들어가게
+        '''
+        # rate_action_space
+        NET_CONFIGS['phase_num_actions'] = {2: [[0, 0], [1, -1], [-1, 1]],
+                                            3: [[0, 0, 0], [1, 0, -1], [1, -1, 0], [0, 1, -1], [-1, 0, 1], [0, -1, 1], [-1, 1, 0]],
+                                            4: [[0, 0, 0, 0], [1, 0, 0, -1], [1, 0, -1, 0], [1, -1, 0, 0], [0, 1, 0, -1], [0, 1, -1, 0], [0, 0, 1, -1],
+                                                [1, 0, 0, -1], [1, 0, -1, 0], [1, 0, 0, -1], [0, 1, 0, -1], [0, 1, -1, 0], [0, 0, 1, -1], [1, 1, -1, -1], [1, -1, 1, -1], [-1, 1, 1, -1], [-1, -1, 1, 1], [-1, 1, -1, 1]]}
+        NET_CONFIGS['rate_action_space'] = {2: len(NET_CONFIGS['phase_num_actions'][2]), 3: len(
+            NET_CONFIGS['phase_num_actions'][3]), 4: len(NET_CONFIGS['phase_num_actions'][4])}
+        # time_action_space
+        NET_CONFIGS['time_action_space'] = list()
+        traffic_info = {
+            'n_0_0': {'min_phase': [28, 28, 28, 28], 'offset': 0, 'phase_duration': [37, 3, 37, 3, 37, 3, 37, 3], 'max_phase': [49, 49, 49, 49], 'period': 160, 'matrix_actions': NET_CONFIGS['phase_num_actions'][4], 'num_phase': 4, },
+            'n_0_1': {'min_phase': [28, 28, 28, 28], 'offset': 0, 'phase_duration': [37, 3, 37, 3, 37, 3, 37, 3], 'max_phase': [49, 49, 49, 49], 'period': 160, 'matrix_actions': NET_CONFIGS['phase_num_actions'][4], 'num_phase': 4, },
+            'n_0_2': {'min_phase': [28, 28, 28, 28], 'offset': 0, 'phase_duration': [37, 3, 37, 3, 37, 3, 37, 3], 'max_phase': [49, 49, 49, 49], 'period': 160, 'matrix_actions': NET_CONFIGS['phase_num_actions'][4], 'num_phase': 4, },
+            'n_1_0': {'min_phase': [28, 28, 28, 28], 'offset': 0, 'phase_duration': [37, 3, 37, 3, 37, 3, 37, 3], 'max_phase': [49, 49, 49, 49], 'period': 160, 'matrix_actions': NET_CONFIGS['phase_num_actions'][4], 'num_phase': 4, },
+            'n_1_1': {'min_phase': [28, 28, 28, 28], 'offset': 0, 'phase_duration': [37, 3, 37, 3, 37, 3, 37, 3], 'max_phase': [49, 49, 49, 49], 'period': 160, 'matrix_actions': NET_CONFIGS['phase_num_actions'][4], 'num_phase': 4, },
+            'n_1_2': {'min_phase': [28, 28, 28, 28], 'offset': 0, 'phase_duration': [37, 3, 37, 3, 37, 3, 37, 3], 'max_phase': [49, 49, 49, 49], 'period': 160, 'matrix_actions': NET_CONFIGS['phase_num_actions'][4], 'num_phase': 4, },
+            'n_2_0': {'min_phase': [28, 28, 28, 28], 'offset': 0, 'phase_duration': [37, 3, 37, 3, 37, 3, 37, 3], 'max_phase': [49, 49, 49, 49], 'period': 160, 'matrix_actions': NET_CONFIGS['phase_num_actions'][4], 'num_phase': 4, },
+            'n_2_1': {'min_phase': [28, 28, 28, 28], 'offset': 0, 'phase_duration': [37, 3, 37, 3, 37, 3, 37, 3], 'max_phase': [49, 49, 49, 49], 'period': 160, 'matrix_actions': NET_CONFIGS['phase_num_actions'][4], 'num_phase': 4, },
+            'n_2_2': {'min_phase': [28, 28, 28, 28], 'offset': 0, 'phase_duration': [37, 3, 37, 3, 37, 3, 37, 3], 'max_phase': [49, 49, 49, 49], 'period': 160, 'matrix_actions': NET_CONFIGS['phase_num_actions'][4], 'num_phase': 4, },
+        }
+        # phase list 삽입
+        for tl_rl in self.tl_rl_list:
+            # dict에 phase list
+            traffic_info[tl_rl['id']]['phase_list'] = self._phase_list()
         # agent별 reward,state,next_state,action저장용
         # 관심 노드와 interest inflow or outflow edge 정렬
         node_interest_pair = dict()
         for _, node in enumerate(node_list):
             if node['id'][-1] not in side_list:
-                node_interest_pair['{}'.format(
-                    node['id'])] = list()
-                for _, interest in enumerate(interest_list):
+                node_interest_pair[node['id']] = list()
+                for _, interest in enumerate(no_dup_interest_set):
                     if node['id'][-3:] == interest['id'][-3:]:  # 좌표만 받기
-                        node_interest_pair['{}'.format(
-                            node['id'])].append(interest)
+                        node_interest_pair[node['id']].append(interest)
 
-        NET_CONFIGS['interest_list'] = interest_list
+        # TODO, common phase 결정하면서 phase_index 만들기
+        for key in traffic_info.keys():
+            traffic_info[key]['common_phase'] = list()  # 실제 현시로 분류되는 phase
+            traffic_info[key]['phase_index'] = list()  # 실제 현시의 index
+            for i, duration in enumerate(traffic_info[key]['phase_duration']):
+                if duration > 3:
+                    traffic_info[key]['common_phase'].append(duration)
+                    traffic_info[key]['phase_index'].append(i)
+            traffic_info[key]['max_phase_num'] = len(
+                traffic_info[key]['common_phase'])
+
+        # TODO, common_phase기반 max_phase_num넣기
+        NET_CONFIGS['tl_period'] = list()
+        NET_CONFIGS['common_phase'] = list()
+        NET_CONFIGS['min_phase'] = list()
+        NET_CONFIGS['max_phase'] = list()
+        NET_CONFIGS['tl_rl_list'] = list()
+        NET_CONFIGS['offset'] = list()
+        NET_CONFIGS['phase_index'] = list()
+        NET_CONFIGS['phase_type']=list() # Encoding Vector
+
+        for key in traffic_info.keys():
+            NET_CONFIGS['tl_period'].append(
+                traffic_info[key]['period'])
+            NET_CONFIGS['common_phase'].append(
+                traffic_info[key]['common_phase'])
+            NET_CONFIGS['min_phase'].append(traffic_info[key]['min_phase'])
+            NET_CONFIGS['max_phase'].append(traffic_info[key]['max_phase'])
+            NET_CONFIGS['tl_rl_list'].append(key)
+            NET_CONFIGS['offset'].append(traffic_info[key]['offset'])
+            NET_CONFIGS['phase_index'].append(traffic_info[key]['phase_index'])
+            NET_CONFIGS['time_action_space'].append(round((torch.min(torch.tensor(traffic_info[key]['max_phase'])-torch.tensor(
+                traffic_info[key]['common_phase']), torch.tensor(traffic_info[key]['common_phase'])-torch.tensor(traffic_info[key]['min_phase']))/2).mean().item()))
+            NET_CONFIGS['phase_type'].append([0,0])
+
+        NET_CONFIGS['num_agent'] = len(NET_CONFIGS['tl_rl_list'])
+        # max value 검출기
+        maximum = 0
+        for key in traffic_info.keys():
+            if maximum < len(traffic_info[key]['phase_duration']):
+                maximum = len(traffic_info[key]['phase_duration'])
+        NET_CONFIGS['max_phase_num'] = maximum
+
+        NET_CONFIGS['interest_list'] = no_dup_interest_list
         NET_CONFIGS['node_interest_pair'] = node_interest_pair
-        NET_CONFIGS['phase_dict'] = phase_dict
+        NET_CONFIGS['traffic_node_info'] = traffic_info
+
         return NET_CONFIGS
 
     def _phase_list(self):
         num_lanes = self.configs['num_lanes']
         g = 'G'
         r = 'r'
+        y = 'y'
         phase_list = [
             'r{2}{1}gr{2}{3}rr{2}{1}gr{2}{3}r'.format(  # 위좌아래좌
                 g*num_lanes, g, r*num_lanes, r),
+            '{}'.format(y*(12+4*num_lanes)),
+            '{}'.format(r*(12+4*num_lanes)),
             'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(  # 위직아래직
                 g*num_lanes, g, r*num_lanes, r),  # current
+            '{}'.format(y*(12+4*num_lanes)),
+            '{}'.format(r*(12+4*num_lanes)),
             'r{2}{3}rr{2}{1}gr{2}{3}rr{2}{1}g'.format(  # 좌좌우좌
                 g*num_lanes, g, r*num_lanes, r),
+            '{}'.format(y*(12+4*num_lanes)),
+            '{}'.format(r*(12+4*num_lanes)),
             'r{2}{3}rG{0}{3}rr{2}{3}rG{0}{3}g'.format(  # 좌직우직
                 g*num_lanes, g, r*num_lanes, r),  # current
+            '{}'.format(y*(12+4*num_lanes)),
+            '{}'.format(r*(12+4*num_lanes)),
         ]
         return phase_list
+
+    def _get_tl_rl_list(self):
+        return self.tl_rl_list
 
 
 if __name__ == "__main__":
