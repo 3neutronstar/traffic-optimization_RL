@@ -129,19 +129,19 @@ class CityEnv(baseEnv):
             self.tl_rl_memory[index].reward -= pressure
         
         # penalty
-        # for index in torch.nonzero(mask_matrix):
-        #     if self.phase_action_matrix[index].sum() != 0:
-        #         phase_index = torch.tensor(
-        #             self.traffic_node_info[self.tl_rl_list[index]]['phase_index'], device=self.device).view(1, -1).long()
-        #         # penalty for phase duration more than maxDuration
-        #         if torch.gt(self.phase_action_matrix[index].gather(dim=1, index=phase_index), torch.tensor(self.traffic_node_info[self.tl_rl_list[index]]['max_phase'])).sum():
-        #             self.reward[0,index] -= 0.4
-        #             self.tl_rl_memory[index].reward -= 0.4  # penalty
+        for index in torch.nonzero(mask_matrix):
+            if self.phase_action_matrix[index].sum() != 0:
+                phase_index = torch.tensor(
+                    self.traffic_node_info[self.tl_rl_list[index]]['phase_index'], device=self.device).view(1, -1).long()
+                # penalty for phase duration more than maxDuration
+                if torch.gt(self.phase_action_matrix[index].gather(dim=1, index=phase_index), torch.tensor(self.traffic_node_info[self.tl_rl_list[index]]['max_phase'])).sum():
+                    self.reward[0,index] -= 0.4
+                    self.tl_rl_memory[index].reward -= 0.4  # penalty
                     
-        #         # penalty for phase duration less than minDuration
-        #         if torch.gt(torch.tensor(self.traffic_node_info[self.tl_rl_list[index]]['min_phase']), self.phase_action_matrix[index].gather(dim=1, index=phase_index)).sum():
-        #             self.reward[0,index] -= 0.4
-        #             self.tl_rl_memory[index].reward -= 0.4  # penalty
+                # penalty for phase duration less than minDuration
+                if torch.gt(torch.tensor(self.traffic_node_info[self.tl_rl_list[index]]['min_phase']), self.phase_action_matrix[index].gather(dim=1, index=phase_index)).sum():
+                    self.reward[0,index] -= 0.4
+                    self.tl_rl_memory[index].reward -= 0.4  # penalty
                     
         # action 변화를 위한 state
         next_states = torch.zeros(

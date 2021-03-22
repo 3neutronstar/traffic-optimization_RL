@@ -41,7 +41,8 @@ def city_dqn_train(configs, time_data, sumoCmd):
     epoch = 0
     print("action space(rate: {}, time: {}".format(
         configs['rate_action_space'], configs['time_action_space']))
-    sumoCmd+=['--seed','1']
+    # sumoCmd+=['--seed','1']
+    print(TL_RL_LIST)
     while epoch < configs['num_epochs']:
         step = 0
         if configs['randomness'] == True:
