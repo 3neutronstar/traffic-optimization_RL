@@ -37,6 +37,7 @@ class MapNetwork(Network):
 
         NET_CONFIGS['tl_period'] = list()
         traffic_info = dict()
+        print(add_file_path)
         add_net_tree = parse(add_file_path)
         tlLogicList = add_net_tree.findall('tlLogic')
         NET_CONFIGS['time_action_space'] = list()
