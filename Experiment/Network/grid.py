@@ -215,44 +215,44 @@ class GridNetwork(Network):
                 # 4행시
                 phase_set = [
                     {'duration': '37',  # 1
-                     'state': 'r{2}{1}gr{2}{3}rr{2}{1}gr{2}{3}r'.format(  # 위좌아래좌
+                     'state': 'r{2}{1}r{2}{3}r{2}{1}r{2}{3}'.format(  # 위좌아래좌
                          g*num_lanes, g, r*num_lanes, r),
                      },
                     {'duration': '3',
-                     'state': 'y'*(12+4*num_lanes),
+                     'state': 'y'*(8+4*num_lanes),
                      },
                     # {'duration': '3',
-                    #  'state': 'r'*(12+4*num_lanes),
+                    #  'state': 'r'*(8+4*num_lanes),
                     #  },
                     {'duration': '37',  # 2
-                     'state': 'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(  # 위직아래직
+                     'state': 'G{0}{3}r{2}{3}G{0}{3}r{2}{3}'.format(  # 위직아래직
                          g*num_lanes, g, r*num_lanes, r),  # current
                      },
                     {'duration': '3',
-                     'state': 'y'*(12+4*num_lanes),
+                     'state': 'y'*(8+4*num_lanes),
                      },
                     # {'duration': '3',
-                    #  'state': 'r'*(12+4*num_lanes),
+                    #  'state': 'r'*(8+4*num_lanes),
                     #  },
                     {'duration': '37',  # 1
-                     'state': 'r{2}{3}rr{2}{1}gr{2}{3}rr{2}{1}g'.format(  # 좌좌우좌
+                     'state': 'r{2}{3}r{2}{1}r{2}{3}r{2}{1}'.format(  # 좌좌우좌
                          g*num_lanes, g, r*num_lanes, r),
                      },
                     {'duration': '3',
-                     'state': 'y'*(12+4*num_lanes),
+                     'state': 'y'*(8+4*num_lanes),
                      },
                     # {'duration': '3',
-                    #  'state': 'r'*(12+4*num_lanes),
+                    #  'state': 'r'*(8+4*num_lanes),
                     #  },
                     {'duration': '37',  # 1
-                     'state': 'r{2}{3}rG{0}{3}rr{2}{3}rG{0}{3}g'.format(  # 좌직우직
+                     'state': 'r{2}{3}G{0}{3}r{2}{3}G{0}{3}'.format(  # 좌직우직
                          g*num_lanes, g, r*num_lanes, r),  # current
                      },
                     {'duration': '3',
-                     'state': 'y'*(12+4*num_lanes),
+                     'state': 'y'*(8+4*num_lanes),
                      },
                     # {'duration': '3',
-                    #  'state': 'r'*(12+4*num_lanes),
+                    #  'state': 'r'*(8+4*num_lanes),
                     #  },
                 ]
                 # 2행시
@@ -493,22 +493,22 @@ class GridNetwork(Network):
         r = 'r'
         y = 'y'
         phase_list = [
-            'r{2}{1}gr{2}{3}rr{2}{1}gr{2}{3}r'.format(  # 위좌아래좌
+            'r{2}{1}r{2}{3}r{2}{1}r{2}{3}'.format(  # 위좌아래좌
                 g*num_lanes, g, r*num_lanes, r),
-            '{}'.format(y*(12+4*num_lanes)),
-            '{}'.format(r*(12+4*num_lanes)),
-            'G{0}{3}rr{2}{3}rG{0}{3}rr{2}{3}r'.format(  # 위직아래직
+            '{}'.format(y*(8+4*num_lanes)),
+            '{}'.format(r*(8+4*num_lanes)),
+            'G{0}{3}r{2}{3}G{0}{3}r{2}{3}'.format(  # 위직아래직
                 g*num_lanes, g, r*num_lanes, r),  # current
-            '{}'.format(y*(12+4*num_lanes)),
-            '{}'.format(r*(12+4*num_lanes)),
-            'r{2}{3}rr{2}{1}gr{2}{3}rr{2}{1}g'.format(  # 좌좌우좌
+            '{}'.format(y*(8+4*num_lanes)),
+            '{}'.format(r*(8+4*num_lanes)),
+            'r{2}{3}r{2}{1}r{2}{3}r{2}{1}'.format(  # 좌좌우좌
                 g*num_lanes, g, r*num_lanes, r),
-            '{}'.format(y*(12+4*num_lanes)),
-            '{}'.format(r*(12+4*num_lanes)),
-            'r{2}{3}rG{0}{3}rr{2}{3}rG{0}{3}g'.format(  # 좌직우직
+            '{}'.format(y*(8+4*num_lanes)),
+            '{}'.format(r*(8+4*num_lanes)),
+            'r{2}{3}G{0}{3}r{2}{3}G{0}{3}'.format(  # 좌직우직
                 g*num_lanes, g, r*num_lanes, r),  # current
-            '{}'.format(y*(12+4*num_lanes)),
-            '{}'.format(r*(12+4*num_lanes)),
+            '{}'.format(y*(8+4*num_lanes)),
+            '{}'.format(r*(8+4*num_lanes)),
         ]
         return phase_list
 

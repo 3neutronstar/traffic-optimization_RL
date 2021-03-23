@@ -170,7 +170,6 @@ class Trainer(RLAlgorithm):
                     rate_actions[0, index] = rate_action.max(1)[1].int()
                     time_actions[0, index] = time_action.max(1)[1].int()
 
-
             actions = torch.cat((rate_actions, time_actions), dim=2)
         return actions
 
@@ -185,7 +184,7 @@ class Trainer(RLAlgorithm):
 
     def save_replay(self, state, action, reward, next_state, mask):
         for index in torch.nonzero(mask):
-            # print(state[0,:, index].sum(),action[0,index].sum(),reward[0,index].sum(),next_state[0,:, index].sum())
+            # print(state[0,:, index].sum(),action[0,index],reward[0,index].sum(),next_state[0,:, index].sum())
             self.mainSuperQNetwork.experience_replay.push(
                 state[0,:, index].view(-1,self.state_space,1), action[0, index], reward[0, index], next_state[0,:, index].view(-1,self.state_space,1))
 

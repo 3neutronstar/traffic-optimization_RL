@@ -116,7 +116,7 @@ class CityEnv(baseEnv):
             interests = self.node_interest_pair[self.tl_rl_list[index]]
             for interest in interests:
                 if interest['outflow']:  # None이 아닐 때 행동
-                    outflow += (traci.edge.getLastStepVehicleNumber(
+                    outflow += (traci.edge.getLastStepHaltingNumber(
                         interest['outflow']))/100.0
                 if interest['inflow']:  # None이 아닐 때 행동
                     inflow += traci.edge.getLastStepHaltingNumber(
@@ -124,7 +124,7 @@ class CityEnv(baseEnv):
             # pressure=inflow-outflow
             # reward cumulative sum
             pressure = torch.tensor(
-                (inflow-outflow), dtype=torch.float, device=self.device)/100.0
+                abs(inflow-outflow), dtype=torch.float, device=self.device)/100.0
             self.reward[0,index] -= pressure
             self.tl_rl_memory[index].reward -= pressure
         
@@ -244,6 +244,6 @@ class CityEnv(baseEnv):
         tl_dict = deepcopy(self.traffic_node_info[tl_rl])
         for j, idx in enumerate(tl_dict['phase_index']):
             tl_dict['phase_duration'][idx] = tl_dict['phase_duration'][idx] + \
-                tl_dict['matrix_actions'][action[0, 0]][j] * action[0, 1]*2
+                tl_dict['matrix_actions'][action[0, 0]][j] * (action[0, 1]+1)*2
         phase_length_set = tl_dict['phase_duration']
         return phase_length_set
