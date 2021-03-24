@@ -15,7 +15,7 @@ DEFAULT_CONFIG = {
     'tau': 0.001,
     'batch_size': 32,
     'experience_replay_size': 5e6,
-    'epsilon': 0.5,
+    'epsilon': 0.8,
     'epsilon_decay_rate': 0.99,
     'fc_net': [36, 48, 24],
     'lr': 1e-4,
@@ -40,12 +40,13 @@ class SuperQNetwork(nn.Module):
         self.num_agent = len(self.configs['tl_rl_list'])
         self.state_space = self.configs['state_space']
         self.experience_replay=ReplayMemory(self.configs['experience_replay_size'])
+        cnn_feature_channel=16
         # Neural Net
-        self.conv1 = nn.Conv1d(self.state_space-2, 4, kernel_size=1)
-        self.conv2 = nn.Conv1d(4, 8, kernel_size=1)
+        self.conv1 = nn.Conv1d(self.state_space, 8, kernel_size=1)
+        self.conv2 = nn.Conv1d(8, cnn_feature_channel, kernel_size=1)
 
         self.fc1 = nn.Linear(
-            8, self.configs['fc_net'][0])
+            cnn_feature_channel, self.configs['fc_net'][0])
         self.fc2 = nn.Linear(
             self.configs['fc_net'][0], self.configs['fc_net'][1])
         self.fc3 = nn.Linear(
@@ -54,7 +55,7 @@ class SuperQNetwork(nn.Module):
             self.configs['fc_net'][2], out_rate_size)
 
         self.fc_y1 = nn.Linear(
-            self.state_space+1, self.configs['fc_net'][0]) # rate+state
+            cnn_feature_channel+1, self.configs['fc_net'][0]) # rate+state
         self.fc_y2 = nn.Linear(
             self.configs['fc_net'][0], self.configs['fc_net'][1])
         self.fc_y3 = nn.Linear(
@@ -75,16 +76,15 @@ class SuperQNetwork(nn.Module):
             self.eval()
 
     def forward(self, input_x):
-        x_state,x_traffic=torch.split(input_x,[8,2],dim=1)
-        x_state = f.relu(self.conv1(x_state))
-        x_cnn = f.relu(self.conv2(x_state))
-        x_vehicle = x_cnn.view(-1, 8)
-        x_vehicle = f.relu(self.fc1(x_vehicle))
+        # x_state,x_traffic=torch.split(input_x,[8,2],dim=1)
+        x_cnn = f.relu(self.conv1(input_x))
+        x_cnn = f.relu(self.conv2(x_cnn))
+        x_cnn = x_cnn.view(-1, 16)
+        x_vehicle = f.relu(self.fc1(x_cnn))
         x_vehicle = f.relu(self.fc2(x_vehicle))
         x_vehicle = f.relu(self.fc3(x_vehicle))
         rate_action_Q = self.fc4(x_vehicle)
-
-        x_traffic = torch.cat((x_cnn, x_traffic, x_state.argmax(dim=1,keepdim=True).detach().clone()),dim=1).view(-1,self.state_space+1)
+        x_traffic = torch.cat((x_cnn, rate_action_Q.argmax(dim=1,keepdim=True).detach().clone()),dim=1).view(-1,16+1)
         x_traffic = f.relu(self.fc_y1(x_traffic))
         x_traffic = f.relu(self.fc_y2(x_traffic))
         x_traffic = f.relu(self.fc_y3(x_traffic))
