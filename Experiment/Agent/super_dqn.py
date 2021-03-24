@@ -15,8 +15,8 @@ DEFAULT_CONFIG = {
     'tau': 0.001,
     'batch_size': 32,
     'experience_replay_size': 5e6,
-    'epsilon': 0.8,
-    'epsilon_decay_rate': 0.995,
+    'epsilon': 0.5,
+    'epsilon_decay_rate': 0.99,
     'fc_net': [36, 48, 24],
     'lr': 1e-4,
     'lr_decay_period':100,
@@ -24,7 +24,7 @@ DEFAULT_CONFIG = {
     # 'lr_decay_rate': 0.995,
     'target_update_period': 10,
     'final_epsilon': 0.0005,
-    'final_lr': 1e-6,
+    'final_lr': 5e-6,
     'alpha':0.91,
 }
 
@@ -121,6 +121,7 @@ class Trainer(RLAlgorithm):
         self.batch_size = self.configs['batch_size']
         self.device = self.configs['device']
         self.running_loss = 0
+        # self.writer=writer
         
         # NN composition
         # size에 따라 다르게 해주어야함
@@ -187,10 +188,11 @@ class Trainer(RLAlgorithm):
             # print(state[0,:, index].sum(),action[0,index],reward[0,index].sum(),next_state[0,:, index].sum())
             self.mainSuperQNetwork.experience_replay.push(
                 state[0,:, index].view(-1,self.state_space,1), action[0, index], reward[0, index], next_state[0,:, index].view(-1,self.state_space,1))
+            
 
     def update(self,mask):  # 각 agent마다 시행하기 # agent network로 돌아가서 시행 그러면될듯?
         # if mask.sum() > 0 and len(self.mainSuperQNetwork.experience_replay) > self.configs['batch_size']:
-        if len(self.mainSuperQNetwork.experience_replay) > self.configs['batch_size']:
+        if len(self.mainSuperQNetwork.experience_replay) > self.configs['batch_size'] and mask.sum()>0:
             transitions = self.mainSuperQNetwork.experience_replay.sample(
                 self.configs['batch_size'])
             batch = Transition(*zip(*transitions))
