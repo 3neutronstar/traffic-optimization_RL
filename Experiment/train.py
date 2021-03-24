@@ -117,7 +117,6 @@ def city_dqn_train(configs, time_data, sumoCmd):
             t_agent += 1
             # 최대에 도달하면 0으로 초기화 (offset과 비교)
             clear_matrix = torch.eq(t_agent % TL_PERIOD, 0)
-            t_agent[clear_matrix] = 0
 
             # action 넘어가야된다면 action index증가 (by tensor slicing)
             action_update_mask = torch.eq(  # update는 단순히 진짜 현시만 받아서 결정해야됨
@@ -127,6 +126,7 @@ def city_dqn_train(configs, time_data, sumoCmd):
             action_index_matrix[clear_matrix] = 0
 
             # mask update, matrix True로 전환
+            t_agent[clear_matrix] = 0
             mask_matrix[clear_matrix] = True
             mask_matrix[~clear_matrix] = False
 
