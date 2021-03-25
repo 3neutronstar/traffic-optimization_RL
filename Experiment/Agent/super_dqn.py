@@ -171,7 +171,7 @@ class Trainer(RLAlgorithm):
                             0, self.configs['time_action_space'][index]-1), dtype=torch.int, device=self.device)
                 else:  # test
                     rate_action, time_action = self.mainSuperQNetwork(
-                        state[0, :, index].view(-1, self.state_space, 1))
+                        state[0, :,:, index].view(-1, self.state_space,4, 1))
                     rate_actions[0, index] = rate_action.max(1)[1].int()
                     time_actions[0, index] = time_action.max(1)[1].int()
 
