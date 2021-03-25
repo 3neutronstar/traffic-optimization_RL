@@ -257,6 +257,6 @@ class CityEnv(baseEnv):
         tl_dict = deepcopy(self.traffic_node_info[tl_rl])
         for j, idx in enumerate(tl_dict['phase_index']):
             tl_dict['phase_duration'][idx] = tl_dict['phase_duration'][idx] + \
-                tl_dict['matrix_actions'][action[0, 0]][j] * (action[0, 1]+1)
+                tl_dict['matrix_actions'][action[0, 0]][j] * int((action[0, 1]+1)*1.5)
         phase_length_set = tl_dict['phase_duration']
         return phase_length_set

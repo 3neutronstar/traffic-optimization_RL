@@ -16,13 +16,13 @@ DEFAULT_CONFIG = {
     'batch_size': 32,
     'experience_replay_size': 5e6,
     'epsilon': 0.8,
-    'epsilon_decay_rate': 0.99,
-    'fc_net': [36, 48, 24],
-    'lr': 1e-3,
+    'epsilon_decay_rate': 0.985,
+    'fc_net': [128, 256, 128],
+    'lr': 1e-4,
     'lr_decay_period': 50,
     'lr_decay_rate': 0.5,
     # 'lr_decay_rate': 0.995,
-    'target_update_period': 20,
+    'target_update_period': 10,
     'final_epsilon': 0.0005,
     'final_lr': 5e-6,
     'alpha': 0.91,
@@ -36,6 +36,7 @@ class SuperQNetwork(nn.Module):
     def __init__(self, input_size, out_rate_size, out_time_size, configs):
         super(SuperQNetwork, self).__init__()
         self.configs = configs
+        self.device=self.configs['device']
         self.input_size = int(input_size)
         self.num_agent = len(self.configs['tl_rl_list'])
         self.state_space = self.configs['state_space']
