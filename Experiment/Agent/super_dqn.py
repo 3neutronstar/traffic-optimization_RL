@@ -18,11 +18,11 @@ DEFAULT_CONFIG = {
     'epsilon': 0.8,
     'epsilon_decay_rate': 0.99,
     'fc_net': [36, 48, 24],
-    'lr': 1e-4,
-    'lr_decay_period': 100,
+    'lr': 1e-3,
+    'lr_decay_period': 50,
     'lr_decay_rate': 0.5,
     # 'lr_decay_rate': 0.995,
-    'target_update_period': 10,
+    'target_update_period': 20,
     'final_epsilon': 0.0005,
     'final_lr': 5e-6,
     'alpha': 0.91,
@@ -41,7 +41,7 @@ class SuperQNetwork(nn.Module):
         self.state_space = self.configs['state_space']
         self.experience_replay = ReplayMemory(
             self.configs['experience_replay_size'])
-        self.cnn_feature_channel = 30
+        self.cnn_feature_channel = 40
         # Neural Net
         self.conv1 = nn.Conv1d(self.state_space*4, 8*4, kernel_size=1)
         self.conv2 = nn.Conv1d(8*4, self.cnn_feature_channel, kernel_size=1)
@@ -78,6 +78,7 @@ class SuperQNetwork(nn.Module):
 
     def forward(self, input_x):
         # x_state,x_traffic=torch.split(input_x,[8,2],dim=1)
+        #x1,x2,x3,x4=torch.split(input_x,[1,1,1,1],dim=2)
         input_x = input_x.view(-1, self.state_space*4, 1)
         x_cnn = f.relu(self.conv1(input_x))
         x_cnn = f.relu(self.conv2(x_cnn))
@@ -176,14 +177,16 @@ class Trainer(RLAlgorithm):
             actions = torch.cat((rate_actions, time_actions), dim=2)
         return actions
 
-    def target_update(self):
-        # # Hard Update
-        # hard_update(self.targetSuperQNetwork, self.mainSuperQNetwork)
+    def target_update(self,epoch):
+        # Hard Update
+        if epoch%self.configs['target_update_period']==0 and self.configs['update_type']=='hard':
+            hard_update(self.targetSuperQNetwork, self.mainSuperQNetwork)
 
         # # Soft Update
         # Total Update
-        soft_update(self.targetSuperQNetwork,
-                    self.mainSuperQNetwork, self.configs)
+        if self.configs['update_type']=='soft':
+            soft_update(self.targetSuperQNetwork,
+                        self.mainSuperQNetwork, self.configs)
 
     def save_replay(self, state, action, reward, next_state, mask):
         for index in torch.nonzero(mask):
