@@ -26,6 +26,7 @@ DEFAULT_CONFIG = {
     'final_epsilon': 0.0005,
     'final_lr': 5e-6,
     'alpha': 0.91,
+    'main_fc_net': [40, 50],
 }
 
 Transition = namedtuple('Transition',
@@ -46,8 +47,13 @@ class SuperQNetwork(nn.Module):
         self.conv1 = nn.Conv1d(self.state_space*4, 8*4, kernel_size=1)
         self.conv2 = nn.Conv1d(8*4, self.cnn_feature_channel, kernel_size=1)
 
+        self.main_fc1 = nn.Linear(
+            self.cnn_feature_channel, self.configs['main_fc_net'][0])
+        self.main_fc2 = nn.Linear(
+            self.configs['main_fc_net'][0], self.configs['main_fc_net'][1])
+
         self.fc1 = nn.Linear(
-            self.cnn_feature_channel, self.configs['fc_net'][0])
+            self.configs['main_fc_net'][1], self.configs['fc_net'][0])
         self.fc2 = nn.Linear(
             self.configs['fc_net'][0], self.configs['fc_net'][1])
         self.fc3 = nn.Linear(
@@ -56,7 +62,7 @@ class SuperQNetwork(nn.Module):
             self.configs['fc_net'][2], out_rate_size)
 
         self.fc_y1 = nn.Linear(
-            self.cnn_feature_channel+1, self.configs['fc_net'][0])  # rate+state
+            self.configs['main_fc_net'][1]+1, self.configs['fc_net'][0])  # rate+state
         self.fc_y2 = nn.Linear(
             self.configs['fc_net'][0], self.configs['fc_net'][1])
         self.fc_y3 = nn.Linear(
@@ -66,6 +72,8 @@ class SuperQNetwork(nn.Module):
 
         nn.init.kaiming_uniform_(self.conv1.weight)
         nn.init.kaiming_uniform_(self.conv2.weight)
+        nn.init.kaiming_uniform_(self.main_fc1.weight)
+        nn.init.kaiming_uniform_(self.main_fc2.weight)
         nn.init.kaiming_uniform_(self.fc1.weight)
         nn.init.kaiming_uniform_(self.fc2.weight)
         nn.init.kaiming_uniform_(self.fc3.weight)
@@ -82,11 +90,13 @@ class SuperQNetwork(nn.Module):
         x_cnn = f.relu(self.conv1(input_x))
         x_cnn = f.relu(self.conv2(x_cnn))
         x_cnn = x_cnn.view(-1, self.cnn_feature_channel)
-        x_vehicle = f.relu(self.fc1(x_cnn))
+        x_fc = f.relu(self.main_fc1(x_cnn))
+        x_fc = f.relu(self.main_fc2(x_fc))
+        x_vehicle = f.relu(self.fc1(x_fc))
         x_vehicle = f.relu(self.fc2(x_vehicle))
         x_vehicle = f.relu(self.fc3(x_vehicle))
         rate_action_Q = self.fc4(x_vehicle)
-        x_traffic = torch.cat((x_cnn, rate_action_Q.argmax(
+        x_traffic = torch.cat((x_fc, rate_action_Q.argmax(
             dim=1, keepdim=True).detach().clone()), dim=1).view(-1, self.cnn_feature_channel+1)
         x_traffic = f.relu(self.fc_y1(x_traffic))
         x_traffic = f.relu(self.fc_y2(x_traffic))
