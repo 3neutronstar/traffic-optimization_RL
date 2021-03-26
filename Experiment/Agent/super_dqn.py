@@ -92,7 +92,7 @@ class SuperQNetwork(nn.Module):
         x_cnn = f.relu(self.conv1(input_x))
         x_cnn = f.relu(self.conv2(x_cnn))
         x_cnn = x_cnn.view(-1, self.cnn_feature_channel)
-        x_fc = f.relu(self.main_fc1(x_cnn))
+        x_fc = f.relu(self.main_fc1(x_cnn))  # 여기
         x_fc = f.relu(self.main_fc2(x_fc))
         x_vehicle = f.relu(self.fc1(x_fc))
         x_vehicle = f.relu(self.fc2(x_vehicle))
