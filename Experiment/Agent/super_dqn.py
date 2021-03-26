@@ -37,7 +37,7 @@ class SuperQNetwork(nn.Module):
     def __init__(self, input_size, out_rate_size, out_time_size, configs):
         super(SuperQNetwork, self).__init__()
         self.configs = configs
-        self.device=self.configs['device']
+        self.device = self.configs['device']
         self.input_size = int(input_size)
         self.num_agent = len(self.configs['tl_rl_list'])
         self.state_space = self.configs['state_space']
@@ -87,7 +87,7 @@ class SuperQNetwork(nn.Module):
 
     def forward(self, input_x):
         # x_state,x_traffic=torch.split(input_x,[8,2],dim=1)
-        #x1,x2,x3,x4=torch.split(input_x,[1,1,1,1],dim=2)
+        # x1,x2,x3,x4=torch.split(input_x,[1,1,1,1],dim=2)
         input_x = input_x.view(-1, self.state_space*4, 1)
         x_cnn = f.relu(self.conv1(input_x))
         x_cnn = f.relu(self.conv2(x_cnn))
@@ -99,7 +99,7 @@ class SuperQNetwork(nn.Module):
         x_vehicle = f.relu(self.fc3(x_vehicle))
         rate_action_Q = self.fc4(x_vehicle)
         x_traffic = torch.cat((x_fc, rate_action_Q.argmax(
-            dim=1, keepdim=True).detach().clone()), dim=1).view(-1, self.cnn_feature_channel+1)
+            dim=1, keepdim=True).detach().clone()), dim=1).view(-1, self.configs['main_fc_net'][1]+1)
         x_traffic = f.relu(self.fc_y1(x_traffic))
         x_traffic = f.relu(self.fc_y2(x_traffic))
         x_traffic = f.relu(self.fc_y3(x_traffic))
@@ -181,21 +181,21 @@ class Trainer(RLAlgorithm):
                             0, self.configs['time_action_space'][index]-1), dtype=torch.int, device=self.device)
                 else:  # test
                     rate_action, time_action = self.mainSuperQNetwork(
-                        state[0, :,:, index].view(-1, self.state_space,4, 1))
+                        state[0, :, :, index].view(-1, self.state_space, 4, 1))
                     rate_actions[0, index] = rate_action.max(1)[1].int()
                     time_actions[0, index] = time_action.max(1)[1].int()
 
             actions = torch.cat((rate_actions, time_actions), dim=2)
         return actions
 
-    def target_update(self,epoch):
+    def target_update(self, epoch):
         # Hard Update
-        if epoch%self.configs['target_update_period']==0 and self.configs['update_type']=='hard':
+        if epoch % self.configs['target_update_period'] == 0 and self.configs['update_type'] == 'hard':
             hard_update(self.targetSuperQNetwork, self.mainSuperQNetwork)
 
         # # Soft Update
         # Total Update
-        if self.configs['update_type']=='soft':
+        if self.configs['update_type'] == 'soft':
             soft_update(self.targetSuperQNetwork,
                         self.mainSuperQNetwork, self.configs)
 
@@ -218,7 +218,7 @@ class Trainer(RLAlgorithm):
                                                         batch.next_state)), device=self.device, dtype=torch.bool)
 
                 non_final_next_states = torch.cat([s for s in batch.next_state
-                                                if s is not None], dim=0)
+                                                   if s is not None], dim=0)
 
                 # dim=0인 이유는 batch 끼리 cat 하는 것이기 때문임
                 state_batch = torch.cat(batch.state)
@@ -253,9 +253,9 @@ class Trainer(RLAlgorithm):
 
                 # loss 계산
                 rate_loss = self.criterion(rate_state_action_values,
-                                        rate_expected_state_action_values.unsqueeze(1))
+                                           rate_expected_state_action_values.unsqueeze(1))
                 time_loss = self.criterion(time_state_action_values,
-                                        time_expected_state_action_values.unsqueeze(1))
+                                           time_expected_state_action_values.unsqueeze(1))
                 # total_loss= self.configs['alpha'] *rate_loss + (1.0-self.configs['alpha'])*time_loss
                 self.running_loss += rate_loss/self.configs['batch_size']
                 self.running_loss += time_loss/self.configs['batch_size']
