@@ -174,9 +174,10 @@ class CityEnv(baseEnv):
             # print(next_state,idx,self.configs['phase_type'][idx])
             # print(next_state)
 
-        for state_index in torch.nonzero(action_update_mask):
-            self.tl_rl_memory[state_index].next_state[:, :,(action_index_matrix[state_index]/2).long()
+            self.tl_rl_memory[idx].next_state[:, :,(action_index_matrix[idx]/2).long()
                                                       ] = next_state.view(1,self.state_space,1,1)
+            print(self.tl_rl_memory[idx].next_state.view(-1,4))
+
         for idx in torch.nonzero(mask_matrix):
             next_states[0,:,:,idx]=self.tl_rl_memory[idx].next_state #next state 생성
             self.tl_rl_memory[idx].state[:,:, (action_index_matrix[idx]/2).long()
