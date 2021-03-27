@@ -121,7 +121,7 @@ class CityEnv(baseEnv):
                     outflow += (traci.edge.getLastStepVehicleNumber(
                         interest['outflow']))/100.0
                 if interest['inflow']:  # None이 아닐 때 행동
-                    inflow += traci.edge.getLastStepHaltingNumber(
+                    inflow += traci.edge.getLastStepVehicleNumber(
                         interest['inflow'])/100.0
             # pressure=inflow-outflow
             # reward cumulative sum
@@ -171,6 +171,7 @@ class CityEnv(baseEnv):
                     veh_state[j*2+1] = left_movement
             next_state = torch.cat((veh_state, phase_type_tensor), dim=0).view(
                 self.state_space, 1)
+            # print(next_state,idx,self.configs['phase_type'][idx])
             # print(next_state)
 
         for state_index in torch.nonzero(action_update_mask):

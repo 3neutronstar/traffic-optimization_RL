@@ -18,15 +18,15 @@ DEFAULT_CONFIG = {
     'epsilon': 0.8,
     'epsilon_decay_rate': 0.99,
     'fc_net': [128, 256, 128],
-    'lr': 5e-5,
-    'lr_decay_period': 200,
+    'lr': 1e-5,
+    'lr_decay_period': 100,
     'lr_decay_rate': 0.5,
     # 'lr_decay_rate': 0.995,
     'target_update_period': 10,
     'final_epsilon': 0.0005,
     'final_lr': 5e-6,
     'alpha': 0.91,
-    'main_fc_net': [40, 50],
+    'main_fc_net': [128, 128],
 }
 
 Transition = namedtuple('Transition',
@@ -127,7 +127,7 @@ class Trainer(RLAlgorithm):
         self.action_size = self.configs['action_size']
         self.gamma = self.configs['gamma']
         self.epsilon = self.configs['epsilon']
-        self.criterion = nn.MSELoss()
+        self.criterion = nn.SmoothL1Loss()
         self.lr = self.configs['lr']
         self.lr_decay_rate = self.configs['lr_decay_rate']
         self.epsilon_decay_rate = self.configs['epsilon_decay_rate']
