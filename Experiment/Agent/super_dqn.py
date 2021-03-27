@@ -27,7 +27,7 @@ DEFAULT_CONFIG = {
     'final_lr': 5e-6,
     'alpha': 0.91,
     'main_fc_net': [128, 128],
-    'cnn':[48,64]
+    'cnn':[48,64],#cnn
 }
 
 Transition = namedtuple('Transition',
