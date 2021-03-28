@@ -90,6 +90,8 @@ def test(flags, configs, sumoConfig):
         sumoCmd = [sumoBinary, "-c", sumoConfig, "--scale", configs['scale']]
     elif flags.network.lower() == 'dunsan':
         sumoCmd = [sumoBinary, "-c", sumoConfig, "--scale", configs['scale']]
+    elif flags.network.lower() == '5x5grid':
+        sumoCmd = [sumoBinary, "-c", sumoConfig, "--scale", configs['scale']]
     else:
         sumoCmd = [sumoBinary, "-c", sumoConfig]
 
@@ -103,6 +105,8 @@ def simulate(flags, configs, sumoConfig):
     else:
         sumoBinary = checkBinary('sumo')
     if flags.network.lower() == "3x3grid":
+        sumoCmd = [sumoBinary, "-c", sumoConfig, "--scale", configs['scale']]
+    if flags.network.lower() == "5x5grid":
         sumoCmd = [sumoBinary, "-c", sumoConfig, "--scale", configs['scale']]
     elif flags.network.lower() == 'dunsan':
         sumoCmd = [sumoBinary, "-c", sumoConfig, "--scale", configs['scale']]
@@ -150,7 +154,7 @@ def simulate(flags, configs, sumoConfig):
                         # part_velocity.append(
                         #     traci.edge.getLastStepMeanSpeed(inflow))
                         tmp_travel = traci.edge.getTraveltime(inflow)
-                        if tmp_travel <= 320:  # 이상한 값 거르기
+                        if tmp_travel<=500 and tmp_travel !=-1:  # 이상한 값 거르기
                             travel_time.append(tmp_travel)
                         # print(travel_time)
                     dup_list.append(inflow)
@@ -160,9 +164,13 @@ def simulate(flags, configs, sumoConfig):
                         part_velocity.append(
                             traci.edge.getLastStepMeanSpeed(interest['outflow']))
                         tmp_travel = traci.edge.getTraveltime(outflow)
-                        if tmp_travel <= 320:  # 이상한 값 거르기
+                        if tmp_travel<=500 and tmp_travel !=-1:  # 이상한 값 거르기
                             travel_time.append(tmp_travel)
                     dup_list.append(interest['outflow'])
+        if step % 900==0:
+            print(step,torch.tensor(waiting_time).mean(),torch.tensor(travel_time).mean())
+            waiting_time=list()
+            travel_time=list()
 
         # edge_list=traci.edge.getIDList()
         # for edgeid in edge_list:
@@ -236,8 +244,11 @@ def main(args):
         mapnet.generate_cfg(True, configs['mode'])
         if configs['network'] == '3x3grid':
             configs['scale'] = str(1)
+        if configs['network'] == '5x5grid':
+            configs['scale'] = str(2.5)
+            print(configs['scale'])
         elif configs['network'] == 'dunsan':
-            configs['scale'] = str(2.0)
+            configs['scale'] = str(0.7)
 
     # check the environment
     if 'SUMO_HOME' in os.environ:

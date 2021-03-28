@@ -22,9 +22,9 @@ DEFAULT_CONFIG = {
     'lr_decay_period': 100,
     'lr_decay_rate': 0.5,
     # 'lr_decay_rate': 0.995,
-    'target_update_period': 10,
+    'target_update_period': 20,
     'final_epsilon': 0.0005,
-    'final_lr': 5e-6,
+    'final_lr': 5e-7,
     'alpha': 0.91,
     'main_fc_net': [128, 128],
     'cnn':[48,64],#cnn
@@ -180,10 +180,12 @@ class Trainer(RLAlgorithm):
                         time_actions[0, index] = torch.tensor(random.randint(
                             0, self.configs['time_action_space'][index]-1), dtype=torch.int, device=self.device)
                 else:  # test
+                    # print(state[0, :, :, index].sum())
                     rate_action, time_action = self.mainSuperQNetwork(
                         state[0, :, :, index].view(-1, self.state_space, 4, 1))
                     rate_actions[0, index] = rate_action.max(1)[1].int()
                     time_actions[0, index] = time_action.max(1)[1].int()
+                    # print(rate_actions[0,index],index)
 
             actions = torch.cat((rate_actions, time_actions), dim=2)
         return actions
@@ -290,8 +292,10 @@ class Trainer(RLAlgorithm):
             self.configs['current_path'], 'training_data', self.configs['time_data'], 'model', name+'Super_target.h5'))
 
     def load_weights(self, name):
+        print(self.mainSuperQNetwork.fc1.weight)
         self.mainSuperQNetwork.load_state_dict(torch.load(os.path.join(
             self.configs['current_path'], 'training_data', self.configs['time_data'], 'model', name+'_{}Super.h5'.format(self.configs['replay_epoch']))))
+        print(self.mainSuperQNetwork.fc1.weight)
         self.mainSuperQNetwork.eval()
 
     def update_tensorboard(self, writer, epoch):

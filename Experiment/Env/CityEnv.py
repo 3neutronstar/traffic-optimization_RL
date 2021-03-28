@@ -162,10 +162,10 @@ class CityEnv(baseEnv):
                     veh_state[j*2] = 0.0
                     veh_state[j*2+1] = 0.0
                 else:
-                    left_movement = traci.lane.getLastStepHaltingNumber(
+                    left_movement = traci.lane.getLastStepVehicleNumber(
                         pair['inflow']+'_{}'.format(self.left_lane_num_dict[pair['inflow']]))/100.0  # 멈춘애들 계산
                     # 직진
-                    veh_state[j*2] = traci.edge.getLastStepHaltingNumber(
+                    veh_state[j*2] = traci.edge.getLastStepVehicleNumber(
                         pair['inflow'])/100.0-left_movement  # 가장 좌측에 멈춘 친구를 왼쪽차선 이용자로 판단
                     # 좌회전
                     veh_state[j*2+1] = left_movement
@@ -176,7 +176,6 @@ class CityEnv(baseEnv):
 
             self.tl_rl_memory[idx].next_state[:, :,(action_index_matrix[idx]/2).long()
                                                       ] = next_state.view(1,self.state_space,1,1)
-            print(self.tl_rl_memory[idx].next_state.view(-1,4))
 
         for idx in torch.nonzero(mask_matrix):
             next_states[0,:,:,idx]=self.tl_rl_memory[idx].next_state #next state 생성
@@ -189,9 +188,6 @@ class CityEnv(baseEnv):
             if idx not in torch.nonzero(mask_matrix).tolist():
                 self.reward[0, idx] = torch.zeros_like(
                     self.reward[0, idx]).clone()
-        # if mask_matrix.sum() > 0:
-        #     print(mask_matrix.sum())
-        #     print(next_states.nonzero().size())
         return next_states  # list 반환 (안에 tensor)
 
     def step(self, action, mask_matrix, action_index_matrix, action_update_mask):
