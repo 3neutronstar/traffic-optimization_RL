@@ -86,14 +86,7 @@ def test(flags, configs, sumoConfig):
         sumoBinary = checkBinary('sumo-gui')
     else:
         sumoBinary = checkBinary('sumo')
-    if flags.network.lower() == "3x3grid":
-        sumoCmd = [sumoBinary, "-c", sumoConfig, "--scale", configs['scale']]
-    elif flags.network.lower() == 'dunsan':
-        sumoCmd = [sumoBinary, "-c", sumoConfig, "--scale", configs['scale']]
-    elif flags.network.lower() == '5x5grid':
-        sumoCmd = [sumoBinary, "-c", sumoConfig, "--scale", configs['scale']]
-    else:
-        sumoCmd = [sumoBinary, "-c", sumoConfig]
+    sumoCmd = [sumoBinary, "-c", sumoConfig, "--scale", configs['scale']]
 
     if flags.algorithm.lower() == 'super_dqn':
         city_dqn_test(flags, sumoCmd, configs)
@@ -104,15 +97,7 @@ def simulate(flags, configs, sumoConfig):
         sumoBinary = checkBinary('sumo-gui')
     else:
         sumoBinary = checkBinary('sumo')
-    if flags.network.lower() == "3x3grid":
-        sumoCmd = [sumoBinary, "-c", sumoConfig, "--scale", configs['scale']]
-    if flags.network.lower() == "5x5grid":
-        sumoCmd = [sumoBinary, "-c", sumoConfig, "--scale", configs['scale']]
-    elif flags.network.lower() == 'dunsan':
-        sumoCmd = [sumoBinary, "-c", sumoConfig, "--scale", configs['scale']]
-    else:
-        sumoCmd = [sumoBinary, "-c", sumoConfig]
-
+    sumoCmd = [sumoBinary, "-c", sumoConfig, "--scale", configs['scale']]
     MAX_STEPS = configs['max_steps']
     traci.start(sumoCmd)
     a = time.time()
@@ -245,7 +230,7 @@ def main(args):
         if configs['network'] == '3x3grid':
             configs['scale'] = str(1)
         if configs['network'] == '5x5grid':
-            configs['scale'] = str(2.5)
+            configs['scale'] = str(1)
             print(configs['scale'])
         elif configs['network'] == 'dunsan':
             configs['scale'] = str(0.7)
