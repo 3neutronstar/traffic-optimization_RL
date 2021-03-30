@@ -88,7 +88,7 @@ class CityEnv(baseEnv):
         for index in torch.nonzero(mask):
             state[0, :, :, index] = deepcopy(self.tl_rl_memory[index].state)
             action[0, index, :] = deepcopy(self.tl_rl_memory[index].action)
-            next_state[0, :,:, index] = deepcopy(
+            next_state[0, :, :, index] = deepcopy(
                 self.tl_rl_memory[index].next_state)
             reward[0, index] = deepcopy(self.tl_rl_memory[index].reward)
             # mask index's reward clear
@@ -148,7 +148,7 @@ class CityEnv(baseEnv):
         # action 변화를 위한 state
         next_states = torch.zeros(
             (1, self.state_space, 4, self.num_agent), dtype=torch.float, device=self.device)
-        
+
         for idx in torch.nonzero(action_update_mask):
             next_state = list()
             # 모든 rl node에 대해서
@@ -169,18 +169,21 @@ class CityEnv(baseEnv):
                         pair['inflow'])/100.0-left_movement  # 가장 좌측에 멈춘 친구를 왼쪽차선 이용자로 판단
                     # 좌회전
                     veh_state[j*2+1] = left_movement
+            print(idx, veh_state.sum(), phase_type_tensor.sum())
             next_state = torch.cat((veh_state, phase_type_tensor), dim=0).view(
                 self.state_space, 1)
             # print(next_state,idx,self.configs['phase_type'][idx])
             # print(next_state)
 
-            self.tl_rl_memory[idx].next_state[:, :,(action_index_matrix[idx]/2).long()
-                                                      ] = next_state.view(1,self.state_space,1,1)
+            self.tl_rl_memory[idx].next_state[:, :, (action_index_matrix[idx]/2).long()
+                                              ] = next_state.view(1, self.state_space, 1, 1).detach().clone()
 
         for idx in torch.nonzero(mask_matrix):
-            next_states[0,:,:,idx]=self.tl_rl_memory[idx].next_state #next state 생성
-            self.tl_rl_memory[idx].state[:,:, (action_index_matrix[idx]/2).long()
-                                         ] = self.tl_rl_memory[idx].next_state[:,:,(action_index_matrix[idx]/2).long()]
+            # next state 생성
+            next_states[0, :, :,
+                        idx] = self.tl_rl_memory[idx].next_state.detach().clone()
+            self.tl_rl_memory[idx].state[:, :, (action_index_matrix[idx]/2).long()
+                                         ] = self.tl_rl_memory[idx].next_state[:, :, (action_index_matrix[idx]/2).long()].detach().clone()
         # reward clear
         reward = self.reward.detach().clone()
         self.cum_reward += reward
@@ -255,6 +258,7 @@ class CityEnv(baseEnv):
         tl_dict = deepcopy(self.traffic_node_info[tl_rl])
         for j, idx in enumerate(tl_dict['phase_index']):
             tl_dict['phase_duration'][idx] = tl_dict['phase_duration'][idx] + \
-                tl_dict['matrix_actions'][action[0, 0]][j] * int((action[0, 1]+1)*1.5)
+                tl_dict['matrix_actions'][action[0, 0]][j] * \
+                int((action[0, 1]+1)*1.5)
         phase_length_set = tl_dict['phase_duration']
         return phase_length_set

@@ -50,7 +50,7 @@ def parse_args(args):
         '--randomness', type=bool, default=False,
         help='activate only in test mode and write file_name to load weights.')
     parser.add_argument(
-        '--update_type', type=str, default='soft',help='hard or soft')
+        '--update_type', type=str, default='soft', help='hard or soft')
     return parser.parse_known_args(args)[0]
 
 
@@ -139,7 +139,7 @@ def simulate(flags, configs, sumoConfig):
                         # part_velocity.append(
                         #     traci.edge.getLastStepMeanSpeed(inflow))
                         tmp_travel = traci.edge.getTraveltime(inflow)
-                        if tmp_travel<=500 and tmp_travel !=-1:  # 이상한 값 거르기
+                        if tmp_travel <= 500 and tmp_travel != -1:  # 이상한 값 거르기
                             travel_time.append(tmp_travel)
                         # print(travel_time)
                     dup_list.append(inflow)
@@ -149,13 +149,14 @@ def simulate(flags, configs, sumoConfig):
                         part_velocity.append(
                             traci.edge.getLastStepMeanSpeed(interest['outflow']))
                         tmp_travel = traci.edge.getTraveltime(outflow)
-                        if tmp_travel<=500 and tmp_travel !=-1:  # 이상한 값 거르기
+                        if tmp_travel <= 500 and tmp_travel != -1:  # 이상한 값 거르기
                             travel_time.append(tmp_travel)
                     dup_list.append(interest['outflow'])
-        if step % 900==0:
-            print(step,torch.tensor(waiting_time).mean(),torch.tensor(travel_time).mean())
-            waiting_time=list()
-            travel_time=list()
+        if step % 900 == 0:
+            print(step, torch.tensor(waiting_time).mean(),
+                  torch.tensor(travel_time).mean())
+            waiting_time = list()
+            travel_time = list()
 
         # edge_list=traci.edge.getIDList()
         # for edgeid in edge_list:
@@ -245,7 +246,7 @@ def main(args):
     # check the mode
     if configs['mode'] == 'train':
         # init train setting
-        configs['update_type']=flags.update_type
+        configs['update_type'] = flags.update_type
         sumoConfig = os.path.join(
             configs['current_path'], 'training_data', time_data, 'net_data', configs['file_name']+'_train.sumocfg')
         train(flags, time_data, configs, sumoConfig)
