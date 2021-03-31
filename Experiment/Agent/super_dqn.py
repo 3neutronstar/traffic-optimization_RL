@@ -26,7 +26,7 @@ DEFAULT_CONFIG = {
     'final_epsilon': 0.0001,
     'final_lr': 0.0001,
     'alpha': 0.91,
-    'cnn':[32,40]
+    'cnn':[50,60]
 }
 
 Transition = namedtuple('Transition',
@@ -43,11 +43,11 @@ class SuperQNetwork(nn.Module):
         self.experience_replay = ReplayMemory(
             self.configs['experience_replay_size'])
         # Neural Net
-        self.conv1 = nn.Conv1d(self.state_space*4, self.configs['cnn'][0], kernel_size=1)
-        self.conv2 = nn.Conv1d(self.configs['cnn'][0], self.configs['cnn'][1], kernel_size=1)
+        self.conv1 = nn.Conv2d(self.state_space, self.configs['cnn'][0], kernel_size=1)
+        self.conv2 = nn.Conv2d(self.configs['cnn'][0], self.configs['cnn'][1], kernel_size=1)
 
         self.fc1 = nn.Linear(
-            self.configs['cnn'][1], self.configs['fc_net'][0])
+            self.configs['cnn'][1]*4, self.configs['fc_net'][0])
         self.fc2 = nn.Linear(
             self.configs['fc_net'][0], self.configs['fc_net'][1])
         self.fc3 = nn.Linear(
@@ -58,7 +58,7 @@ class SuperQNetwork(nn.Module):
             self.configs['fc_net'][3], out_rate_size)
 
         self.fc_y1 = nn.Linear(
-            self.configs['cnn'][1]+1, self.configs['fc_net'][0])  # rate+state
+            self.configs['cnn'][1]*4+1, self.configs['fc_net'][0])  # rate+state
         self.fc_y2 = nn.Linear(
             self.configs['fc_net'][0], self.configs['fc_net'][1])
         self.fc_y3 = nn.Linear(
@@ -83,19 +83,17 @@ class SuperQNetwork(nn.Module):
             self.eval()
 
     def forward(self, input_x):
-        # x_state,x_traffic=torch.split(input_x,[8,2],dim=1)
-        #x1,x2,x3,x4=torch.split(input_x,[1,1,1,1],dim=2)
-        input_x = input_x.view(-1, self.state_space*4, 1)
+        # input_x = input_x.view(-1, self.state_space*4, 1)
         x_cnn = f.relu(self.conv1(input_x))
         x_cnn = f.relu(self.conv2(x_cnn))
-        x_cnn = x_cnn.view(-1, self.configs['cnn'][1])
+        x_cnn = x_cnn.view(-1, self.configs['cnn'][1]*4)
         x_vehicle = f.relu(self.fc1(x_cnn))
         x_vehicle = f.relu(self.fc2(x_vehicle))
         x_vehicle = f.relu(self.fc3(x_vehicle))
         x_vehicle = f.relu(self.fc4(x_vehicle))
         rate_action_Q = self.fc5(x_vehicle)
         x_traffic = torch.cat((x_cnn, rate_action_Q.argmax(
-            dim=1, keepdim=True).detach().clone()), dim=1).view(-1, self.configs['cnn'][1]+1)
+            dim=1, keepdim=True).detach().clone()), dim=1).view(-1, self.configs['cnn'][1]*4+1)
         x_traffic = f.relu(self.fc_y1(x_traffic))
         x_traffic = f.relu(self.fc_y2(x_traffic))
         x_traffic = f.relu(self.fc_y3(x_traffic))
@@ -149,7 +147,7 @@ class Trainer(RLAlgorithm):
         self.targetSuperQNetwork = SuperQNetwork(
             self.state_space, self.rate_action_space[rate_key], self.time_action_space[0], self.configs)
         # hard update, optimizer setting
-        self.optimizer = optim.Adadelta(
+        self.optimizer = optim.Adam(
             self.mainSuperQNetwork.parameters(), self.lr)
         hard_update(self.targetSuperQNetwork, self.mainSuperQNetwork)
 

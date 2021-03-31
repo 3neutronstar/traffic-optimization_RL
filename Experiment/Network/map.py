@@ -84,9 +84,9 @@ class MapNetwork(Network):
                     max_duration_list.append(int(phase.attrib['maxDur']))
 
                     dif_max_list.append(
-                        int(phase.attrib['maxDur'])-int(phase.attrib['duration']))
+                        (int(phase.attrib['maxDur'])-int(phase.attrib['duration']))/100.0)
                     dif_min_list.append(
-                        int(phase.attrib['duration'])-int(phase.attrib['minDur']))
+                        (int(phase.attrib['duration'])-int(phase.attrib['minDur']))/100.0)
                     phase_index_list.append(i)
                     common_phase_list.append(int(phase.attrib['duration']))
 
@@ -300,9 +300,9 @@ class MapNetwork(Network):
                         max_duration_list.append(
                             int(phase.attrib['maxDur']))
                         dif_max_list.append(
-                            phase.attrib['maxDur']-phase.attrib['duration'])
+                            (int(phase.attrib['maxDur'])-int(phase.attrib['duration']))/100.0)
                         dif_min_list.append(
-                            phase.attrib['duration']-phase.attrib['minDur'])
+                            (int(phase.attrib['duration'])-int(phase.attrib['minDur']))/100.0)
                         phase_index_list.append(i)
                         common_phase_list.append(int(this_phase_dur))
 
