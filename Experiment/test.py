@@ -136,8 +136,8 @@ def city_dqn_test(flags, sumoCmd, configs):
                             waiting_time.append(traci.edge.getWaitingTime(inflow))#/float(
                                 #traci.edge.getLastStepVehicleNumber(inflow)))
                             # 차량의 평균속도
-                            part_velocity.append(
-                                traci.edge.getLastStepMeanSpeed(inflow))
+                            # part_velocity.append(
+                            #     traci.edge.getLastStepMeanSpeed(inflow))
                             tmp_travel = traci.edge.getTraveltime(inflow)
                             if tmp_travel<=500 and tmp_travel !=-1:  # 이상한 값 거르기
                                 travel_time.append(tmp_travel)
@@ -145,8 +145,8 @@ def city_dqn_test(flags, sumoCmd, configs):
 
                     if outflow != None and outflow not in dup_list:
                         if traci.edge.getLastStepVehicleNumber(outflow) != 0:
-                            part_velocity.append(
-                                traci.edge.getLastStepMeanSpeed(interest['outflow']))
+                            # part_velocity.append(
+                            #     traci.edge.getLastStepMeanSpeed(interest['outflow']))
                             tmp_travel = traci.edge.getTraveltime(outflow)
                             if tmp_travel<=500 and tmp_travel !=-1:  # 이상한 값 거르기
                                 travel_time.append(tmp_travel)

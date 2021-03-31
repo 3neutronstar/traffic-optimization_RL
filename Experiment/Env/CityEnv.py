@@ -169,7 +169,7 @@ class CityEnv(baseEnv):
                         pair['inflow'])/100.0-left_movement  # 가장 좌측에 멈춘 친구를 왼쪽차선 이용자로 판단
                     # 좌회전
                     veh_state[j*2+1] = left_movement
-            print(idx, veh_state.sum(), phase_type_tensor.sum())
+            # print(idx, veh_state.sum(), phase_type_tensor.sum())
             next_state = torch.cat((veh_state, phase_type_tensor), dim=0).view(
                 self.state_space, 1)
             # print(next_state,idx,self.configs['phase_type'][idx])

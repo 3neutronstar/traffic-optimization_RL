@@ -146,17 +146,12 @@ def simulate(flags, configs, sumoConfig):
 
                 if outflow != None and outflow not in dup_list:
                     if traci.edge.getLastStepVehicleNumber(outflow) != 0:
-                        part_velocity.append(
-                            traci.edge.getLastStepMeanSpeed(interest['outflow']))
+                        # part_velocity.append(
+                        #     traci.edge.getLastStepMeanSpeed(interest['outflow']))
                         tmp_travel = traci.edge.getTraveltime(outflow)
                         if tmp_travel <= 500 and tmp_travel != -1:  # 이상한 값 거르기
                             travel_time.append(tmp_travel)
                     dup_list.append(interest['outflow'])
-        if step % 900 == 0:
-            print(step, torch.tensor(waiting_time).mean(),
-                  torch.tensor(travel_time).mean())
-            waiting_time = list()
-            travel_time = list()
 
         # edge_list=traci.edge.getIDList()
         # for edgeid in edge_list:
@@ -232,9 +227,11 @@ def main(args):
             configs['scale'] = str(1)
         if configs['network'] == '5x5grid':
             configs['scale'] = str(1)
+        if configs['network'] == '5x5grid_v2':
+            configs['scale'] = str(1)
             print(configs['scale'])
         elif configs['network'] == 'dunsan':
-            configs['scale'] = str(1.1)
+            configs['scale'] = str(1)
 
     # check the environment
     if 'SUMO_HOME' in os.environ:
