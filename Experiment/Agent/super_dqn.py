@@ -295,7 +295,7 @@ class Trainer(RLAlgorithm):
     def update_tensorboard(self, writer, epoch):
         writer.add_scalar('episode/loss', self.running_loss/self.configs['max_steps'],
                           self.configs['max_steps']*epoch)  # 1 epoch마다
-        writer.add_scalar('hyperparameter/lr', self.lr,
+        writer.add_scalar('hyperparameter/lr', self.optimizer.param_groups[0]['lr'],
                           self.configs['max_steps']*epoch)
         writer.add_scalar('hyperparameter/epsilon',
                           self.epsilon, self.configs['max_steps']*epoch)
