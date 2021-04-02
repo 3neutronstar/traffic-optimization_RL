@@ -19,7 +19,7 @@ DEFAULT_CONFIG = {
     'epsilon_decay_rate': 0.99,
     'fc_net': [160, 160, 160, 160],
     'lr': 0.001,
-    'lr_decay_period': 50,
+    'lr_decay_period': 25,
     'lr_decay_rate': 0.8,
     # 'lr_decay_rate': 0.995,
     'target_update_period': 10,
@@ -147,9 +147,10 @@ class Trainer(RLAlgorithm):
         self.targetSuperQNetwork = SuperQNetwork(
             self.state_space, self.rate_action_space[rate_key], self.time_action_space[0], self.configs)
         # hard update, optimizer setting
-        self.optimizer = optim.Adam(
-            self.mainSuperQNetwork.parameters(), self.lr)
+        self.optimizer = optim.Adadelta(
+            self.mainSuperQNetwork.parameters(), lr=self.configs['lr'])
         hard_update(self.targetSuperQNetwork, self.mainSuperQNetwork)
+        self.lr_scheduler=optim.lr_scheduler.StepLR(optimizer=self.optimizer,step_size=self.configs['lr_decay_period'],gamma=self.configs['lr_decay_rate'])
 
     def get_action(self, state, mask):
         # 전체를 날리는 epsilon greedy
@@ -196,7 +197,7 @@ class Trainer(RLAlgorithm):
 
     def save_replay(self, state, action, reward, next_state, mask):
         for index in torch.nonzero(mask):
-            # print(state[0,:, index].sum(),action[0,index],reward[0,index].sum(),next_state[0,:, index].sum())
+            # print(state[0,:, index])#,action[0,index],reward[0,index].sum(),next_state[0,:, index].sum())
             self.mainSuperQNetwork.experience_replay.push(
                 state[0, :, :, index].view(-1, self.state_space, 4, 1), action[0, index], reward[0, index], next_state[0, :, :, index].view(-1, self.state_space, 4, 1))
             # print("state {}".format(state[0, :, :, index].view(-1, self.state_space, 4, 1)))
@@ -277,8 +278,7 @@ class Trainer(RLAlgorithm):
         # if self.lr > self.configs['final_lr']:
         #     self.lr = self.lr_decay_rate*self.lr
 
-        if epoch % self.configs['lr_decay_period'] == 0 and self.lr > self.configs['final_lr'] and epoch > 1:
-            self.lr = self.configs['lr_decay_rate']*self.lr
+        self.lr_scheduler.step()
 
     def save_weights(self, name):
 

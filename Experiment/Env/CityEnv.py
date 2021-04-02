@@ -118,7 +118,7 @@ class CityEnv(baseEnv):
             interests = self.node_interest_pair[self.tl_rl_list[index]]
             for interest in interests:
                 if interest['outflow']:  # None이 아닐 때 행동
-                    outflow += (traci.edge.getLastStepHaltingNumber(
+                    outflow += (traci.edge.getLastStepVehicleNumber(
                         interest['outflow']))/100.0
                 if interest['inflow']:  # None이 아닐 때 행동
                     inflow += traci.edge.getLastStepVehicleNumber(
@@ -172,21 +172,21 @@ class CityEnv(baseEnv):
             # print(idx, veh_state.sum(), phase_type_tensor.sum())
             # duration 차이의 tensor
             min_dur_tensor = torch.tensor(
-                self.traffic_node_info[self.tl_rl_list[idx]]['dif_min'][int(action_index_matrix[idx]/2)], dtype=torch.int, device=self.device).view(-1)
+                [self.traffic_node_info[self.tl_rl_list[idx]]['dif_min'][int(action_index_matrix[idx]/2)]], dtype=torch.float, device=self.device).view(-1)
             max_dur_tensor = torch.tensor(
-                self.traffic_node_info[self.tl_rl_list[idx]]['dif_max'][int(action_index_matrix[idx]/2)], dtype=torch.int, device=self.device).view(-1)
+                [self.traffic_node_info[self.tl_rl_list[idx]]['dif_max'][int(action_index_matrix[idx]/2)]], dtype=torch.float, device=self.device).view(-1)
             next_state = torch.cat((veh_state, phase_type_tensor, min_dur_tensor, max_dur_tensor), dim=0).view(
                 self.state_space, 1)
             # print(next_state,idx,self.configs['phase_type'][idx])
             # print(next_state)
-
+            # print((action_index_matrix[idx]/2).long())
             self.tl_rl_memory[idx].next_state[:, :, (action_index_matrix[idx]/2).long()
                                               ] = next_state.view(1, self.state_space, 1, 1).detach().clone()
+            # print(self.tl_rl_memory[idx].next_state.view(-1,self.state_space,4))
 
         for idx in torch.nonzero(mask_matrix):
             # next state 생성
-            next_states[0, :, :,
-                        idx] = self.tl_rl_memory[idx].next_state.detach().clone()
+            next_states[0, :, :,idx] = self.tl_rl_memory[idx].next_state.detach().clone()
             self.tl_rl_memory[idx].state[:, :, (action_index_matrix[idx]/2).long()
                                          ] = self.tl_rl_memory[idx].next_state[:, :, (action_index_matrix[idx]/2).long()].detach().clone()
         # reward clear
