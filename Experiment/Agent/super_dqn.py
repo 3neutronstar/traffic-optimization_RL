@@ -23,7 +23,7 @@ DEFAULT_CONFIG = {
     'lr_decay_rate': 0.8,
     # 'lr_decay_rate': 0.995,
     'target_update_period': 10,
-    'final_epsilon': 0.0001,
+    'final_epsilon': 0.00001,
     'final_lr': 0.0001,
     'alpha': 0.91,
     'cnn':[50,60]

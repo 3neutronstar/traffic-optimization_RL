@@ -142,7 +142,6 @@ def city_dqn_train(configs, time_data, sumoCmd):
                     mask_matrix)
                 agent.save_replay(rep_state, rep_action, rep_reward,
                                   rep_next_state, mask_matrix)  # dqn
-                total_reward += rep_reward.sum()
             # update
             agent.update(mask_matrix)
 
@@ -157,9 +156,11 @@ def city_dqn_train(configs, time_data, sumoCmd):
         print("time:", b-a)
         epoch += 1
         # once in an epoch
-        update_tensorboard(writer, epoch, env, agent, arrived_vehicles)
         print('======== {} epoch/ return: {:.5f} arrived number:{}'.format(epoch,
-                                                                           total_reward.sum(), arrived_vehicles))
+                                                                           env.cum_reward.sum(), arrived_vehicles))
+        update_tensorboard(writer, epoch, env, agent, arrived_vehicles)
+        print("hi",env.test_val)
+        env.test_val=0
         if epoch % 50 == 0:
             agent.save_weights(
                 configs['file_name']+'_{}'.format(epoch))

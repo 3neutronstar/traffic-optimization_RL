@@ -71,6 +71,8 @@ class CityEnv(baseEnv):
                     continue
                 self.left_lane_num_dict[pair['inflow']] = traci.edge.getLaneNumber(
                     pair['inflow'])-1
+        
+        self.test_val=0
 
     def get_state(self, mask):
         '''
@@ -112,8 +114,8 @@ class CityEnv(baseEnv):
                 action_change_mask[index] = True
 
         # Reward
-        # print("action", action_change_mask)
         for index in torch.nonzero(action_change_mask):
+            self.test_val+=1
             outflow = 0
             inflow = 0
             interests = self.node_interest_pair[self.tl_rl_list[index]]

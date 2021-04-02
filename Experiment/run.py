@@ -231,7 +231,7 @@ def main(args):
             configs['scale'] = str(1)
             print(configs['scale'])
         elif configs['network'] == 'dunsan':
-            configs['scale'] = str(3)
+            configs['scale'] = str(1)
 
     # check the environment
     if 'SUMO_HOME' in os.environ:
