@@ -119,8 +119,9 @@ def city_dqn_train(configs, time_data, sumoCmd):
             clear_matrix = torch.eq(t_agent % TL_PERIOD, 0)
 
             # action 넘어가야된다면 action index증가 (by tensor slicing)
-            action_update_mask = torch.eq(  # update는 단순히 진짜 현시만 받아서 결정해야됨
-                t_agent, action_matrix[0, action_index_matrix]).view(NUM_AGENT)  # 0,인 이유는 인덱싱
+            for idx,_ in enumerate(TL_RL_LIST):
+                action_update_mask[idx] = torch.eq(  # update는 단순히 진짜 현시만 받아서 결정해야됨
+                    t_agent[idx], action_matrix[idx, action_index_matrix[idx]].view(-1))  # 0,인 이유는 인덱싱
 
             action_index_matrix[action_update_mask] += 1
             # agent의 최대 phase를 넘어가면 해당 agent의 action index 0으로 초기화
@@ -128,6 +129,7 @@ def city_dqn_train(configs, time_data, sumoCmd):
             
             # mask update, matrix True로 전환
             t_agent[clear_matrix] = 0
+            # print(t_agent,action_index_matrix,step,action_update_mask)
             mask_matrix[clear_matrix] = True
             mask_matrix[~clear_matrix] = False
 
