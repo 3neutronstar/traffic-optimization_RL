@@ -161,7 +161,7 @@ def city_dqn_train(configs, time_data, sumoCmd):
         print('======== {} epoch/ return: {:.5f} arrived number:{}'.format(epoch,
                                                                            env.cum_reward.sum(), arrived_vehicles))
         update_tensorboard(writer, epoch, env, agent, arrived_vehicles)
-        print("hi",env.test_val)
+        # print("hi",env.test_val)
         env.test_val=0
         if epoch % 50 == 0:
             agent.save_weights(

@@ -72,9 +72,9 @@ class CityEnv(baseEnv):
                 self.left_lane_num_dict[pair['inflow']] = traci.edge.getLaneNumber(
                     pair['inflow'])-1
         
-        self.test_val=list()
-        for i in self.tl_rl_list:
-            self.test_val.append(0)
+        # self.test_val=list()
+        # for i in self.tl_rl_list:
+        #     self.test_val.append(0)
 
     def get_state(self, mask):
         '''
@@ -114,7 +114,7 @@ class CityEnv(baseEnv):
             if action_index_matrix[index] in self.traffic_node_info[self.tl_rl_list[index]]['phase_index']:
                 # action_index_matrix상의 값이 next state를 받아와야하는 index일 경우
                 action_change_mask[index] = True
-                self.test_val[index]+=1
+                # self.test_val[index]+=1
 
         # Reward
         for index in torch.nonzero(action_change_mask):
