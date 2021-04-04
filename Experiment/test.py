@@ -110,8 +110,12 @@ def city_dqn_test(flags, sumoCmd, configs):
 
 
             # 넘어가야된다면 action index증가 (by tensor slicing)
-            action_update_mask = torch.eq(  # update는 단순히 진짜 현시만 받아서 결정해야됨
-                t_agent, action_matrix[0, action_index_matrix]).view(NUM_AGENT)  # 0,인 이유는 인덱싱
+            
+            # action 넘어가야된다면 action index증가 (by tensor slicing)
+            for idx,_ in enumerate(TL_RL_LIST):
+                action_update_mask[idx] = torch.eq(  # update는 단순히 진짜 현시만 받아서 결정해야됨
+                    t_agent[idx], action_matrix[idx, action_index_matrix[idx]].view(-1))  # 0,인 이유는 인덱싱
+
             action_index_matrix[action_update_mask] += 1
             # agent의 최대 phase를 넘어가면 해당 agent의 action index 0으로 초기화
             action_index_matrix[clear_matrix] = 0
