@@ -185,6 +185,8 @@ class CityEnv(baseEnv):
             # print(next_state,idx,self.configs['phase_type'][idx])
             # print(next_state)
 
+            self.tl_rl_memory[idx].state[:, :, (action_index_matrix[idx]/2).long()
+                                         ] = self.tl_rl_memory[idx].next_state[:, :, (action_index_matrix[idx]/2).long()].detach().clone()
             self.tl_rl_memory[idx].next_state[:, :, (action_index_matrix[idx]/2).long()
                                               ] = next_state.view(1, self.state_space, 1, 1).detach().clone()
 
@@ -192,8 +194,6 @@ class CityEnv(baseEnv):
             # next state 생성
             next_states[0, :, :,
                         idx] = self.tl_rl_memory[idx].next_state.detach().clone()
-            self.tl_rl_memory[idx].state[:, :, (action_index_matrix[idx]/2).long()
-                                         ] = self.tl_rl_memory[idx].next_state[:, :, (action_index_matrix[idx]/2).long()].detach().clone()
         # reward clear
         reward = self.reward.detach().clone()
         self.cum_reward += reward

@@ -228,8 +228,8 @@ def main(args):
         if configs['network'] == '5x5grid':
             configs['scale'] = str(1)
         if configs['network'] == '5x5grid_v2':
-            configs['scale'] = str(1)
-            print(configs['scale'])
+            configs['scale'] = str(1.5)
+            print("Scale:",configs['scale'])
         elif configs['network'] == 'dunsan':
             configs['scale'] = str(1)
 

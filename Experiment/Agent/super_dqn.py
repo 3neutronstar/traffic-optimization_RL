@@ -14,11 +14,11 @@ DEFAULT_CONFIG = {
     'gamma': 0.9,
     'tau': 0.001,
     'batch_size': 40,
-    'experience_replay_size': 100000,
+    'experience_replay_size': 500000,
     'epsilon': 0.9,
-    'epsilon_decay_rate': 0.99,
+    'epsilon_decay_rate': 0.995,
     'fc_net': [160, 160, 160, 160],
-    'lr': 0.0001,
+    'lr': 0.00001,
     'lr_decay_period': 50,
     'lr_decay_rate': 0.8,
     # 'lr_decay_rate': 0.995,
@@ -204,6 +204,9 @@ class Trainer(RLAlgorithm):
             # print("action {}".format(action[0, index]))
             # print("reward {}".format(reward[0, index]))
             # print("next_state {}".format(next_state[0, :, :, index].view(-1, self.state_space, 4, 1)))
+            # if torch.eq(state[0, :, :, index],next_state[0, :, :, index]).sum()>0:
+            #     print(torch.eq(state[0, :, :, index],next_state[0, :, :, index]).sum())
+            #     print("FAKE")
 
     def update(self, mask):  # 각 agent마다 시행하기 # agent network로 돌아가서 시행 그러면될듯?
         # if mask.sum() > 0 and len(self.mainSuperQNetwork.experience_replay) > self.configs['batch_size']:
